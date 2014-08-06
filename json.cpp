@@ -179,7 +179,7 @@ namespace JSON {
                                                              offset,
                                                              (offset + 1) < infoLen
                                                             >::MatchJSONVarTag(),
-                                               (offset + DECORATOR_LEN) < infoLen
+                                              (offset + DECORATOR_LEN) < infoLen
                                              >::FindJSONToken();
         }
     };
