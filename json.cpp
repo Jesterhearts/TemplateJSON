@@ -3,20 +3,60 @@
 #include <string>
 #include <stdexcept>
 
+/* Helper macros */
 #define WIDEN(STRING)   \
     L ## STRING
 
+#define JSON_COUNTERTOSTRIMPL(VALUE)    \
+    WIDEN( #VALUE )
 
-#define JSON_CLASS(FQN, CLASS_DEF)                                                              \
-    namespace JSON {                                                                            \
-        constexpr const wchar_t* __##FQN = WIDEN(#CLASS_DEF);                                   \
-        constexpr const size_t __##FQN##_size(sizeof (WIDEN(#CLASS_DEF)) / sizeof(wchar_t));    \
-    }                                                                                           \
-    class FQN CLASS_DEF
+#define JSON_COUNTERTOSTR(VALUE)    \
+    JSON_COUNTERTOSTRIMPL( VALUE )
 
+/* constructor macros */
+#define JSON_CLASS(CLASS_NAME, CLASS_BODY)                                                      \
+    class CLASS_NAME {                                                                          \
+        /* inject the stuff that we need to function */                                         \
+        static constexpr const wchar_t* __##CLASS_NAME = WIDEN(#CLASS_BODY);                    \
+        static constexpr const size_t __##CLASS_NAME##_size =                                   \
+                                                sizeof (WIDEN(#CLASS_BODY)) / sizeof(wchar_t);  \
+                                                                                                \
+        template<class ThisClass, int uniqueID>                                                 \
+        static void VarToJSON(ThisClass&, JSON::VarToJSONHelper<uniqueID>);                     \
+        CLASS_BODY                                                                              \
+    };
+
+#define JSON_VAR(CLASS, TYPE, VARNAME)                                              \
+    static constexpr const int __##VARNAME_id = __COUNTER__;                        \
+    /* This is off by 1 from the id! */                                             \
+    static constexpr const wchar_t* __##VARNAME = WIDEN(#VARNAME)                   \
+                                                  L"_"                              \
+                                                  JSON_COUNTERTOSTR( __COUNTER__ ); \
+                                                                                    \
+    template<int uniqueID>                                                          \
+    static void __TYPE##_VarToJSONFunctionCreator(CLASS& classInto)   {             \
+        CLASS::VarToJSON<CLASS>(classInto,                                          \
+                                JSON::VarToJSONHelper<__##VARNAME_id>());           \
+    }                                                                               \
+                                                                                    \
+    template<class ThisClass>                                                       \
+    static void VarToJSON(ThisClass& classInto,                                     \
+                          JSON::VarToJSONHelper<__##VARNAME_id> helper) {           \
+                                                                                    \
+    }                                                                               \
+    TYPE VARNAME;
+
+/* holy shit so many templates */
 namespace JSON {
 
+    template<int uniqueID>
+    struct VarToJSONHelper {
+        const static int help = uniqueID;
+    };
+
 //the decorator
+// TODO: this is no longer used, but it's useful for testing stuff right now
+// until things are complete
 #define __json
     constexpr const size_t DECORATOR_LEN = sizeof(L"__json") / sizeof(wchar_t) - 1;
 
@@ -106,24 +146,24 @@ namespace JSON {
     };
 
     //This class checks if a string at an offset matches the decorator
-    template<const wchar_t *const *class_info, size_t info_len, unsigned int offset, bool inRange>
+    template<const wchar_t *const *classInfo, size_t infoLen, unsigned int offset, bool inRange>
     struct JSONTagMatcher {
         static constexpr bool MatchJSONVarTag() {
             return JSONTokenMatcherStart<6,
                                          L'_', L'_', L'j', L's', L'o', L'n',
-                                         class_info[0][offset],
-                                         class_info[0][offset + 1],
-                                         class_info[0][offset + 2],
-                                         class_info[0][offset + 3],
-                                         class_info[0][offset + 4],
-                                         class_info[0][offset + 5]
+                                         classInfo[0][offset],
+                                         classInfo[0][offset + 1],
+                                         classInfo[0][offset + 2],
+                                         classInfo[0][offset + 3],
+                                         classInfo[0][offset + 4],
+                                         classInfo[0][offset + 5]
                                     >::MatchToken();
         }
     };
 
     //This keeps us from going out of bounds while searching the array
-    template<const wchar_t *const *class_info, size_t info_len, unsigned int offset>
-    struct JSONTagMatcher<class_info, info_len, offset, false> {
+    template<const wchar_t *const *classInfo, size_t infoLen, unsigned int offset>
+    struct JSONTagMatcher<classInfo, infoLen, offset, false> {
         static constexpr bool MatchJSONVarTag() {
             return false;
         }
@@ -131,54 +171,59 @@ namespace JSON {
 
     //This recursively searches the input string until it finds a matching token
     //  or fails to find one
-    template<const wchar_t *const *class_info, size_t info_len, unsigned int offset, bool foundToken, bool recurse>
+    template<const wchar_t *const *classInfo, size_t infoLen, unsigned int offset, bool foundToken, bool recurse>
     struct JSONClassParserTokenFinder {
         static constexpr const wchar_t* FindJSONToken() {
-            return JSONClassParserTokenFinder<class_info,
-                                              info_len,
+            return JSONClassParserTokenFinder<classInfo,
+                                              infoLen,
                                               offset + 1,
-                                              JSONTagMatcher<class_info,
-                                                             info_len,
+                                              JSONTagMatcher<classInfo,
+                                                             infoLen,
                                                              offset,
-                                                             (offset + 1) < info_len
+                                                             (offset + 1) < infoLen
                                                             >::MatchJSONVarTag(),
-                                               (offset + DECORATOR_LEN) < info_len             
+                                               (offset + DECORATOR_LEN) < infoLen             
                                             >::FindJSONToken();
         }
     };
 
     //This is the termination case when a recursive search finds a token
-    template<const wchar_t *const *class_info, size_t info_len, unsigned int offset, bool recurse>
-    struct JSONClassParserTokenFinder<class_info, info_len, offset, true, recurse> {
+    template<const wchar_t *const *classInfo, size_t infoLen, unsigned int offset, bool recurse>
+    struct JSONClassParserTokenFinder<classInfo, infoLen, offset, true, recurse> {
         static constexpr const wchar_t* FindJSONToken() {
             //The offset is increased before we know if we found the end, so we
             //  need to decrease it here to get the real offset
-            return class_info[0] + offset - 1;
+            return classInfo[0] + offset - 1;
         }
     };
 
     //This handles the recursive search failing to locate a token 
-    template<const wchar_t *const *class_info, size_t info_len, unsigned int offset, bool foundToken>
-    struct JSONClassParserTokenFinder<class_info, info_len, offset, foundToken, false> {
+    template<const wchar_t *const *classInfo, size_t infoLen, unsigned int offset, bool foundToken>
+    struct JSONClassParserTokenFinder<classInfo, infoLen, offset, foundToken, false> {
         static constexpr const wchar_t* FindJSONToken() {
             return nullptr;
         }
     };
 
-    template<const wchar_t *const *class_info, size_t info_len>
+    // template<const wchar_t *const *classInfo, size_t infoLen,
+    //          const wchar_t* const wchar_t *const *varname, size_t varnameLen,
+    //          unsigned int offset, bool nameMatch>
+    // struct  {};
+
+    template<const wchar_t *const *classInfo, size_t infoLen>
     struct JSONClassParser {
         static constexpr const wchar_t* FindNextJSONToken() {
-            return JSONClassParserTokenFinder<class_info, info_len, 0, false, true>::FindJSONToken();
+            return JSONClassParserTokenFinder<classInfo, infoLen, 0, false, true>::FindJSONToken();
         }
     };
 
-    template<const wchar_t *const *class_info, size_t info_len>
+    template<const wchar_t *const *classInfo, size_t infoLen>
     struct JSONParser {
         static void FromJSON() {
-            // bool t = JSONTagMatcher<class_info, info_len, 0, true>::MatchJSONVarTag();
+            // bool t = JSONTagMatcher<classInfo, infoLen, 0, true>::MatchJSONVarTag();
             // std::wcout << t << std::endl;
-            std::wcout << *class_info << std::endl;
-            const wchar_t* first = JSONClassParser<class_info, info_len>::FindNextJSONToken();
+            std::wcout << *classInfo << std::endl;
+            const wchar_t* first = JSONClassParser<classInfo, infoLen>::FindNextJSONToken();
             std::wcout << first << std::endl;
         }
     };
@@ -201,17 +246,16 @@ namespace JSON {
     };
 }
 
-JSON_CLASS(Test, {
+JSON_CLASS(Test, 
 public:
-     __json int abc;
+     JSON_VAR(Test, int, abc);
 
      __json int xyz;
-
-};);
+);
 
 int main() {
 
-    JSON::JSONParser<&JSON::__Test, JSON::__Test_size>::FromJSON();
+    JSON::JSONParser<&Test::__Test, Test::__Test_size>::FromJSON();
 
     return 0;
 }
