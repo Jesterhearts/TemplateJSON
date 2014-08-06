@@ -42,7 +42,13 @@ namespace JSON {
              wchar_t... testchars>
     struct JSONTokenMatcherPart { 
         static constexpr bool MatchToken() {
-            return JSONTokenMatcherPart<JSONTokenGetter<offset + numCharsInTestWord, testchars...>::GetTokenAtOffset() == JSONTokenGetter<offset, testchars...>::GetTokenAtOffset(),
+            return JSONTokenMatcherPart<JSONTokenGetter<
+                                                        offset + numCharsInTestWord,
+                                                        testchars...
+                                                       >::GetTokenAtOffset() == JSONTokenGetter<
+                                                                                                offset,
+                                                                                                testchars...
+                                                                                               >::GetTokenAtOffset(),
                                         sizeof...(testchars) == numCharsInTestWord + offset + 1,
                                         testedCount + 1 == numCharsInTestWord,
                                         testedCount + 1, offset + 1, numCharsInTestWord,
@@ -52,7 +58,9 @@ namespace JSON {
     };
 
     //This is the fail case, no need to continue
-    template<bool stopTesting, bool testPass, size_t testedCount, size_t offset, size_t numCharsInTestWord, wchar_t... testchars>
+    template<bool stopTesting, bool testPass,
+             size_t testedCount, size_t offset, size_t numCharsInTestWord,
+             wchar_t... testchars>
     struct JSONTokenMatcherPart<false, stopTesting, testPass, testedCount, offset, numCharsInTestWord, testchars...> {
         static constexpr bool MatchToken() {
             return false;
@@ -60,7 +68,9 @@ namespace JSON {
     };
 
     //The string isn't long enough
-    template<bool test, bool testPass, size_t testedCount, size_t offset, size_t numCharsInTestWord, wchar_t... testchars>
+    template<bool test, bool testPass,
+             size_t testedCount, size_t offset, size_t numCharsInTestWord,
+             wchar_t... testchars>
     struct JSONTokenMatcherPart<test, true, testPass, testedCount, offset, numCharsInTestWord, testchars...> {
         static constexpr bool MatchToken() {
             return false;
@@ -68,7 +78,9 @@ namespace JSON {
     };
 
     //YAY! A Match!
-    template<bool test, bool stopTesting, size_t testedCount, size_t offset, size_t numCharsInTestWord, wchar_t... testchars>
+    template<bool test, bool stopTesting,
+             size_t testedCount, size_t offset, size_t numCharsInTestWord,
+             wchar_t... testchars>
     struct JSONTokenMatcherPart<test, stopTesting, true, testedCount, offset, numCharsInTestWord, testchars...> {
         static constexpr bool MatchToken() {
             return true;
@@ -76,7 +88,9 @@ namespace JSON {
     };
 
     //Also a match
-    template<bool test, size_t testedCount, size_t offset, size_t numCharsInTestWord, wchar_t... testchars>
+    template<bool test,
+            size_t testedCount, size_t offset, size_t numCharsInTestWord,
+            wchar_t... testchars>
     struct JSONTokenMatcherPart<test, true, true, testedCount, offset, numCharsInTestWord, testchars...> {
         static constexpr bool MatchToken() {
             return true;
