@@ -57,7 +57,7 @@ namespace JSON {
 //the decorator
 // TODO: this is no longer used, but it's useful for testing stuff right now
 // until things are complete
-#define __json
+// #define __json
     constexpr const size_t DECORATOR_LEN = sizeof(L"__json") / sizeof(wchar_t) - 1;
 
     template<size_t offset, wchar_t token, wchar_t... tokens>
@@ -197,6 +197,16 @@ namespace JSON {
         }
     };
 
+    //Also a termination case
+    template<const wchar_t *const *classInfo, size_t infoLen, unsigned int offset>
+    struct JSONClassParserTokenFinder<classInfo, infoLen, offset, true, false> {
+        static constexpr const wchar_t* FindJSONToken() {
+            //The offset is increased before we know if we found the end, so we
+            //  need to decrease it here to get the real offset
+            return classInfo[0] + offset - 1;
+        }
+    };
+
     //This handles the recursive search failing to locate a token 
     template<const wchar_t *const *classInfo, size_t infoLen, unsigned int offset, bool foundToken>
     struct JSONClassParserTokenFinder<classInfo, infoLen, offset, foundToken, false> {
@@ -204,11 +214,6 @@ namespace JSON {
             return nullptr;
         }
     };
-
-    // template<const wchar_t *const *classInfo, size_t infoLen,
-    //          const wchar_t* const wchar_t *const *varname, size_t varnameLen,
-    //          unsigned int offset, bool nameMatch>
-    // struct  {};
 
     template<const wchar_t *const *classInfo, size_t infoLen>
     struct JSONClassParser {
@@ -248,9 +253,7 @@ namespace JSON {
 
 JSON_CLASS(Test, 
 public:
-     JSON_VAR(Test, int, abc);
-
-     __json int xyz;
+     JSON_VAR(Test, int, __json);
 );
 
 int main() {
