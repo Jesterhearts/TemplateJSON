@@ -54,10 +54,8 @@ namespace JSON {
         const static int help = uniqueID;
     };
 
-//the decorator
 // TODO: this is no longer used, but it's useful for testing stuff right now
 // until things are complete
-// #define __json
     constexpr const size_t DECORATOR_LEN = sizeof(L"__json") / sizeof(wchar_t) - 1;
 
     template<size_t offset, wchar_t token, wchar_t... tokens>
@@ -82,11 +80,10 @@ namespace JSON {
              wchar_t... testchars>
     struct JSONTokenMatcherPart { 
         static constexpr bool MatchToken() {
-            return JSONTokenMatcherPart<JSONTokenGetter<
-                                                        offset + numCharsInTestWord,
+            return JSONTokenMatcherPart<JSONTokenGetter<offset,
                                                         testchars...
                                                        >::GetTokenAtOffset() == JSONTokenGetter<
-                                                                                                offset,
+                                                                                                offset + numCharsInTestWord,
                                                                                                 testchars...
                                                                                                >::GetTokenAtOffset(),
                                         sizeof...(testchars) == numCharsInTestWord + offset + 1,
@@ -157,7 +154,7 @@ namespace JSON {
                                          classInfo[0][offset + 3],
                                          classInfo[0][offset + 4],
                                          classInfo[0][offset + 5]
-                                    >::MatchToken();
+                                        >::MatchToken();
         }
     };
 
@@ -182,8 +179,8 @@ namespace JSON {
                                                              offset,
                                                              (offset + 1) < infoLen
                                                             >::MatchJSONVarTag(),
-                                               (offset + DECORATOR_LEN) < infoLen             
-                                            >::FindJSONToken();
+                                               (offset + DECORATOR_LEN) < infoLen
+                                             >::FindJSONToken();
         }
     };
 
