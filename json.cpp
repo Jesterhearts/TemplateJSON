@@ -170,7 +170,6 @@ namespace JSON {
              const wchar_t* const* testWord,
              size_t candidateOffset,
              size_t testOffset,
-             /* matchFailed = true */
              bool endCandidateWord,
              bool endTestWord>
     struct JSONTokenMatcherPart<candidateWord,
@@ -191,7 +190,6 @@ namespace JSON {
              size_t candidateOffset,
              size_t testOffset,
              bool matchFailed,
-             /* endCandidateWord = true */
              bool endTestWord>
     struct JSONTokenMatcherPart<candidateWord,
                                 testWord,
@@ -210,8 +208,6 @@ namespace JSON {
              const wchar_t* const* testWord,
              size_t candidateOffset,
              size_t testOffset,
-             /* matchFailed = true */
-             /* endCandidateWord = true */
              bool endTestWord>
     struct JSONTokenMatcherPart<candidateWord,
                                 testWord,
@@ -231,8 +227,7 @@ namespace JSON {
              size_t candidateOffset,
              size_t testOffset,
              bool matchFailed,
-             bool endCandidateWord
-             /* endTestWord = true */>
+             bool endCandidateWord>
     struct JSONTokenMatcherPart<candidateWord,
                                 testWord,
                                 candidateOffset,
@@ -250,9 +245,7 @@ namespace JSON {
              const wchar_t* const* testWord,
              size_t candidateOffset,
              size_t testOffset,
-             bool matchFailed
-             /* endCandidateWord = true */
-             /* endTestWord = true */>
+             bool matchFailed>
     struct JSONTokenMatcherPart<candidateWord,
                                 testWord,
                                 candidateOffset,
