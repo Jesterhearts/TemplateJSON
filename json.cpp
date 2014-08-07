@@ -36,14 +36,15 @@
                                                   JSON_COUNTERTOSTR( __COUNTER__ ); \
                                                                                     \
     template<int uniqueID>                                                          \
-    static void __TYPE##_VarToJSONFunctionCreator(CLASS& classInto)   {             \
-        CLASS::VarToJSON<CLASS>(classInto,                                          \
+    static void __TYPE##_VarToJSONFunctionCreator(CLASS& classFrom)   {             \
+        CLASS::VarToJSON<CLASS>(classFrom,                                          \
                                 JSON::VarToJSONHelper<__##VARNAME_id>());           \
     }                                                                               \
                                                                                     \
     template<class ThisClass>                                                       \
-    static void VarToJSON(ThisClass& classInto,                                     \
+    static void VarToJSON(ThisClass& classFrom,                                     \
                           JSON::VarToJSONHelper<__##VARNAME_id> helper) {           \
+      /* stringmap.append = jsonValueParserForTYPE :: parse(classFrom.VARNAME) */   \
                                                                                     \
     }                                                                               \
     TYPE VARNAME;
@@ -56,158 +57,172 @@ namespace JSON {
         const static int help = uniqueID;
     };
 
-// TODO: this is no longer used, but it's useful for testing stuff right now
-// until things are complete
-    constexpr const wchar_t* DECORATOR_STR = L" __json";
+    constexpr const wchar_t* DECORATOR_STR = L"JSON_VAR(";
 
     constexpr const wchar_t nullchar = L'\0';
 
     template<wchar_t testChar, wchar_t candidateChar>
     struct JSONTokenTester {
-      static constexpr bool Equal() {
-          return testChar == candidateChar;
-      }
+        static constexpr bool Equal() {
+            return testChar == candidateChar;
+        }
+
+        static constexpr bool NotEqual() {
+            return testChar != candidateChar;
+        }
     };
 
+    template<const wchar_t* const* word,
+             size_t offset,
+             size_t eatenCount = 0,
+             bool matchSpaceFailed = false,
+             bool matchTabFailed = false>
+    struct JSONWhitespaceCounter {
+        static constexpr size_t Count() {
+            return JSONWhitespaceCounter<word,
+                                         offset + 1,
+                                         eatenCount + 1,
+                                         JSONTokenTester<word[0][offset],
+                                                         L' '
+                                                        >::NotEqual(),
+                                         JSONTokenTester<word[0][offset],
+                                                         L'\t'
+                                                        >::NotEqual()
+                                        >::Count();
+        }
+    };
+
+    template<const wchar_t* const* word,
+             size_t offset,
+             size_t eatenCount>
+    struct JSONWhitespaceCounter<word,
+                               offset,
+                               eatenCount,
+                               true,
+                               true> {
+        static constexpr size_t Count() {
+            return eatenCount - 1;
+        }
+    };
+
+
     //This case handles successful comparisons and recurses
-    template<bool testResult,
-             bool stopTesting,
-             bool testComplete,
+    template<const wchar_t* const* candidateWord,
              const wchar_t* const* testWord,
-             const wchar_t* const* candidateWord,
-             size_t testOffset,
-             size_t candidateOffset>
+             size_t candidateOffset,
+             size_t testOffset = 0,
+             bool matchFailed = false,
+             bool endCandidateWord = false,
+             bool endTestWord = false>
     struct JSONTokenMatcherPart { 
         static constexpr bool MatchToken() {
-            return JSONTokenMatcherPart<JSONTokenTester<testWord[0][testOffset],
+            return JSONTokenMatcherPart<candidateWord,
+                                        testWord,
+                                        candidateOffset + 1,
+                                        testOffset + 1,
+                                        JSONTokenTester<testWord[0][testOffset],
                                                         candidateWord[0][candidateOffset]
-                                                       >::Equal(),
+                                                       >::NotEqual(),
                                         JSONTokenTester<candidateWord[0][candidateOffset + 1],
                                                         nullchar
                                                        >::Equal(),
                                         JSONTokenTester<testWord[0][testOffset + 1],
                                                         nullchar
-                                                       >::Equal(),
-                                        testWord,
-                                        candidateWord,
-                                        testOffset + 1,
-                                        candidateOffset + 1
+                                                       >::Equal()
                                        >::MatchToken();
         }
     };
 
     //This is the fail case, no need to continue
-    template<bool stopTesting,
-             bool testComplete,
+    template<const wchar_t* const* candidateWord,
              const wchar_t* const* testWord,
-             const wchar_t* const* candidateWord,
+             size_t candidateOffset,
              size_t testOffset,
-             size_t candidateOffset>
-    struct JSONTokenMatcherPart</* testResult */ false,
-                                stopTesting,
-                                testComplete, 
+             bool endCandidateWord,
+             bool endTestWord>
+    struct JSONTokenMatcherPart<candidateWord,
                                 testWord,
-                                candidateWord,
+                                candidateOffset,
                                 testOffset,
-                                candidateOffset
-                               > {
+                                /* matchFailed */ true,
+                                endCandidateWord,
+                                endTestWord> {
         static constexpr bool MatchToken() {
             return false;
         }
     };
 
     //The string isn't long enough
-    template<bool testResult,
-             bool testComplete,
+    template<const wchar_t* const* candidateWord,
              const wchar_t* const* testWord,
-             const wchar_t* const* candidateWord,
+             size_t candidateOffset,
              size_t testOffset,
-             size_t candidateOffset>
-    struct JSONTokenMatcherPart<testResult,
-                                /* stopTesting */ true,
-                                testComplete,
+             bool matchFailed,
+             bool endTestWord>
+    struct JSONTokenMatcherPart<candidateWord,
                                 testWord,
-                                candidateWord,
+                                candidateOffset,
                                 testOffset,
-                                candidateOffset
-                               > {
+                                matchFailed,
+                                /* endCandidateWord */ true,
+                                endTestWord> {
         static constexpr bool MatchToken() {
             return false;
         }
     };
 
     //Also not long enough, also it didn't match
-    template<bool testComplete,
+    template<const wchar_t* const* candidateWord,
              const wchar_t* const* testWord,
-             const wchar_t* const* candidateWord,
+             size_t candidateOffset,
              size_t testOffset,
-             size_t candidateOffset>
-    struct JSONTokenMatcherPart</* testResult */ false,
-                                /* stopTesting */ true,
-                                testComplete,
+             bool endTestWord>
+    struct JSONTokenMatcherPart<candidateWord,
                                 testWord,
-                                candidateWord,
+                                candidateOffset,
                                 testOffset,
-                                candidateOffset
-                               > {
+                                /* matchFailed */ true,
+                                /* endCandidateWord */ true,
+                                endTestWord> {
         static constexpr bool MatchToken() {
             return false;
         }
     };
 
     //YAY! A Match!
-    template<bool testResult,
-             bool stopTesting,
+    template<const wchar_t* const* candidateWord,
              const wchar_t* const* testWord,
-             const wchar_t* const* candidateWord,
+             size_t candidateOffset,
              size_t testOffset,
-             size_t candidateOffset>
-    struct JSONTokenMatcherPart<testResult,
-                                stopTesting,
-                                /* testComplete */ true,
+             bool matchFailed,
+             bool endCandidateWord>
+    struct JSONTokenMatcherPart<candidateWord,
                                 testWord,
-                                candidateWord,
+                                candidateOffset,
                                 testOffset,
-                                candidateOffset
-                               > {
+                                matchFailed,
+                                endCandidateWord,
+                                /* endTestWord */ true> {
         static constexpr bool MatchToken() {
             return true;
         }
     };
 
     //Also a match, but full length
-    template<bool testResult,
+    template<const wchar_t* const* candidateWord,
              const wchar_t* const* testWord,
-             const wchar_t* const* candidateWord,
+             size_t candidateOffset,
              size_t testOffset,
-             size_t candidateOffset>
-    struct JSONTokenMatcherPart<testResult,
-                                /* stopTesting */ true,
-                                /* testComplete */ true,
+             bool matchFailed>
+    struct JSONTokenMatcherPart<candidateWord,
                                 testWord,
-                                candidateWord,
+                                candidateOffset,
                                 testOffset,
-                                candidateOffset
-                               > {
+                                matchFailed,
+                                /* endCandidateWord */ true,
+                                /* endTestWord */ true> {
         static constexpr bool MatchToken() {
             return true;
-        }
-    };
-
-    //This is just a convenience class for starting the tokenization
-    template<const wchar_t* const* testWord,
-             const wchar_t* const* candidateWord,
-             size_t candidateOffset>
-    struct JSONTokenMatcherStart {
-        static constexpr bool MatchToken() {
-            return JSONTokenMatcherPart</* testResult - false would kill it early */ true,
-                                        /* stopTesting */ false,
-                                        /* testComplete */ false,
-                                        testWord,
-                                        candidateWord,
-                                        /* testOffset */ 0,
-                                        candidateOffset
-                                       >::MatchToken();
         }
     };
 
@@ -215,10 +230,10 @@ namespace JSON {
     template<const wchar_t *const *classInfo, unsigned int offset>
     struct JSONTagMatcher {
         static constexpr bool MatchJSONVarTag() {
-            return JSONTokenMatcherStart<&DECORATOR_STR,
-                                         classInfo,
-                                         offset
-                                        >::MatchToken();
+            return JSONTokenMatcherPart<classInfo,
+                                        &DECORATOR_STR,
+                                        offset
+                                       >::MatchToken();
         }
     };
 
