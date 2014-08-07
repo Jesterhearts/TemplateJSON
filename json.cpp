@@ -74,12 +74,6 @@ namespace JSON {
     //  it doesn't break everytime we change things
     constexpr const wchar_t* DECORATOR_STR = EXPAND_MACRO_WIDEN(JSON_VAR_DECORATOR);
 
-    //Sometimes g++ bitches at me for including a character literal in a
-    //  template argument.
-    //Sometimes it doesn't.
-    //Either way - this shuts it up
-    constexpr const wchar_t nullchar = L'\0';
-
     /* Helpers for the template programs */
     template<int uniqueID>
     struct VarToJSONIdentifier {
@@ -95,6 +89,123 @@ namespace JSON {
 
         static constexpr bool NotEqual() {
             return testChar != candidateChar;
+        }
+    };
+
+////////////////////////////////////////////////////////////////////////////////
+// JSONIsNullOrWhitespace implementation
+////
+    template<wchar_t testChar>
+    struct JSONIsNullOrWhitespace {
+        static constexpr bool Check() {
+            /* The specializations do the check for valid chars
+               so if it hits this it can't be
+             */
+            return false;
+        }
+    };
+
+    template<>
+    struct JSONIsNullOrWhitespace<L' '> {
+        static constexpr bool Check() {
+            return true;
+        }
+    };
+
+    template<>
+    struct JSONIsNullOrWhitespace<L'\t'> {
+        static constexpr bool Check() {
+            return true;
+        }
+    };
+
+    template<>
+    struct JSONIsNullOrWhitespace<L'\0'> {
+        static constexpr bool Check() {
+            return true;
+        }
+    };
+
+////////////////////////////////////////////////////////////////////////////////
+// JSONIsNumber implementation
+////
+    template<wchar_t testChar>
+    struct JSONIsNumber {
+        static constexpr bool Check() {
+            /* The specializations enumerate 0-9
+               so if it hits this it can't be
+             */
+            return false;
+        }
+    };
+
+    template<>
+    struct JSONIsNumber<L'0'> {
+        static constexpr bool Check() {
+            return true;
+        }
+    };
+
+    template<>
+    struct JSONIsNumber<L'1'> {
+        static constexpr bool Check() {
+            return true;
+        }
+    };
+
+    template<>
+    struct JSONIsNumber<L'2'> {
+        static constexpr bool Check() {
+            return true;
+        }
+    };
+
+    template<>
+    struct JSONIsNumber<L'3'> {
+        static constexpr bool Check() {
+            return true;
+        }
+    };
+
+    template<>
+    struct JSONIsNumber<L'4'> {
+        static constexpr bool Check() {
+            return true;
+        }
+    };
+
+    template<>
+    struct JSONIsNumber<L'5'> {
+        static constexpr bool Check() {
+            return true;
+        }
+    };
+
+    template<>
+    struct JSONIsNumber<L'6'> {
+        static constexpr bool Check() {
+            return true;
+        }
+    };
+
+    template<>
+    struct JSONIsNumber<L'7'> {
+        static constexpr bool Check() {
+            return true;
+        }
+    };
+
+    template<>
+    struct JSONIsNumber<L'8'> {
+        static constexpr bool Check() {
+            return true;
+        }
+    };
+
+    template<>
+    struct JSONIsNumber<L'9'> {
+        static constexpr bool Check() {
+            return true;
         }
     };
 
@@ -156,10 +267,10 @@ namespace JSON {
                                                         candidateWord[0][candidateOffset]
                                                        >::NotEqual(),
                                         JSONTokenTester<candidateWord[0][candidateOffset + 1],
-                                                        nullchar
+                                                        L'\0'
                                                        >::Equal(),
                                         JSONTokenTester<testWord[0][testOffset + 1],
-                                                        nullchar
+                                                        L'\0'
                                                        >::Equal()
                                        >::MatchToken();
         }
@@ -283,7 +394,7 @@ namespace JSON {
              bool foundToken,
              bool endOfInput>
     struct JSONClassParserTokenFinder {
-        static constexpr const wchar_t* FindJSONToken() {
+        static constexpr const size_t FindJSONToken() {
             return JSONClassParserTokenFinder<classInfo,
                                               offset + 1,
                                               JSONTagMatcher<classInfo,
@@ -302,10 +413,10 @@ namespace JSON {
                                       offset,
                                       /* foundToken*/ true,
                                       endOfInput> {
-        static constexpr const wchar_t* FindJSONToken() {
+        static constexpr size_t FindJSONToken() {
             //The offset is increased before we know if we found the end, so we
             //  need to decrease it here to get the real offset
-            return classInfo[0] + offset - 1;
+            return offset - 1;
         }
     };
 
@@ -316,10 +427,10 @@ namespace JSON {
                                       offset,
                                       /* foundToken*/ true,
                                       /* endOfInput */ false> {
-        static constexpr const wchar_t* FindJSONToken() {
+        static constexpr size_t FindJSONToken() {
             //The offset is increased before we know if we found the end, so we
             //  need to decrease it here to get the real offset
-            return classInfo[0] + offset - 1;
+            return offset - 1;
         }
     };
 
@@ -331,9 +442,38 @@ namespace JSON {
                                       offset,
                                       foundToken,
                                       /* endOfInput */ false> {
-        static constexpr const wchar_t* FindJSONToken() {
-            return nullptr;
+        static constexpr const size_t FindJSONToken() {
+            return offset - 1;
         }
+    };
+
+////////////////////////////////////////////////////////////////////////////////
+// JSONVarIDParser implementation
+////
+    template<const wchar_t * variableString,
+             size_t offset = 0,
+             bool startOfNumber = false,
+             bool numberFound = false,
+             bool endOfVariable = false>
+    struct JSONVarIDParser {
+        static constexpr int Parse() {
+            return JSONVarIDParser<variableString,
+                                   offset + 1,
+                                   JSONIsNumber<variableString[offset]
+                                               >::Check(),
+                                   numberFound,
+                                   JSONIsNullOrWhitespace<variableString[offset]
+                                                         >::Check()
+                                  >::Parse();
+        }
+    };
+
+////////////////////////////////////////////////////////////////////////////////
+// JSONVarFnInvoker implementation
+////
+    template<class classOn,
+             const wchar_t * variableString>
+    struct JSONVarFnInvoker {
     };
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -341,7 +481,7 @@ namespace JSON {
 ////
     template<const wchar_t *const *classInfo>
     struct JSONClassParser {
-        static constexpr const wchar_t* FindNextJSONToken() {
+        static constexpr const size_t FindNextJSONToken() {
             return JSONClassParserTokenFinder<classInfo, 0, false, true>::FindJSONToken();
         }
     };
@@ -357,8 +497,8 @@ namespace JSON {
             std::wcout << DECORATOR_STR << std::endl << std::endl;
 
             std::wcout << L"Result:" << std::endl;
-            const wchar_t* first = JSONClassParser<classInfo>::FindNextJSONToken();
-            std::wcout << first << std::endl;
+            size_t first_pos = JSONClassParser<classInfo>::FindNextJSONToken();
+            std::wcout << &(*classInfo)[first_pos] << std::endl;
         }
     };
 
