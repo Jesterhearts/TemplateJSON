@@ -21,6 +21,7 @@
 #define JSON_CLASS_IMPL(CLASS_NAME, CLASS_BODY)                                                 \
     class CLASS_NAME {                                                                          \
         /* inject the stuff that we need to function. It shouldn't be public */                 \
+        typedef CLASS_NAME __JSONClass;                                                         \
         /* This gives us the string for the class that we parse at compile time */              \
         static constexpr const wchar_t* __##CLASS_NAME = WIDEN(#CLASS_BODY);                    \
                                                                                                 \
@@ -30,6 +31,7 @@
          */                                                                                     \
         template<class ThisClass, int uniqueID>                                                 \
         static void VarToJSON(ThisClass&, JSON::VarToJSONIdentifier<uniqueID>);                 \
+                                                                                                \
         /* Here we actually make the rest of the class for them */                              \
         CLASS_BODY                                                                              \
     };
@@ -38,7 +40,7 @@
 #define JSON_CLASS(CLASS_NAME, CLASS_BODY)  \
     JSON_CLASS_IMPL(CLASS_NAME, CLASS_BODY)
 
-#define JSON_VAR_IMPL(CLASS, TYPE, VARNAME, KEY)                                    \
+#define JSON_VAR_IMPL(TYPE_QUALIFIERS, TYPE, VARNAME, JSONKEY, KEY)                 \
     /* This is the thing our tokenizer looks for, KEY gives it the ID for the       \
        specialization.                                                              \
      */                                                                             \
@@ -51,15 +53,20 @@
       /* stringmap.append = jsonValueParserForTYPE :: parse(classFrom.VARNAME) */   \
                                                                                     \
     }                                                                               \
-    TYPE VARNAME;
+    TYPE_QUALIFIERS TYPE VARNAME;
 
 /* Indirection here so that KEY_ARG (__COUNTER__) will become a number */
-#define JSON_VAR_HELPER(CLASS, TYPE, VARNAME, KEY_ARG)  \
-    JSON_VAR_IMPL(CLASS, TYPE, VARNAME, KEY_ARG)
+#define JSON_VAR_HELPER(TYPE_QUALIFIERS, TYPE, VARNAME, JSONKEY, KEY_ARG)   \
+    JSON_VAR_IMPL(TYPE_QUALIFIERS, TYPE, VARNAME, JSONKEY, KEY_ARG)
 
 /* Make a variable and give it a unique ID */
-#define JSON_VAR(CLASS, TYPE, VARNAME)  \
-    JSON_VAR_HELPER(CLASS, TYPE, VARNAME, __COUNTER__)
+#define JSON_QUALIFIED_VAR(TYPE_QUALIFIERS, TYPE, VARNAME, JSONKEY)   \
+    JSON_VAR_HELPER(TYPE_QUALIFIERS, TYPE, VARNAME, JSONKEY, __COUNTER__)
+
+#define JSON_NO_QUALIFIER
+
+#define JSON_VAR(TYPE, VARNAME, JSONKEY)    \
+    JSON_QUALIFIED_VAR(JSON_NO_QUALIFIER, TYPE, VARNAME, JSONKEY)
 
 /* holy shit so many templates */
 namespace JSON {
@@ -314,43 +321,6 @@ namespace JSON {
                         true> {
         static constexpr int Parse() {
             return value;
-        }
-    };
-
-////////////////////////////////////////////////////////////////////////////////
-// JSONWhitespaceCounter implementation
-////
-    template<const wchar_t* const* word,
-             size_t offset,
-             size_t count = 0,
-             bool matchSpaceFailed = false,
-             bool matchTabFailed = false>
-    struct JSONWhitespaceCounter {
-        static constexpr size_t Count() {
-            return JSONWhitespaceCounter<word,
-                                         offset + 1,
-                                         count + 1,
-                                         JSONTokenTester<word[0][offset],
-                                                         L' '
-                                                        >::NotEqual(),
-                                         JSONTokenTester<word[0][offset],
-                                                         L'\t'
-                                                        >::NotEqual()
-                                        >::Count();
-        }
-    };
-
-    template<const wchar_t* const* word,
-             size_t offset,
-             size_t count>
-    struct JSONWhitespaceCounter<word,
-                               offset,
-                               count,
-                               true,
-                               true> {
-        static constexpr size_t Count() {
-            /* We counted one extra to get here */
-            return count - 1;
         }
     };
 
@@ -618,7 +588,7 @@ namespace JSON {
                            offset,
                            numberSequenceOffsetStart,
                            false,
-                           true> {
+                            true> {
         static constexpr int Parse() {
             /* FAILED TO PARSE THE VARIABLE OH GOD WAHT DID YOU DO */
         }
@@ -628,8 +598,13 @@ namespace JSON {
 // JSONVarFnInvoker implementation
 ////
     template<class classOn,
-             const wchar_t * variableString>
-    struct JSONVarFnInvoker {
+             const wchar_t *const *variableString,
+             size_t offset>
+    struct JSONVartoJSONFnInvoker {
+        static void Invoke(classOn& classFrom) {
+            constexpr int id = JSONVarIDParser<variableString, offset>::Parse();
+            classOn::VarToJSON(classFrom, JSON::VarToJSONIdentifier<id>());
+        }
     };
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -661,7 +636,7 @@ namespace JSON {
 
             std::wcout << L"Test int parsing:" << std::endl;
             std::wcout << JSONParseInt<&test>::Parse() << std::endl << std::endl;
-            
+
             std::wcout << L"Test var ID parsing:" << std::endl;
             std::wcout << L"offset: " << first_pos + DECORATOR_STR_LEN << std::endl;
             std::wcout << L"String: " << &(*classInfo)[first_pos + DECORATOR_STR_LEN] << std::endl;
@@ -690,7 +665,7 @@ namespace JSON {
 
 JSON_CLASS(Test, 
 public:
-     JSON_VAR(Test, int, __json);
+     JSON_QUALIFIED_VAR(static, int, __json, L"test");
 );
 
 int main() {
