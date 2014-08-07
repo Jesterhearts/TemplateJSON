@@ -73,6 +73,7 @@ namespace JSON {
     // It's defined in terms of what we use to make the identifier, so hopefully
     //  it doesn't break everytime we change things
     constexpr const wchar_t* DECORATOR_STR = EXPAND_MACRO_WIDEN(JSON_VAR_DECORATOR);
+    constexpr const size_t DECORATOR_STR_LEN = sizeof(EXPAND_MACRO_WIDEN(JSON_VAR_DECORATOR)) / sizeof(wchar_t);
 
     /* Helpers for the template programs */
     template<int uniqueID>
@@ -561,17 +562,17 @@ namespace JSON {
     //  or the string ends
     template<const wchar_t *const *variableString,
              size_t offset = 0,
-             bool startOfNumber = false,
-             bool numberFound = false,
+             size_t numberSequenceOffsetStart = offset,
+             bool lastCharWasNumber = false,
              bool endOfVariable = false>
     struct JSONVarIDParser {
         static constexpr int Parse() {
             return JSONVarIDParser<variableString,
                                    offset + 1,
+                                   numberSequenceOffsetStart,
                                    JSONIsNumber<variableString[0][offset]
                                                >::Check(),
-                                   numberFound,
-                                   JSONIsNullOrWhitespace<variableString[0][offset]
+                                   JSONIsNullOrWhitespace<variableString[0][offset + 1]
                                                          >::Check()
                                   >::Parse();
         }
@@ -579,15 +580,47 @@ namespace JSON {
 
     template<const wchar_t *const *variableString,
              size_t offset,
-             bool startOfNumber,
-             bool endOfVariable>
+             size_t numberSequenceOffsetStart>
     struct JSONVarIDParser<variableString,
                            offset,
-                           startOfNumber,
-                           /* numberFound */ true,
-                           endOfVariable> {
+                           numberSequenceOffsetStart,
+                           /* lastCharWasNumber */ true,
+                           /* endOfVariable */ true> {
         static constexpr int Parse() {
-            return JSONParseInt<variableString + offset>::Parse();
+            return JSONParseInt<variableString, numberSequenceOffsetStart>::Parse();
+        }
+    };
+
+    template<const wchar_t *const *variableString,
+             size_t offset,
+             size_t numberSequenceOffsetStart>
+    struct JSONVarIDParser<variableString,
+                           offset,
+                           numberSequenceOffsetStart,
+                           /* lastCharWasNumber */ false,
+                           /* endOfVariable */ false> {
+        static constexpr int Parse() {
+            return JSONVarIDParser<variableString,
+                                   offset + 1,
+                                   offset,
+                                   JSONIsNumber<variableString[0][offset]
+                                               >::Check(),
+                                   JSONIsNullOrWhitespace<variableString[0][offset + 1]
+                                                         >::Check()
+                                  >::Parse();
+        }
+    };
+
+    template<const wchar_t *const *variableString,
+             size_t offset,
+             size_t numberSequenceOffsetStart>
+    struct JSONVarIDParser<variableString,
+                           offset,
+                           numberSequenceOffsetStart,
+                           false,
+                           true> {
+        static constexpr int Parse() {
+            /* FAILED TO PARSE THE VARIABLE OH GOD WAHT DID YOU DO */
         }
     };
 
@@ -617,15 +650,23 @@ namespace JSON {
             // bool t = JSONTagMatcher<classInfo, 0, true>::MatchJSONVarTag();
             // std::wcout << t << std::endl;
             std::wcout << L"Class info:" << std::endl;
-            std::wcout << *classInfo << std::endl;
+            std::wcout << *classInfo << std::endl << std::endl;
+
             std::wcout << L"Decorator:" << std::endl;
             std::wcout << DECORATOR_STR << std::endl << std::endl;
 
             std::wcout << L"Result:" << std::endl;
-            size_t first_pos = JSONClassParser<classInfo>::FindNextJSONToken();
-            std::wcout << &(*classInfo)[first_pos] << std::endl;
+            constexpr size_t first_pos = JSONClassParser<classInfo>::FindNextJSONToken();
+            std::wcout << &(*classInfo)[first_pos] << std::endl << std::endl;
 
-            std::wcout << JSONParseInt<&test>::Parse() << std::endl;
+            std::wcout << L"Test int parsing:" << std::endl;
+            std::wcout << JSONParseInt<&test>::Parse() << std::endl << std::endl;
+            
+            std::wcout << L"Test var ID parsing:" << std::endl;
+            std::wcout << L"offset: " << first_pos + DECORATOR_STR_LEN << std::endl;
+            std::wcout << L"String: " << &(*classInfo)[first_pos + DECORATOR_STR_LEN] << std::endl;
+            int varValue = JSONVarIDParser<classInfo, first_pos + DECORATOR_STR_LEN>::Parse();
+            std::wcout << L"Parsed: " << varValue << std::endl;
         }
     };
 
