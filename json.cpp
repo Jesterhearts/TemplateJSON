@@ -210,6 +210,113 @@ namespace JSON {
     };
 
 ////////////////////////////////////////////////////////////////////////////////
+// JSONCharToInt implementation
+////
+    template <wchar_t Char>
+    struct JSONCharToInt {
+        static constexpr int Value();
+    };
+
+    template<>
+    struct JSONCharToInt<L'0'> {
+        static constexpr int Value() {
+            return 0;
+        }
+    };
+
+    template<>
+    struct JSONCharToInt<L'1'> {
+        static constexpr int Value() {
+            return 1;
+        }
+    };
+
+    template<>
+    struct JSONCharToInt<L'2'> {
+        static constexpr int Value() {
+            return 2;
+        }
+    };
+
+    template<>
+    struct JSONCharToInt<L'3'> {
+        static constexpr int Value() {
+            return 3;
+        }
+    };
+
+    template<>
+    struct JSONCharToInt<L'4'> {
+        static constexpr int Value() {
+            return 4;
+        }
+    };
+
+    template<>
+    struct JSONCharToInt<L'5'> {
+        static constexpr int Value() {
+            return 5;
+        }
+    };
+
+    template<>
+    struct JSONCharToInt<L'6'> {
+        static constexpr int Value() {
+            return 6;
+        }
+    };
+
+    template<>
+    struct JSONCharToInt<L'7'> {
+        static constexpr int Value() {
+            return 7;
+        }
+    };
+
+    template<>
+    struct JSONCharToInt<L'8'> {
+        static constexpr int Value() {
+            return 8;
+        }
+    };
+
+    template<>
+    struct JSONCharToInt<L'9'> {
+        static constexpr int Value() {
+            return 9;
+        }
+    };
+
+////////////////////////////////////////////////////////////////////////////////
+// JSONParseInt implementation
+////
+    template<const wchar_t *const *string,
+             size_t offset = 0,
+             int value = 0,
+             bool endOfString = false>
+    struct JSONParseInt {
+        static constexpr int Parse() {
+            return JSONParseInt<string,
+                                offset + 1,
+                                value * 10 + JSONCharToInt<string[0][offset]>::Value(),
+                                !JSONIsNumber<string[0][offset + 1]>::Check()
+                               >::Parse();
+        }
+    };
+
+    template<const wchar_t *const *string,
+             size_t offset,
+             int value>
+    struct JSONParseInt<string,
+                        offset,
+                        value,
+                        true> {
+        static constexpr int Parse() {
+            return value;
+        }
+    };
+
+////////////////////////////////////////////////////////////////////////////////
 // JSONWhitespaceCounter implementation
 ////
     template<const wchar_t* const* word,
@@ -450,7 +557,9 @@ namespace JSON {
 ////////////////////////////////////////////////////////////////////////////////
 // JSONVarIDParser implementation
 ////
-    template<const wchar_t * variableString,
+    //This eats tokens until the start of a number is found
+    //  or the string ends
+    template<const wchar_t *const *variableString,
              size_t offset = 0,
              bool startOfNumber = false,
              bool numberFound = false,
@@ -459,12 +568,26 @@ namespace JSON {
         static constexpr int Parse() {
             return JSONVarIDParser<variableString,
                                    offset + 1,
-                                   JSONIsNumber<variableString[offset]
+                                   JSONIsNumber<variableString[0][offset]
                                                >::Check(),
                                    numberFound,
-                                   JSONIsNullOrWhitespace<variableString[offset]
+                                   JSONIsNullOrWhitespace<variableString[0][offset]
                                                          >::Check()
                                   >::Parse();
+        }
+    };
+
+    template<const wchar_t *const *variableString,
+             size_t offset,
+             bool startOfNumber,
+             bool endOfVariable>
+    struct JSONVarIDParser<variableString,
+                           offset,
+                           startOfNumber,
+                           /* numberFound */ true,
+                           endOfVariable> {
+        static constexpr int Parse() {
+            return JSONParseInt<variableString + offset>::Parse();
         }
     };
 
@@ -486,6 +609,8 @@ namespace JSON {
         }
     };
 
+    constexpr const wchar_t* test = L"10";
+
     template<const wchar_t *const *classInfo>
     struct JSONParser {
         static void FromJSON() {
@@ -499,6 +624,8 @@ namespace JSON {
             std::wcout << L"Result:" << std::endl;
             size_t first_pos = JSONClassParser<classInfo>::FindNextJSONToken();
             std::wcout << &(*classInfo)[first_pos] << std::endl;
+
+            std::wcout << JSONParseInt<&test>::Parse() << std::endl;
         }
     };
 
