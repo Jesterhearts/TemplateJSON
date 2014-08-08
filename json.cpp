@@ -56,19 +56,16 @@
        specialization.                                                                      \
      */                                                                                     \
     JSON_VAR_DECORATOR KEY = EXPAND_MACRO_WIDEN(KEY);                                       \
+    /* prevent duplicate keys */                                                            \
+    static constexpr void* __KEYARG_##JSONKEY = nullptr;                                    \
                                                                                             \
     /* This function does the actual work */                                                \
     static void VarToJSON(const __THIS_JSON_CLASS__& classFrom,                             \
-                          JSON::DataMap& jsonData,                                          \
+                          std::wstringstream& jsonData,                                     \
                           const JSON::VarToJSONIdentifier<                                  \
                                     JSON::VarNameHasher<&KEY>::Hash()>&& key) {             \
-        jsonData.insert(JSON::DataType(JSONKEY,                                             \
-                                           JSON::TypetoJSONFnInvoker<TYPE>                  \
-                                                ::ToJSON(classFrom.VARNAME)));              \
-                                                                                            \
-        std::wcout << typeid(__THIS_JSON_CLASS__).name() <<                                 \
-                    WIDEN(#VARNAME) L" serialized to: " << jsonData[JSONKEY] << std::endl;  \
-                                                                                            \
+        jsonData << L"\"" #JSONKEY L"\":\"" <<                                              \
+                    JSON::TypetoJSONFnInvoker<TYPE>::ToJSON(classFrom.VARNAME);             \
     }                                                                                       \
     __VA_ARGS__ TYPE VARNAME
 
@@ -417,7 +414,7 @@ namespace JSON {
              const wchar_t *const *classString,
              size_t offset>
     struct VartoJSONFnInvoker {
-        static void ToJSON(const classOn& classFrom, DataMap& jsonData) {
+        static void ToJSON(const classOn& classFrom, std::wstringstream& jsonData) {
             constexpr unsigned int id = VarNameHasher<classString, offset>::Hash();
             classOn::VarToJSON(classFrom, jsonData, JSON::VarToJSONIdentifier<id>());
         }
@@ -502,43 +499,63 @@ namespace JSON {
     template<class ClassFor,
              const wchar_t *const *classInfo,
              size_t offset = 0,
+             bool first = false,
              bool started = false,
              bool noMoreVars = false>
     struct ClassJSONFnsBuilder {
-        static void BuildFns (const ClassFor& classOn, DataMap& jsonData) {
+        static void BuildFns (const ClassFor& classOn, std::wstringstream& jsonData) {
             constexpr size_t tokenEnd = ClassParserTokenFinder<classInfo, offset>::FindJSONToken();
-            ClassJSONFnsBuilder<ClassFor, classInfo, tokenEnd, true, tokenEnd == 0>::BuildFns(classOn, jsonData);
+            ClassJSONFnsBuilder<ClassFor,
+                                classInfo,
+                                tokenEnd,
+                                true,
+                                true,
+                                tokenEnd == 0
+                               >::BuildFns(classOn, jsonData);
         }
     };
 
     template<class ClassFor,
              const wchar_t *const *classInfo,
-             size_t offset>
+             size_t offset,
+             bool first>
     struct ClassJSONFnsBuilder<ClassFor,
                                classInfo,
                                offset,
+                               first,
                                /* started */ true,
                                /* noMoreVars */ false> {
-        static void BuildFns (const ClassFor& classOn, DataMap& jsonData) {
+        static void BuildFns (const ClassFor& classOn, std::wstringstream& jsonData) {
+            if(!first) {
+                jsonData << L",";
+            }
             /* Do the function call */
             constexpr unsigned int varKey = VarNameHasher<classInfo, offset>::Hash();
             VartoJSONFnInvoker<ClassFor, classInfo, offset>::ToJSON(classOn, jsonData);
 
             constexpr size_t tokenEnd = ClassParserTokenFinder<classInfo, offset>::FindJSONToken();
             /* Try to do more calls */
-            ClassJSONFnsBuilder<ClassFor, classInfo, tokenEnd, true, tokenEnd == 0>::BuildFns(classOn, jsonData);
+            ClassJSONFnsBuilder<ClassFor,
+                                classInfo,
+                                tokenEnd,
+                                false,
+                                true,
+                                tokenEnd == 0
+                               >::BuildFns(classOn, jsonData);
         }
     };
 
     template<class ClassFor,
              const wchar_t *const *classInfo,
-             size_t offset>
+             size_t offset,
+             bool first>
     struct ClassJSONFnsBuilder<ClassFor,
                                classInfo,
                                offset,
+                               first,
                                /* started */ true,
                                /* noMoreVars */ true> {
-        static void BuildFns (const ClassFor& classOn, DataMap& jsonData) {
+        static void BuildFns (const ClassFor& classOn, std::wstringstream& jsonData) {
         }
     };
 
@@ -546,11 +563,13 @@ namespace JSON {
              const wchar_t *const *classInfo>
     struct ClassJSONFnsInvoker {
         static std::wstring InvokeToJSONFns(const ClassFor& classOn) {
-            DataMap jsonData;
+            std::wstringstream jsonData;
 
+            jsonData << L"{";
             ClassJSONFnsBuilder<ClassFor, classInfo>::BuildFns(classOn, jsonData);
+            jsonData << L"}";
 
-            return L"";
+            return jsonData.str();
         }
     };
 }
@@ -558,15 +577,16 @@ namespace JSON {
 JSON_CLASS(Test, 
 public:
      /* variable type, variable name, json key */
-     JSON_VAR(int, __json0, L"test");
-     JSON_VAR(int, abc, L"test");
+     JSON_VAR(int, __json0, test);
+     JSON_VAR(int, abc, test2);
 );
 
 int main() {
 
     Test a;
     a.__json0 = 30;
-    a.ToJSON();
+    std::wstring json = a.ToJSON();
+    std::wcout << json;
 
     return 0;
 }
