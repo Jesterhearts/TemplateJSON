@@ -31,6 +31,9 @@
         template <class ThisClass, const wchar_t *const *classString, size_t offset>            \
         friend struct JSON::JSONVartoJSONFnInvoker;                                             \
                                                                                                 \
+        template <class ThisClass>                                                              \
+        friend struct JSON::JSONTypetoJSONFnInvoker;                                            \
+                                                                                                \
         /* This gives us the string for the class that we parse at compile time */              \
         static constexpr const wchar_t* __##CLASS_NAME = EXPAND_MACRO_WIDEN(__VA_ARGS__);       \
         static constexpr const wchar_t* __##CLASS_NAME##_str = WIDEN(#CLASS_NAME);              \
@@ -40,30 +43,28 @@
            class                                                                                \
          */                                                                                     \
         template<class ThisClass, unsigned int uniqueID>                                        \
-        static void VarToJSON(ThisClass&,                                                       \
+        static void VarToJSON(const ThisClass&,                                                 \
                               JSON::JSONDataMap&,                                               \
                               const JSON::VarToJSONIdentifier<uniqueID>&);                      \
                                                                                                 \
-        template<unsigned int uniqueID>                                                         \
-        static void TypeToJSON(JSON::JSONDataMap&,                                              \
-                              const JSON::VarToJSONIdentifier<uniqueID>&);                      \
-                                                                                                \
-        static void TypeToJSON(JSON::JSONDataMap&,                                              \
-                               const JSON::VarToJSONIdentifier<                                 \
-                                        JSON::JSONStringHasher<&__##CLASS_NAME##_str>::Hash()>& \
-                               ) {                                                              \
+    public:                                                                                     \
+        std::wstring ToJSON() const {                                                           \
+            JSON::JSONDataMap jsonData;                                                         \
+            std::wcout << L"Type invoke get" << std::endl;                                      \
             /* VarToJSON jsonify all members */                                                 \
+            return L"";                                                                         \
         }                                                                                       \
                                                                                                 \
+    private:                                                                                    \
         /* Here we actually make the rest of the class for them */                              \
         __VA_ARGS__                                                                             \
-    };
+    }
 
 /* Do indirection so macros in the class body get invoked properly */
 #define JSON_CLASS(CLASS_NAME, ...)  \
     JSON_CLASS_IMPL(CLASS_NAME, __VA_ARGS__)
 
-#define JSON_VAR_IMPL(TYPE_QUALIFIERS, TYPE, VARNAME, JSONKEY, KEY)                         \
+#define JSON_VAR_IMPL(TYPE, VARNAME, JSONKEY, KEY, ...)                                     \
     /* This is the thing our tokenizer looks for, KEY gives it the ID for the               \
        specialization.                                                                      \
      */                                                                                     \
@@ -71,32 +72,31 @@
                                                                                             \
     /* This function does the actual work */                                                \
     template<class ThisClass>                                                               \
-    static void VarToJSON(ThisClass& classFrom,                                             \
+    static void VarToJSON(const ThisClass& classFrom,                                       \
                           JSON::JSONDataMap& jsonData,                                      \
                           const JSON::VarToJSONIdentifier<                                  \
-                                    JSON::JSONStringHasher<&KEY>::Hash()>& key) {           \
-        jsonData.insert(JSON::JSONDataType(JSONKEY, L"TODO"));                              \
+                                    JSON::JSONStringHasher<&KEY>::Hash()>&& key) {          \
+        jsonData.insert(JSON::JSONDataType(JSONKEY,                                         \
+                                           JSON::JSONTypetoJSONFnInvoker<TYPE>              \
+                                                ::Invoke(classFrom.VARNAME)));              \
+                                                                                            \
         std::wcout << typeid(__JSONClass).name() <<                                         \
-                    WIDEN(#VARNAME) L" FN Get!" << std::endl;                               \
+                    WIDEN(#VARNAME) L" serialized to: " << jsonData[JSONKEY] << std::endl;  \
                                                                                             \
     }                                                                                       \
-    TYPE_QUALIFIERS TYPE VARNAME;
+    __VA_ARGS__ TYPE VARNAME
+
+/* This makes sure our JSON key (KEY_ARG) for hashing and searching are the same */
+#define JSON_VAR_HELPER0(TYPE, VARNAME, JSONKEY, KEY_ARG, ...)   \
+    JSON_VAR_IMPL(TYPE, VARNAME, JSONKEY, __##VARNAME##KEY_ARG, __VA_ARGS__)
 
 /* Indirection here so that KEY_ARG (__COUNTER__) will become a number */
-#define JSON_VAR_HELPER0(TYPE_QUALIFIERS, TYPE, VARNAME, JSONKEY, KEY_ARG)   \
-    JSON_VAR_IMPL(TYPE_QUALIFIERS, TYPE, VARNAME, JSONKEY, __##VARNAME##KEY_ARG)
+#define JSON_VAR_HELPER(TYPE, VARNAME, JSONKEY, KEY_ARG, ...)   \
+    JSON_VAR_HELPER0(TYPE, VARNAME, JSONKEY, KEY_ARG, __VA_ARGS__)
 
-#define JSON_VAR_HELPER(TYPE_QUALIFIERS, TYPE, VARNAME, JSONKEY, KEY_ARG)   \
-    JSON_VAR_HELPER0(TYPE_QUALIFIERS, TYPE, VARNAME, JSONKEY, KEY_ARG)
-
-/* Make a variable and give it a unique ID */
-#define JSON_QUALIFIED_VAR(TYPE_QUALIFIERS, TYPE, VARNAME, JSONKEY)   \
-    JSON_VAR_HELPER(TYPE_QUALIFIERS, TYPE, VARNAME, JSONKEY, __COUNTER__)
-
-#define JSON_NO_QUALIFIER
-
-#define JSON_VAR(TYPE, VARNAME, JSONKEY)    \
-    JSON_QUALIFIED_VAR(JSON_NO_QUALIFIER, TYPE, VARNAME, JSONKEY)
+/* Make a variable, the varargs will become the type qualifiers if specified */
+#define JSON_VAR(TYPE, VARNAME, JSONKEY, ...)    \
+    JSON_VAR_HELPER(TYPE, VARNAME, JSONKEY, __COUNTER__, __VA_ARGS__)
 
 /* holy shit so many templates */
 namespace JSON {
@@ -130,6 +130,31 @@ namespace JSON {
 
         static constexpr bool NotEqual() {
             return testChar != candidateChar;
+        }
+    };
+
+    template<class Type>
+    struct JSONPODParser {
+        static Type FromJSON(const std::wstring& json) {
+            std::wstringstream wss;
+            wss << json;
+
+            Type value;
+            wss >> value;
+
+            if(wss.fail()) {
+                throw std::invalid_argument("bad json value for key"); 
+            }
+
+            return value;
+        }
+
+        static std::wstring ToJSON(const Type& value) {
+            // return std::to_wstring(value);
+            //Cygwin won't let me use the above...
+            std::wstringstream wss;
+            wss << value;
+            return wss.str();
         }
     };
 
@@ -411,6 +436,79 @@ namespace JSON {
     };
 
 ////////////////////////////////////////////////////////////////////////////////
+// JSONTypetoJSONFnInvoker implementation
+////
+    template<class classOn>
+    struct JSONTypetoJSONFnInvoker {
+        static std::wstring Invoke(const classOn& classFrom) {
+            return classFrom.FromJSON();
+        }
+    };
+
+    template<>
+    struct JSONTypetoJSONFnInvoker<int> {
+        static std::wstring Invoke(const int& classFrom) {
+            return JSONPODParser<int>::ToJSON(classFrom);
+        }
+    };
+
+    template<>
+    struct JSONTypetoJSONFnInvoker<long> {
+        static std::wstring Invoke(const long& classFrom) {
+            return JSONPODParser<long>::ToJSON(classFrom);
+        }
+    };
+
+    template<>
+    struct JSONTypetoJSONFnInvoker<long long> {
+        static std::wstring Invoke(const long long& classFrom) {
+            return JSONPODParser<long long>::ToJSON(classFrom);
+        }
+    };
+
+    template<>
+    struct JSONTypetoJSONFnInvoker<unsigned int> {
+        static std::wstring Invoke(const unsigned int& classFrom) {
+            return JSONPODParser<unsigned int>::ToJSON(classFrom);
+        }
+    };
+
+    template<>
+    struct JSONTypetoJSONFnInvoker<unsigned long> {
+        static std::wstring Invoke(const unsigned long& classFrom) {
+            return JSONPODParser<unsigned long>::ToJSON(classFrom);
+        }
+    };
+
+    template<>
+    struct JSONTypetoJSONFnInvoker<unsigned long long> {
+        static std::wstring Invoke(const unsigned long long& classFrom) {
+            return JSONPODParser<unsigned long long>::ToJSON(classFrom);
+        }
+    };
+
+    template<>
+    struct JSONTypetoJSONFnInvoker<float> {
+        static std::wstring Invoke(const float& classFrom) {
+            return JSONPODParser<float>::ToJSON(classFrom);
+        }
+    };
+
+    template<>
+    struct JSONTypetoJSONFnInvoker<double> {
+        static std::wstring Invoke(const double& classFrom) {
+            return JSONPODParser<double>::ToJSON(classFrom);
+        }
+    };
+
+    template<>
+    struct JSONTypetoJSONFnInvoker<long double> {
+        static std::wstring Invoke(const long double& classFrom) {
+            return JSONPODParser<long double> ::ToJSON(classFrom);
+        }
+    };
+
+////////////////////////////////////////////////////////////////////////////////
 // JSONClassParser implementation
 ////
     template<const wchar_t *const *classInfo>
@@ -447,25 +545,12 @@ namespace JSON {
             std::wcout << L"Test Fn execution:" << std::endl;
             JSONDataMap jsonData;
             classFor a;
+            a.__json = 20;
             JSONVartoJSONFnInvoker<classFor, classInfo, first_pos + DECORATOR_STR_LEN>::Invoke(a, jsonData);
             std::wcout << L"#Items in map: " << jsonData.size() << std::endl;
-        }
-    };
 
-    template<class Type>
-    struct JSONValuePODParser {
-        static Type FromJSON(const std::wstring& json) {
-            std::wstringstream wss;
-            wss << json;
-
-            Type value;
-            wss >> value;
-
-            if(wss.fail()) {
-                throw std::invalid_argument("bad json value for key"); 
-            }
-
-            return value;
+            a.__json = 10;
+            a.ToJSON();
         }
     };
 }
