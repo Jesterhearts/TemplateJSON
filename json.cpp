@@ -17,6 +17,15 @@
 #define EXPAND_MACRO_WIDEN(MACRO) \
     EXPAND_MACRO_WIDEN_IMPL(MACRO)
 
+#define MAKE_UNIQUE_VAL_IMPL(VARNAME, NUMBER)   \
+    VARNAME ##_## NUMBER
+
+#define MAKE_UNIQUE_VAL_HELPER(VARNAME, NUMBER) \
+    MAKE_UNIQUE_VAL_IMPL(VARNAME, NUMBER)
+
+#define MAKE_UNIQUE_VAL(VARNAME)    \
+    MAKE_UNIQUE_VAL_HELPER(VARNAME, __COUNTER__)
+
 /* Don't put this anywhere in your class definition unless you like reading horrific template
    errors */
 #define JSON_VAR_DECORATOR \
@@ -67,19 +76,17 @@
         jsonData += L"\"" #JSONKEY L"\":\"";                                                \
         jsonData += JSON::TypetoJSONFnInvoker<TYPE>::ToJSON(classFrom.VARNAME);             \
     }                                                                                       \
-    __VA_ARGS__ TYPE VARNAME
+    TYPE VARNAME __VA_ARGS__
 
 /* This makes sure our JSON key (KEY_ARG) for hashing and searching are the same */
-#define JSON_VAR_HELPER0(TYPE, VARNAME, JSONKEY, KEY_ARG, ...)   \
-    JSON_VAR_IMPL(TYPE, VARNAME, JSONKEY, __##VARNAME##_##KEY_ARG, __VA_ARGS__)
-
-/* Indirection here so that KEY_ARG (__COUNTER__) will become a number */
 #define JSON_VAR_HELPER(TYPE, VARNAME, JSONKEY, KEY_ARG, ...)   \
-    JSON_VAR_HELPER0(TYPE, VARNAME, JSONKEY, KEY_ARG, __VA_ARGS__)
+    JSON_VAR_IMPL(TYPE, VARNAME, JSONKEY, KEY_ARG, __VA_ARGS__)
 
-/* Make a variable, the varargs will become the type qualifiers if specified */
+/* Make a variable. The varargs will become the the value the variable is initialized to, if
+   specified
+ */
 #define JSON_VAR(TYPE, VARNAME, JSONKEY, ...)    \
-    JSON_VAR_HELPER(TYPE, VARNAME, JSONKEY, __COUNTER__, __VA_ARGS__)
+    JSON_VAR_HELPER(TYPE, VARNAME, JSONKEY, MAKE_UNIQUE_VAL(VARNAME), __VA_ARGS__)
 
 /* holy shit so many templates */
 namespace JSON {
@@ -575,13 +582,13 @@ namespace JSON {
 JSON_CLASS(Test, 
 public:
      /* variable type, variable name, json key */
-     JSON_VAR(int, __json0, test);
-     JSON_VAR(int, abc, test2);
+     JSON_VAR(int, __json0, test0);
+     JSON_VAR(int, MAKE_UNIQUE_VAL(__json), MAKE_UNIQUE_VAL(test));
 );
 
 int main() {
 
-    Test a;
+    Test a{0};
     a.__json0 = 30;
     std::wstring json = a.ToJSON();
     std::wcout << json;
