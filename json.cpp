@@ -29,10 +29,10 @@
         typedef CLASS_NAME __JSONClass;                                                         \
         /* This needs to be able to hit functions even if private */                            \
         template <class ThisClass, const wchar_t *const *classString, size_t offset>            \
-        friend struct JSON::JSONVartoJSONFnInvoker;                                             \
+        friend struct JSON::VartoJSONFnInvoker;                                                 \
                                                                                                 \
         template <class ThisClass>                                                              \
-        friend struct JSON::JSONTypetoJSONFnInvoker;                                            \
+        friend struct JSON::TypetoJSONFnInvoker;                                                \
                                                                                                 \
         /* This gives us the string for the class that we parse at compile time */              \
         static constexpr const wchar_t* __##CLASS_NAME = EXPAND_MACRO_WIDEN(__VA_ARGS__);       \
@@ -44,12 +44,12 @@
          */                                                                                     \
         template<class ThisClass, unsigned int uniqueID>                                        \
         static void VarToJSON(const ThisClass&,                                                 \
-                              JSON::JSONDataMap&,                                               \
+                              JSON::DataMap&,                                               \
                               const JSON::VarToJSONIdentifier<uniqueID>&);                      \
                                                                                                 \
     public:                                                                                     \
         std::wstring ToJSON() const {                                                           \
-            JSON::JSONDataMap jsonData;                                                         \
+            JSON::DataMap jsonData;                                                         \
             std::wcout << L"Type invoke get" << std::endl;                                      \
             /* VarToJSON jsonify all members */                                                 \
             return L"";                                                                         \
@@ -73,11 +73,11 @@
     /* This function does the actual work */                                                \
     template<class ThisClass>                                                               \
     static void VarToJSON(const ThisClass& classFrom,                                       \
-                          JSON::JSONDataMap& jsonData,                                      \
+                          JSON::DataMap& jsonData,                                      \
                           const JSON::VarToJSONIdentifier<                                  \
-                                    JSON::JSONStringHasher<&KEY>::Hash()>&& key) {          \
-        jsonData.insert(JSON::JSONDataType(JSONKEY,                                         \
-                                           JSON::JSONTypetoJSONFnInvoker<TYPE>              \
+                                    JSON::StringHasher<&KEY>::Hash()>&& key) {          \
+        jsonData.insert(JSON::DataType(JSONKEY,                                         \
+                                           JSON::TypetoJSONFnInvoker<TYPE>              \
                                                 ::Invoke(classFrom.VARNAME)));              \
                                                                                             \
         std::wcout << typeid(__JSONClass).name() <<                                         \
@@ -106,8 +106,8 @@ namespace JSON {
     //  - typedef lets us use it in class defs and still find the unique string
     typedef const wchar_t* __json_var;
 
-    typedef std::unordered_map<std::wstring, std::wstring> JSONDataMap;
-    typedef std::pair<std::wstring, std::wstring> JSONDataType;
+    typedef std::unordered_map<std::wstring, std::wstring> DataMap;
+    typedef std::pair<std::wstring, std::wstring> DataType;
 
     //This is used to match against when searching the stringy class.
     // It's defined in terms of what we use to make the identifier, so hopefully
@@ -123,7 +123,7 @@ namespace JSON {
 
     template<wchar_t testChar,
              wchar_t candidateChar>
-    struct JSONTokenTester {
+    struct TokenTester {
         static constexpr bool Equal() {
             return testChar == candidateChar;
         }
@@ -134,7 +134,7 @@ namespace JSON {
     };
 
     template<class Type>
-    struct JSONPODParser {
+    struct PODParser {
         static Type FromJSON(const std::wstring& json) {
             std::wstringstream wss;
             wss << json;
@@ -162,7 +162,7 @@ namespace JSON {
 // JSONIsNullOrWhitespace implementation
 ////
     template<wchar_t testChar>
-    struct JSONIsNullOrWhitespace {
+    struct IsNullOrWhitespace {
         static constexpr bool Check() {
             /* The specializations do the check for valid chars
                so if it hits this it can't be
@@ -172,21 +172,21 @@ namespace JSON {
     };
 
     template<>
-    struct JSONIsNullOrWhitespace<L' '> {
+    struct IsNullOrWhitespace<L' '> {
         static constexpr bool Check() {
             return true;
         }
     };
 
     template<>
-    struct JSONIsNullOrWhitespace<L'\t'> {
+    struct IsNullOrWhitespace<L'\t'> {
         static constexpr bool Check() {
             return true;
         }
     };
 
     template<>
-    struct JSONIsNullOrWhitespace<L'\0'> {
+    struct IsNullOrWhitespace<L'\0'> {
         static constexpr bool Check() {
             return true;
         }
@@ -199,20 +199,20 @@ namespace JSON {
              size_t offset = 0,
              unsigned int hashValue = 0,
              bool endOfString = false>
-    struct JSONStringHasher {
+    struct StringHasher {
         static constexpr unsigned int Hash() {
-            return JSONStringHasher<string,
-                                    offset + 1,
-                                    hashValue * 131 + string[0][offset],
-                                    JSONIsNullOrWhitespace<string[0][offset + 1]>::Check()
-                                   >::Hash();
+            return StringHasher<string,
+                                offset + 1,
+                                hashValue * 131 + string[0][offset],
+                                IsNullOrWhitespace<string[0][offset + 1]>::Check()
+                               >::Hash();
         }
     };
 
     template<const wchar_t *const *string,
              size_t offset,
              unsigned int hashValue>
-    struct JSONStringHasher<string,
+    struct StringHasher<string,
                             offset,
                             hashValue,
                             /* endOfString */ true> {
@@ -232,22 +232,22 @@ namespace JSON {
              bool matchFailed = false,
              bool endCandidateWord = false,
              bool endTestWord = false>
-    struct JSONTokenMatcherPart { 
+    struct TokenMatcherPart { 
         static constexpr bool MatchToken() {
-            return JSONTokenMatcherPart<candidateWord,
-                                        testWord,
-                                        candidateOffset + 1,
-                                        testOffset + 1,
-                                        JSONTokenTester<testWord[0][testOffset],
-                                                        candidateWord[0][candidateOffset]
-                                                       >::NotEqual(),
-                                        JSONTokenTester<candidateWord[0][candidateOffset + 1],
-                                                        L'\0'
-                                                       >::Equal(),
-                                        JSONTokenTester<testWord[0][testOffset + 1],
-                                                        L'\0'
-                                                       >::Equal()
-                                       >::MatchToken();
+            return TokenMatcherPart<candidateWord,
+                                    testWord,
+                                    candidateOffset + 1,
+                                    testOffset + 1,
+                                    TokenTester<testWord[0][testOffset],
+                                                candidateWord[0][candidateOffset]
+                                               >::NotEqual(),
+                                    TokenTester<candidateWord[0][candidateOffset + 1],
+                                                L'\0'
+                                               >::Equal(),
+                                    TokenTester<testWord[0][testOffset + 1],
+                                                L'\0'
+                                               >::Equal()
+                                   >::MatchToken();
         }
     };
 
@@ -258,7 +258,7 @@ namespace JSON {
              size_t testOffset,
              bool endCandidateWord,
              bool endTestWord>
-    struct JSONTokenMatcherPart<candidateWord,
+    struct TokenMatcherPart<candidateWord,
                                 testWord,
                                 candidateOffset,
                                 testOffset,
@@ -277,7 +277,7 @@ namespace JSON {
              size_t testOffset,
              bool matchFailed,
              bool endTestWord>
-    struct JSONTokenMatcherPart<candidateWord,
+    struct TokenMatcherPart<candidateWord,
                                 testWord,
                                 candidateOffset,
                                 testOffset,
@@ -295,7 +295,7 @@ namespace JSON {
              size_t candidateOffset,
              size_t testOffset,
              bool endTestWord>
-    struct JSONTokenMatcherPart<candidateWord,
+    struct TokenMatcherPart<candidateWord,
                                 testWord,
                                 candidateOffset,
                                 testOffset,
@@ -314,7 +314,7 @@ namespace JSON {
              size_t testOffset,
              bool matchFailed,
              bool endCandidateWord>
-    struct JSONTokenMatcherPart<candidateWord,
+    struct TokenMatcherPart<candidateWord,
                                 testWord,
                                 candidateOffset,
                                 testOffset,
@@ -332,7 +332,7 @@ namespace JSON {
              size_t candidateOffset,
              size_t testOffset,
              bool matchFailed>
-    struct JSONTokenMatcherPart<candidateWord,
+    struct TokenMatcherPart<candidateWord,
                                 testWord,
                                 candidateOffset,
                                 testOffset,
@@ -350,12 +350,12 @@ namespace JSON {
     //This class checks if a string at an offset matches the decorator
     template<const wchar_t *const *classInfo,
              unsigned int offset>
-    struct JSONTagMatcher {
+    struct TagMatcher {
         static constexpr bool MatchJSONVarTag() {
-            return JSONTokenMatcherPart<classInfo,
-                                        &DECORATOR_STR,
-                                        offset
-                                       >::MatchToken();
+            return TokenMatcherPart<classInfo,
+                                    &DECORATOR_STR,
+                                    offset
+                                   >::MatchToken();
         }
     };
 
@@ -368,13 +368,13 @@ namespace JSON {
              unsigned int offset,
              bool foundToken,
              bool endOfInput>
-    struct JSONClassParserTokenFinder {
+    struct ClassParserTokenFinder {
         static constexpr const size_t FindJSONToken() {
-            return JSONClassParserTokenFinder<classInfo,
+            return ClassParserTokenFinder<classInfo,
                                               offset + 1,
-                                              JSONTagMatcher<classInfo,
-                                                             offset
-                                                            >::MatchJSONVarTag(),
+                                              TagMatcher<classInfo,
+                                                         offset
+                                                        >::MatchJSONVarTag(),
                                               classInfo[0][offset + 1] != L'\0'
                                              >::FindJSONToken();
         }
@@ -384,7 +384,7 @@ namespace JSON {
     template<const wchar_t *const *classInfo,
              unsigned int offset,
              bool endOfInput>
-    struct JSONClassParserTokenFinder<classInfo,
+    struct ClassParserTokenFinder<classInfo,
                                       offset,
                                       /* foundToken*/ true,
                                       endOfInput> {
@@ -398,7 +398,7 @@ namespace JSON {
     //Also a termination case
     template<const wchar_t *const *classInfo,
              unsigned int offset>
-    struct JSONClassParserTokenFinder<classInfo,
+    struct ClassParserTokenFinder<classInfo,
                                       offset,
                                       /* foundToken*/ true,
                                       /* endOfInput */ false> {
@@ -413,7 +413,7 @@ namespace JSON {
     template<const wchar_t *const *classInfo,
              unsigned int offset,
              bool foundToken>
-    struct JSONClassParserTokenFinder<classInfo,
+    struct ClassParserTokenFinder<classInfo,
                                       offset,
                                       foundToken,
                                       /* endOfInput */ false> {
@@ -428,9 +428,9 @@ namespace JSON {
     template<class classOn,
              const wchar_t *const *classString,
              size_t offset>
-    struct JSONVartoJSONFnInvoker {
-        static void Invoke(classOn& classFrom, JSONDataMap& jsonData) {
-            constexpr unsigned int id = JSONStringHasher<classString, offset>::Hash();
+    struct VartoJSONFnInvoker {
+        static void Invoke(classOn& classFrom, DataMap& jsonData) {
+            constexpr unsigned int id = StringHasher<classString, offset>::Hash();
             classOn::VarToJSON(classFrom, jsonData, JSON::VarToJSONIdentifier<id>());
         }
     };
@@ -439,72 +439,72 @@ namespace JSON {
 // JSONTypetoJSONFnInvoker implementation
 ////
     template<class classOn>
-    struct JSONTypetoJSONFnInvoker {
+    struct TypetoJSONFnInvoker {
         static std::wstring Invoke(const classOn& classFrom) {
             return classFrom.FromJSON();
         }
     };
 
     template<>
-    struct JSONTypetoJSONFnInvoker<int> {
+    struct TypetoJSONFnInvoker<int> {
         static std::wstring Invoke(const int& classFrom) {
-            return JSONPODParser<int>::ToJSON(classFrom);
+            return PODParser<int>::ToJSON(classFrom);
         }
     };
 
     template<>
-    struct JSONTypetoJSONFnInvoker<long> {
+    struct TypetoJSONFnInvoker<long> {
         static std::wstring Invoke(const long& classFrom) {
-            return JSONPODParser<long>::ToJSON(classFrom);
+            return PODParser<long>::ToJSON(classFrom);
         }
     };
 
     template<>
-    struct JSONTypetoJSONFnInvoker<long long> {
+    struct TypetoJSONFnInvoker<long long> {
         static std::wstring Invoke(const long long& classFrom) {
-            return JSONPODParser<long long>::ToJSON(classFrom);
+            return PODParser<long long>::ToJSON(classFrom);
         }
     };
 
     template<>
-    struct JSONTypetoJSONFnInvoker<unsigned int> {
+    struct TypetoJSONFnInvoker<unsigned int> {
         static std::wstring Invoke(const unsigned int& classFrom) {
-            return JSONPODParser<unsigned int>::ToJSON(classFrom);
+            return PODParser<unsigned int>::ToJSON(classFrom);
         }
     };
 
     template<>
-    struct JSONTypetoJSONFnInvoker<unsigned long> {
+    struct TypetoJSONFnInvoker<unsigned long> {
         static std::wstring Invoke(const unsigned long& classFrom) {
-            return JSONPODParser<unsigned long>::ToJSON(classFrom);
+            return PODParser<unsigned long>::ToJSON(classFrom);
         }
     };
 
     template<>
-    struct JSONTypetoJSONFnInvoker<unsigned long long> {
+    struct TypetoJSONFnInvoker<unsigned long long> {
         static std::wstring Invoke(const unsigned long long& classFrom) {
-            return JSONPODParser<unsigned long long>::ToJSON(classFrom);
+            return PODParser<unsigned long long>::ToJSON(classFrom);
         }
     };
 
     template<>
-    struct JSONTypetoJSONFnInvoker<float> {
+    struct TypetoJSONFnInvoker<float> {
         static std::wstring Invoke(const float& classFrom) {
-            return JSONPODParser<float>::ToJSON(classFrom);
+            return PODParser<float>::ToJSON(classFrom);
         }
     };
 
     template<>
-    struct JSONTypetoJSONFnInvoker<double> {
+    struct TypetoJSONFnInvoker<double> {
         static std::wstring Invoke(const double& classFrom) {
-            return JSONPODParser<double>::ToJSON(classFrom);
+            return PODParser<double>::ToJSON(classFrom);
         }
     };
 
     template<>
-    struct JSONTypetoJSONFnInvoker<long double> {
+    struct TypetoJSONFnInvoker<long double> {
         static std::wstring Invoke(const long double& classFrom) {
-            return JSONPODParser<long double> ::ToJSON(classFrom);
+            return PODParser<long double> ::ToJSON(classFrom);
         }
     };
 
@@ -512,9 +512,9 @@ namespace JSON {
 // JSONClassParser implementation
 ////
     template<const wchar_t *const *classInfo>
-    struct JSONClassParser {
+    struct ClassParser {
         static constexpr const size_t FindNextJSONToken() {
-            return JSONClassParserTokenFinder<classInfo, 0, false, true>::FindJSONToken();
+            return ClassParserTokenFinder<classInfo, 0, false, true>::FindJSONToken();
         }
     };
 
@@ -522,7 +522,7 @@ namespace JSON {
 
     template<class classFor,
              const wchar_t *const *classInfo>
-    struct JSONParser {
+    struct Parser {
         static void FromJSON() {
             // bool t = JSONTagMatcher<classInfo, 0, true>::MatchJSONVarTag();
             // std::wcout << t << std::endl;
@@ -533,20 +533,20 @@ namespace JSON {
             std::wcout << DECORATOR_STR << std::endl << std::endl;
 
             std::wcout << L"Result:" << std::endl;
-            constexpr size_t first_pos = JSONClassParser<classInfo>::FindNextJSONToken();
+            constexpr size_t first_pos = ClassParser<classInfo>::FindNextJSONToken();
             std::wcout << &(*classInfo)[first_pos] << std::endl << std::endl;
 
             std::wcout << L"Test var ID parsing:" << std::endl;
             std::wcout << L"offset: " << first_pos + DECORATOR_STR_LEN << std::endl;
             std::wcout << L"String: " << &(*classInfo)[first_pos + DECORATOR_STR_LEN] << std::endl;
-            unsigned int varValue = JSONStringHasher<classInfo, first_pos + DECORATOR_STR_LEN>::Hash();
+            unsigned int varValue = StringHasher<classInfo, first_pos + DECORATOR_STR_LEN>::Hash();
             std::wcout << L"Hashed out: " << varValue << std::endl << std::endl;
 
             std::wcout << L"Test Fn execution:" << std::endl;
-            JSONDataMap jsonData;
+            DataMap jsonData;
             classFor a;
             a.__json = 20;
-            JSONVartoJSONFnInvoker<classFor, classInfo, first_pos + DECORATOR_STR_LEN>::Invoke(a, jsonData);
+            VartoJSONFnInvoker<classFor, classInfo, first_pos + DECORATOR_STR_LEN>::Invoke(a, jsonData);
             std::wcout << L"#Items in map: " << jsonData.size() << std::endl;
 
             a.__json = 10;
@@ -563,7 +563,7 @@ public:
 
 int main() {
 
-    JSON::JSONParser<Test, &Test::__Test>::FromJSON();
+    JSON::Parser<Test, &Test::__Test>::FromJSON();
 
     return 0;
 }
