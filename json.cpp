@@ -61,10 +61,10 @@
                                                                                             \
     /* This function does the actual work */                                                \
     static void VarToJSON(const __THIS_JSON_CLASS__& classFrom,                             \
-                          std::wstringstream& jsonData,                                     \
+                          std::wstring& jsonData,                                           \
                           const JSON::VarToJSONIdentifier<                                  \
                                     JSON::VarNameHasher<&KEY>::Hash()>&& key) {             \
-        jsonData << L"\"" #JSONKEY L"\":\"" <<                                              \
+        jsonData += L"\"" #JSONKEY L"\":\"" +                                               \
                     JSON::TypetoJSONFnInvoker<TYPE>::ToJSON(classFrom.VARNAME);             \
     }                                                                                       \
     __VA_ARGS__ TYPE VARNAME
@@ -414,7 +414,7 @@ namespace JSON {
              const wchar_t *const *classString,
              size_t offset>
     struct VartoJSONFnInvoker {
-        static void ToJSON(const classOn& classFrom, std::wstringstream& jsonData) {
+        static void ToJSON(const classOn& classFrom, std::wstring& jsonData) {
             constexpr unsigned int id = VarNameHasher<classString, offset>::Hash();
             classOn::VarToJSON(classFrom, jsonData, JSON::VarToJSONIdentifier<id>());
         }
@@ -494,7 +494,7 @@ namespace JSON {
     };
 
 ////////////////////////////////////////////////////////////////////////////////
-// JSONClassParser implementation
+// ClassJSONFnsBuilder implementation
 ////
     template<class ClassFor,
              const wchar_t *const *classInfo,
@@ -503,7 +503,7 @@ namespace JSON {
              bool started = false,
              bool noMoreVars = false>
     struct ClassJSONFnsBuilder {
-        static void BuildFns (const ClassFor& classOn, std::wstringstream& jsonData) {
+        static void BuildFns (const ClassFor& classOn, std::wstring& jsonData) {
             constexpr size_t tokenEnd = ClassParserTokenFinder<classInfo, offset>::FindJSONToken();
             ClassJSONFnsBuilder<ClassFor,
                                 classInfo,
@@ -525,9 +525,9 @@ namespace JSON {
                                first,
                                /* started */ true,
                                /* noMoreVars */ false> {
-        static void BuildFns (const ClassFor& classOn, std::wstringstream& jsonData) {
+        static void BuildFns (const ClassFor& classOn, std::wstring& jsonData) {
             if(!first) {
-                jsonData << L",";
+                jsonData += L",";
             }
             /* Do the function call */
             constexpr unsigned int varKey = VarNameHasher<classInfo, offset>::Hash();
@@ -555,7 +555,7 @@ namespace JSON {
                                first,
                                /* started */ true,
                                /* noMoreVars */ true> {
-        static void BuildFns (const ClassFor& classOn, std::wstringstream& jsonData) {
+        static void BuildFns (const ClassFor& classOn, std::wstring& jsonData) {
         }
     };
 
@@ -563,13 +563,11 @@ namespace JSON {
              const wchar_t *const *classInfo>
     struct ClassJSONFnsInvoker {
         static std::wstring InvokeToJSONFns(const ClassFor& classOn) {
-            std::wstringstream jsonData;
-
-            jsonData << L"{";
+            std::wstring jsonData(L"{");
             ClassJSONFnsBuilder<ClassFor, classInfo>::BuildFns(classOn, jsonData);
-            jsonData << L"}";
+            jsonData += L"}";
 
-            return jsonData.str();
+            return jsonData;
         }
     };
 }
