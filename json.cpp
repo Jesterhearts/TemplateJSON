@@ -64,8 +64,8 @@
                           std::wstring& jsonData,                                           \
                           const JSON::VarToJSONIdentifier<                                  \
                                     JSON::VarNameHasher<&KEY>::Hash()>&& key) {             \
-        jsonData += L"\"" #JSONKEY L"\":\"" +                                               \
-                    JSON::TypetoJSONFnInvoker<TYPE>::ToJSON(classFrom.VARNAME);             \
+        jsonData += L"\"" #JSONKEY L"\":\"";                                                \
+        jsonData += JSON::TypetoJSONFnInvoker<TYPE>::ToJSON(classFrom.VARNAME);             \
     }                                                                                       \
     __VA_ARGS__ TYPE VARNAME
 
