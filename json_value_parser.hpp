@@ -8,17 +8,39 @@
 #include <algorithm>
 
 namespace std {
-    template<class T, std::size_t A> class array;
-    template<class T, class A> class deque;
-    template<class T, class A> class forward_list;
-    template<class T, class A> class list;
-    template<class T, class A> class queue;
-    template<class T, class A> class set;
-    template<class T, class A> class stack;
-    template<class T, class A> class vector;
+    template<typename T, std::size_t N> struct array;
+    template<typename T, typename A> class deque;
+    template<typename T, typename A> class forward_list;
+    template<typename T, typename A> class list;
+    template<typename T, typename A> class vector;
+
+    template<typename T1, typename T2> struct pair;
+    template<typename... Types > class tuple;
+
+    template<typename K, typename C, typename A> class set;
+    template<typename K, typename C, typename A> class multiset;
+    template<typename K, typename H, typename KE, typename A> class unordered_set;
+
+    template<typename K, typename T, typename C, typename A> class map;
+
 }
 
 namespace JSON {
+
+#define JSON_NUMTYPE_PARSER(PODTYPE)                                                \
+    template<>                                                                      \
+    struct TypeJSONFnInvokerImpl<const PODTYPE&> {                                  \
+        inline static std::wstring ToJSON(const PODTYPE& classFrom) json_finline {  \
+            return PODParser<PODTYPE>::ToJSON(classFrom);                           \
+        }                                                                           \
+    }
+
+#define JSON_ITRABLE_PARSER(STL_TYPE, ...)                                                              \
+    struct TypeJSONFnInvokerImpl<const std::STL_TYPE<__VA_ARGS__>&> {                                   \
+        inline static std::wstring ToJSON(const std::STL_TYPE<__VA_ARGS__>& classFrom) json_finline {   \
+            return IterableParser<std::STL_TYPE<__VA_ARGS__>>::ToJSON(classFrom);                       \
+        }                                                                                               \
+    }
 
 ////////////////////////////////////////////////////////////////////////////////
 // PODParser implementation
@@ -26,7 +48,7 @@ namespace JSON {
 ////
     template<typename Type>
     struct PODParser {
-        static Type FromJSON(const std::wstring& json) {
+        inline static Type FromJSON(const std::wstring& json) json_finline {
             std::wstringstream wss;
             wss << json;
 
@@ -40,7 +62,7 @@ namespace JSON {
             return value;
         }
 
-        static std::wstring ToJSON(const Type& value) {
+        inline static std::wstring ToJSON(const Type& value) json_finline {
             // return std::to_wstring(value);
             //Cygwin won't let me use the above...
             std::wstringstream wss;
@@ -49,35 +71,33 @@ namespace JSON {
         }
     };
 
-template<typename T> struct TypetoJSONFnInvokerHelper;
+template<typename T> struct TypeJSONFnInvoker;
 
 ////////////////////////////////////////////////////////////////////////////////
-// FlatIterableParser implementation
-// Transforms stl types like vector, set, etc. that have an array-like structure and support 
-// std iterators
+// IterableParser implementation
+// Transforms an iterable type into an array of its internal values
 ////
     template<typename Type>
-    struct FlatIterableParser {
-        static Type FromJSON(const std::wstring& json) {
+    struct IterableParser {
+        inline static Type FromJSON(const std::wstring& json) json_finline {
             //TODO
             Type value;
             return value;
         }
 
-        static std::wstring ToJSON(const Type& value) {
+        inline static std::wstring ToJSON(const Type& value) json_finline {
             std::wstring result(L"[");
 
-            auto itr = std::begin(value);
-            auto endItr = std::prev(std::end(value));
-            typedef decltype(*itr) valtype;
-
-            for(; itr != endItr; ++itr) {
-                result += TypetoJSONFnInvokerHelper<valtype>::ToJSON(*itr);
-                result += L",";
-            }
-
             if(!value.empty()) {
-                result += TypetoJSONFnInvokerHelper<valtype>::ToJSON(value.back());
+                auto itr = std::begin(value);
+                auto endItr = std::prev(std::end(value));
+                typedef decltype(*itr) valtype;
+
+                for(; itr != endItr; ++itr) {
+                    result += TypeJSONFnInvoker<valtype>::ToJSON(*itr);
+                    result += L",";
+                }
+                result += TypeJSONFnInvoker<valtype>::ToJSON(*itr);
             }
 
             result += L"]";
@@ -86,19 +106,36 @@ template<typename T> struct TypetoJSONFnInvokerHelper;
     };
 
 ////////////////////////////////////////////////////////////////////////////////
-// TypetoJSONFnInvoker implementation
+// TypeJSONFnInvoker implementation
 ////
+    template<typename T> struct TypeJSONFnInvokerImpl;
+
     template<typename classOn>
-    struct TypetoJSONFnInvoker {
-        static std::wstring ToJSON(const classOn& classFrom) {
+    struct TypeJSONFnInvoker {
+        inline static std::wstring ToJSON(const classOn& classFrom) json_finline {
+            return TypeJSONFnInvokerImpl<const classOn&>::ToJSON(classFrom);
+        }
+    };
+
+    template<typename classOn>
+    struct TypeJSONFnInvokerImpl {
+        inline static std::wstring ToJSON(const classOn& classFrom) json_finline {
             return classFrom.ToJSON();
         }
     };
 
-    /* basic data types */
+    /* pretty easy */
     template<>
-    struct TypetoJSONFnInvoker<const char&> {
-        static std::wstring ToJSON(const char& classFrom) {
+    struct TypeJSONFnInvokerImpl<std::wstring> {
+        inline static std::wstring ToJSON(const std::wstring& classFrom) json_finline {
+            return L"\"" + classFrom + L"\"";
+        }
+    };
+
+    /* basic data types with special handling */
+    template<>
+    struct TypeJSONFnInvokerImpl<const char&> {
+        inline static std::wstring ToJSON(const char& classFrom) json_finline {
             std::wstring result(L"\"");
             result += PODParser<char>::ToJSON(classFrom);
             result += L"\"";
@@ -107,8 +144,8 @@ template<typename T> struct TypetoJSONFnInvokerHelper;
     };
 
     template<>
-    struct TypetoJSONFnInvoker<const wchar_t&> {
-        static std::wstring ToJSON(const wchar_t& classFrom) {
+    struct TypeJSONFnInvokerImpl<const wchar_t&> {
+        inline static std::wstring ToJSON(const wchar_t& classFrom) json_finline {
             std::wstring result(L"\"");
             result += classFrom;
             result += L"\"";
@@ -117,117 +154,110 @@ template<typename T> struct TypetoJSONFnInvokerHelper;
     };
 
     template<>
-    struct TypetoJSONFnInvoker<const bool&> {
-        static std::wstring ToJSON(const bool& classFrom) {
+    struct TypeJSONFnInvokerImpl<const bool&> {
+        inline static std::wstring ToJSON(const bool& classFrom) json_finline {
             return classFrom ? L"true" : L"false";
         }
     };
 
-    template<>
-    struct TypetoJSONFnInvoker<const int&> {
-        static std::wstring ToJSON(const int& classFrom) {
-            return PODParser<int>::ToJSON(classFrom);
+    /* basic number types */
+    JSON_NUMTYPE_PARSER(int);
+    JSON_NUMTYPE_PARSER(long);
+    JSON_NUMTYPE_PARSER(long long);
+    JSON_NUMTYPE_PARSER(unsigned int);
+    JSON_NUMTYPE_PARSER(unsigned long);
+    JSON_NUMTYPE_PARSER(unsigned long long);
+    JSON_NUMTYPE_PARSER(float);
+    JSON_NUMTYPE_PARSER(double);
+    JSON_NUMTYPE_PARSER(long double);
+
+    /* stl flat iterable types */
+    template<typename T, std::size_t A>
+    JSON_ITRABLE_PARSER(array, T, A);
+
+    template<typename T, typename A>
+    JSON_ITRABLE_PARSER(deque, T, A);
+
+    template<typename T, typename A>
+    JSON_ITRABLE_PARSER(forward_list, T, A);
+
+    template<typename T, typename A>
+    JSON_ITRABLE_PARSER(list, T, A);
+
+    template<typename T, typename A>
+    JSON_ITRABLE_PARSER(vector, T, A);
+
+    template<typename K, typename C, typename A>
+    JSON_ITRABLE_PARSER(set, K, C, A);
+
+    template<typename K, typename C, typename A>
+    JSON_ITRABLE_PARSER(multiset, K, C, A);
+
+    template<typename K, typename H, typename KE, typename A>
+    JSON_ITRABLE_PARSER(unordered_set, K, H, KE, A);
+
+    /* stl map types */
+    template<typename K, typename T, typename C, typename A>
+    JSON_ITRABLE_PARSER(map, K, T, C, A);
+
+    template<typename T1, typename T2>
+    struct TypeJSONFnInvokerImpl<const std::pair<T1, T2>&> {
+        inline static std::wstring ToJSON(const std::pair<T1, T2>& classFrom) json_finline {
+            std::wstring json(L"[");
+            json += TypeJSONFnInvoker<T1>::ToJSON(classFrom.first);
+            json += L",";
+            json += TypeJSONFnInvoker<T1>::ToJSON(classFrom.second);
+            json += L"]";
+
+            return json;
         }
     };
 
-    template<>
-    struct TypetoJSONFnInvoker<const long&> {
-        static std::wstring ToJSON(const long& classFrom) {
-            return PODParser<long>::ToJSON(classFrom);
+    /* ugh */
+    template<typename TupleType,
+             size_t curIndex,
+             bool lastValue,
+             typename curType,
+             typename... Types>
+    struct TupleHandler {
+        inline static void ToJSON(const TupleType& classFrom,
+                                  std::wstring& jsonString) json_finline {
+            jsonString += TypeJSONFnInvoker<curType>::ToJSON(std::get<curIndex>(classFrom));
+            jsonString += L",";
+            TupleHandler<TupleType,
+                         curIndex + 1,
+                         sizeof...(Types) == 1,
+                         Types...
+                        >::ToJSON(classFrom, jsonString);
         }
     };
 
-    template<>
-    struct TypetoJSONFnInvoker<const long long&> {
-        static std::wstring ToJSON(const long long& classFrom) {
-            return PODParser<long long>::ToJSON(classFrom);
+    template<typename TupleType,
+             size_t curIndex,
+             typename curType,
+             typename... Types>
+    struct TupleHandler <TupleType,
+                         curIndex,
+                         true,
+                         curType,
+                         Types...> {
+        inline static void ToJSON(const TupleType& classFrom,
+                                  std::wstring& jsonString) json_finline {
+            jsonString += TypeJSONFnInvoker<curType>::ToJSON(std::get<curIndex>(classFrom));
         }
     };
 
-    template<>
-    struct TypetoJSONFnInvoker<const unsigned int&> {
-        static std::wstring ToJSON(const unsigned int& classFrom) {
-            return PODParser<unsigned int>::ToJSON(classFrom);
-        }
-    };
-
-    template<>
-    struct TypetoJSONFnInvoker<const unsigned long&> {
-        static std::wstring ToJSON(const unsigned long& classFrom) {
-            return PODParser<unsigned long>::ToJSON(classFrom);
-        }
-    };
-
-    template<>
-    struct TypetoJSONFnInvoker<const unsigned long long&> {
-        static std::wstring ToJSON(const unsigned long long& classFrom) {
-            return PODParser<unsigned long long>::ToJSON(classFrom);
-        }
-    };
-
-    template<>
-    struct TypetoJSONFnInvoker<const float&> {
-        static std::wstring ToJSON(const float& classFrom) {
-            return PODParser<float>::ToJSON(classFrom);
-        }
-    };
-
-    template<>
-    struct TypetoJSONFnInvoker<const double&> {
-        static std::wstring ToJSON(const double& classFrom) {
-            return PODParser<double>::ToJSON(classFrom);
-        }
-    };
-
-    template<>
-    struct TypetoJSONFnInvoker<const long double&> {
-        static std::wstring ToJSON(const long double& classFrom) {
-            return PODParser<long double> ::ToJSON(classFrom);
-        }
-    };
-
-    /* stl array types */
-    template<typename T>
-    struct TypetoJSONFnInvoker<const std::vector<T>&> {
-        static std::wstring ToJSON(const std::vector<T>& classFrom) {
-            return FlatIterableParser<std::vector<T>>::ToJSON(classFrom);
-        }
-    };
-
-    // template<typename T>
-    // struct TypetoJSONFnInvoker<const std::list<T>&> {
-    //     static std::wstring ToJSON(const std::vector<T>& classFrom) {
-    //         return FlatIterableParser<std::vector<T>>::ToJSON(classFrom);
-    //     }
-    // };
-
-    // template<typename T>
-    // struct TypetoJSONFnInvoker<const std::deque<T>&> {
-    //     static std::wstring ToJSON(const std::vector<T>& classFrom) {
-    //         return FlatIterableParser<std::vector<T>>::ToJSON(classFrom);
-    //     }
-    // };
-
-    // template<typename T>
-    // struct TypetoJSONFnInvoker<const std::forward_list<T>&> {
-    //     static std::wstring ToJSON(const std::vector<T>& classFrom) {
-    //         return FlatIterableParser<std::vector<T>>::ToJSON(classFrom);
-    //     }
-    // };
-
-    // template<typename T>
-    // struct TypetoJSONFnInvoker<const std::array<T>&> {
-    //     static std::wstring ToJSON(const std::vector<T>& classFrom) {
-    //         return FlatIterableParser<std::vector<T>>::ToJSON(classFrom);
-    //     }
-    // };
-
-
-    /* */
-    template<typename classOn>
-    struct TypetoJSONFnInvokerHelper {
-        static std::wstring ToJSON(const classOn& classFrom) {
-            return TypetoJSONFnInvoker<const classOn&>::ToJSON(classFrom);
+    template<typename... Types>
+    struct TypeJSONFnInvokerImpl<const std::tuple<Types...>&> {
+        inline static std::wstring ToJSON(const std::tuple<Types...>& classFrom) json_finline {
+            std::wstring json(L"[");
+            TupleHandler<std::tuple<Types...>,
+                         0,
+                         sizeof...(Types) == 1,
+                         Types...
+                        >::ToJSON(classFrom, json);
+            json += L"]";
+            return json;
         }
     };
 }
