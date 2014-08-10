@@ -63,6 +63,7 @@ int main() {
 
     HasMap hm;
     hm.mymap.insert(std::make_pair(1337, 3.14));
+    hm.mymap.insert(std::make_pair(3.14159, 100.0));
     json = hm.ToJSON();
     std::wcout << json << std::endl;
 

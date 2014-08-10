@@ -2,6 +2,11 @@
 #ifndef __JSON_CLASS_PARSER_HPP__
 #define __JSON_CLASS_PARSER_HPP__
 
+/* Don't put this anywhere in your class definition unless you like reading horrific template
+   errors */
+#define JSON_VAR_DECORATOR \
+    static constexpr JSON::__json_var
+
 #include "json_common_macros.hpp"
 #include "json_token_engine.hpp"
 
@@ -129,4 +134,5 @@ namespace JSON {
         }
     };
 }
+
 #endif

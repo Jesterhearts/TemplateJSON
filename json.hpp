@@ -8,13 +8,8 @@
 #include <unordered_map>
 
 #include "json_common_macros.hpp"
-#include "json_class_parser.hpp"
 #include "json_value_parser.hpp"
-
-/* Don't put this anywhere in your class definition unless you like reading horrific template
-   errors */
-#define JSON_VAR_DECORATOR \
-    static constexpr JSON::__json_var
+#include "json_class_parser.hpp"
 
 /* constructor macros */
 #define JSON_CLASS_IMPL(CLASS_NAME, ...)                                                        \
@@ -23,10 +18,10 @@
         /* inject the stuff that we need to function. It shouldn't be public */                 \
         /* These need to be able to hit functions even if private */                            \
         template <class ThisClass, const wchar_t *const *classString, size_t offset>            \
-        friend struct JSON::VarJSONFnInvoker;                                                 \
+        friend struct JSON::VarJSONFnInvoker;                                                   \
                                                                                                 \
         template <class ThisClass>                                                              \
-        friend struct JSON::TypeJSONFnInvoker;                                                \
+        friend struct JSON::TypeJSONFnInvoker;                                                  \
                                                                                                 \
         /* This gives us the string for the class that we parse at compile time */              \
         static constexpr const wchar_t* __##CLASS_NAME = WIDEN(#__VA_ARGS__);                   \
@@ -89,11 +84,10 @@
 
 /* holy shit so many templates */
 namespace JSON {
-
     typedef std::unordered_map<std::wstring, std::wstring> DataMap;
     typedef std::pair<std::wstring, std::wstring> DataType;
 
-    /* Makes a unique fn identifier */
+    /* Helpers for the template programs */
     template<unsigned int uniqueID>
     struct VarToJSONIdentifier {
         static constexpr unsigned int help = uniqueID;
