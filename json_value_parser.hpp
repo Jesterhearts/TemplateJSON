@@ -5,24 +5,24 @@
 #include <sstream>
 #include <string>
 #include <stdexcept>
-#include <algorithm>
+#include <type_traits>
+/* I want to include as few headers as possible, but tuples suck to set up properly */
+#include <tuple>
 
 namespace std {
-    template<typename T, std::size_t N> struct array;
+    template<typename T, size_t N> struct array;
     template<typename T, typename A> class deque;
     template<typename T, typename A> class forward_list;
     template<typename T, typename A> class list;
     template<typename T, typename A> class vector;
 
     template<typename T1, typename T2> struct pair;
-    template<typename... Types > class tuple;
 
     template<typename K, typename C, typename A> class set;
     template<typename K, typename C, typename A> class multiset;
     template<typename K, typename H, typename KE, typename A> class unordered_set;
 
     template<typename K, typename T, typename C, typename A> class map;
-
 }
 
 namespace JSON {
@@ -109,11 +109,22 @@ template<typename T> struct TypeJSONFnInvoker;
 // TypeJSONFnInvoker implementation
 ////
     template<typename T> struct TypeJSONFnInvokerImpl;
+    template<typename T, size_t N> struct JSONArrayHandler;
 
     template<typename classOn>
     struct TypeJSONFnInvoker {
         inline static std::wstring ToJSON(const classOn& classFrom) json_finline {
             return TypeJSONFnInvokerImpl<const classOn&>::ToJSON(classFrom);
+        }
+    };
+
+    template<typename classOn>
+    struct TypeJSONFnInvoker<classOn*> {
+        inline static std::wstring ToJSON(const classOn* classFrom) json_finline {
+            if(classFrom == nullptr) {
+                return L"null";
+            }
+            return TypeJSONFnInvoker<const classOn&>::ToJSON(*classFrom);
         }
     };
 
@@ -161,6 +172,7 @@ template<typename T> struct TypeJSONFnInvoker;
     };
 
     /* basic number types */
+    //TODO can this be cleaner with std::is_fundamental?
     JSON_NUMTYPE_PARSER(int);
     JSON_NUMTYPE_PARSER(long);
     JSON_NUMTYPE_PARSER(long long);
@@ -258,6 +270,38 @@ template<typename T> struct TypeJSONFnInvoker;
                         >::ToJSON(classFrom, json);
             json += L"]";
             return json;
+        }
+    };
+
+/////////////////////////////////////////
+// Compile-time sized array handler
+    template<typename classOn,
+             size_t rank = 1>
+    struct JSONArrayHandler {
+        inline static std::wstring ToJSON(const classOn classFrom) json_finline {
+            if(std::extent<classOn>::value == 0) {
+                return L"[]";
+            }
+
+            typedef typename std::remove_extent<classOn>::type valueType;
+
+            std::wstring json(L"[");
+            json += JSONArrayHandler<valueType, std::rank<valueType>::value>::ToJSON(classFrom[0]);
+
+            for(size_t i = 1; i < std::extent<classOn>::value; ++i) {
+                json += L",";
+                json += JSONArrayHandler<valueType, std::rank<valueType>::value>::ToJSON(classFrom[i]);
+            }
+            json += L"]";
+            return json;
+        }
+    };
+
+    /* Not an array */
+    template<typename classOn>
+    struct JSONArrayHandler<classOn, 0> {
+        inline static std::wstring ToJSON(const classOn classFrom) json_finline {
+            return TypeJSONFnInvoker<classOn>::ToJSON(classFrom);
         }
     };
 }

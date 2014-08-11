@@ -2,21 +2,23 @@
 #ifndef __JSON_HPP_
 #define __JSON_HPP_
 
+#include "json_common_macros.hpp"
+#include "json_value_parser.hpp"
+#include "json_class_parser.hpp"
+
 #include <iostream>
 #include <sstream>
 #include <string>
 #include <unordered_map>
 
-#include "json_common_macros.hpp"
-#include "json_value_parser.hpp"
-#include "json_class_parser.hpp"
-
 /* constructor macros */
 #define JSON_CLASS_IMPL(CLASS_NAME, ...)                                                        \
-    class CLASS_NAME {                                                                          \
-        typedef CLASS_NAME __THIS_JSON_CLASS__;                                                 \
+    class CLASS_NAME : public JSON::JSONBase<CLASS_NAME> {                                      \
         /* inject the stuff that we need to function. It shouldn't be public */                 \
         /* These need to be able to hit functions even if private */                            \
+        template<class ThisClass>                                                               \
+        friend class JSON::JSONBase;                                                            \
+                                                                                                \
         template <class ThisClass, const wchar_t *const *classString, size_t offset>            \
         friend struct JSON::VarJSONFnInvoker;                                                   \
                                                                                                 \
@@ -24,13 +26,8 @@
         friend struct JSON::TypeJSONFnInvoker;                                                  \
                                                                                                 \
         /* This gives us the string for the class that we parse at compile time */              \
-        static constexpr const wchar_t* __##CLASS_NAME = WIDEN(#__VA_ARGS__);                   \
+        static constexpr const wchar_t* __THIS_JSON_CLASS_STRING__ = WIDEN(#__VA_ARGS__);       \
                                                                                                 \
-    public:                                                                                     \
-        std::wstring ToJSON() const {                                                           \
-            return JSON::ClassJSONFnsInvoker<CLASS_NAME, &__##CLASS_NAME>                       \
-                            ::InvokeToJSONFns(*this);                                           \
-        }                                                                                       \
     private:                                                                                    \
         /* Here we actually make the rest of the class for them */                              \
         __VA_ARGS__                                                                             \
@@ -52,19 +49,22 @@
     /* prevent duplicate keys */                                                            \
     static constexpr void* __KEYARG_##JSONKEY = nullptr;                                    \
 
-
+////////////////////////////////////////////////////////////////////////////////////////////////////
+//  These macros are for creating basic variables
+//  - numeric types, classes, non-array pointers
+/////
 #define JSON_VAR_IMPL(TYPE, VARNAME, JSONKEY, KEY, ...)                                     \
     JSON_VAR_PREAMBLE(TYPE, VARNAME, JSONKEY, KEY, __VA_ARGS__)                             \
                                                                                             \
     /* This function does the actual work */                                                \
-    static void VarToJSON(const __THIS_JSON_CLASS__& classFrom,                             \
+    static void VarToJSON(const JSONBase::__JSONType& classFrom,                            \
                           std::wstring& jsonData,                                           \
                           const JSON::VarToJSONIdentifier<                                  \
                                     JSON::VarNameHasher<&KEY>::Hash()>&& key) {             \
         jsonData += L"\"" #JSONKEY L"\":";                                                  \
-        jsonData += JSON::TypeJSONFnInvoker<TYPE>                                         \
+        jsonData += JSON::TypeJSONFnInvoker<TYPE>                                           \
                         ::ToJSON(static_cast<TYPE>(classFrom.VARNAME));                     \
-    }                                                                                       \
+    }
 
 /* This makes sure our JSON key (KEY_ARG) for hashing and searching are the same */
 #define JSON_VAR_HELPER(TYPE, VARNAME, JSONKEY, KEY_ARG, ...)    \
@@ -73,7 +73,7 @@
 /* Make a variable and use a specific key. The key must be in plain text (not a string).
  */
 #define JSON_VAR_AND_KEY(TYPE, VARNAME, JSONKEY, ...)    \
-    JSON_VAR_HELPER(TYPE, VARNAME, JSONKEY, MAKE_UNIQUE_VAL(VARNAME), __VA_ARGS__)
+    JSON_VAR_HELPER(TYPE, VARNAME, JSONKEY, MAKE_UNIQUE_VAL(JSONKEY), __VA_ARGS__)
 
 /* Make a variable. The varargs will become the the value the variable is initialized to, if
    specified. The variable name becomes the key in JSON
@@ -81,16 +81,58 @@
 #define JSON_VAR(TYPE, VARNAME, ...)    \
     JSON_VAR_AND_KEY(TYPE, VARNAME, VARNAME, __VA_ARGS__)
 
+////////////////////////////////////////////////////////////////////////////////////////////////////
+//  These macros are for creating constant-sized arrays
+////
+#define JSON_ARRAY_IMPL(TYPE, VARNAME, AR_DIMS, JSONKEY, KEY, ...)                          \
+    JSON_VAR_PREAMBLE(TYPE, VARNAME AR_DIMS, JSONKEY, KEY, __VA_ARGS__)                     \
+                                                                                            \
+    /* This function does the actual work */                                                \
+    static void VarToJSON(const JSONBase::__JSONType& classFrom,                            \
+                          std::wstring& jsonData,                                           \
+                          const JSON::VarToJSONIdentifier<                                  \
+                                    JSON::VarNameHasher<&KEY>::Hash()>&& key) {             \
+        jsonData += L"\"" #JSONKEY L"\":";                                                  \
+        jsonData += JSON::JSONArrayHandler<const TYPE AR_DIMS>                              \
+                        ::ToJSON(classFrom.VARNAME);                                        \
+    }
 
-/* holy shit so many templates */
+#define JSON_ARRAY_HELPER(TYPE, VARNAME, AR_DIMS, JSONKEY, KEY_ARG, ...)    \
+    JSON_ARRAY_IMPL(TYPE, VARNAME, AR_DIMS, JSONKEY, KEY_ARG, __VA_ARGS__)
+
+#define JSON_ARRAY_AND_KEY(TYPE, VARNAME, AR_DIMS, JSONKEY, ...) \
+    JSON_ARRAY_HELPER(TYPE, VARNAME, AR_DIMS, JSONKEY, MAKE_UNIQUE_VAL(JSONKEY), __VA_ARGS__)
+
+#define JSON_ARRAY(TYPE, VARNAME, AR_DIMS, ...) \
+    JSON_ARRAY_AND_KEY(TYPE, VARNAME, AR_DIMS, VARNAME, __VA_ARGS__)
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+//  These functions and definitions generate the to/from JSON functions for the class at compile
+//  time
+////
 namespace JSON {
-    typedef std::unordered_map<std::wstring, std::wstring> DataMap;
-    typedef std::pair<std::wstring, std::wstring> DataType;
+
+    template<typename C, const wchar_t* const* S> struct ClassJSONFnsInvoker;
 
     /* Helpers for the template programs */
     template<unsigned int uniqueID>
     struct VarToJSONIdentifier {
         static constexpr unsigned int help = uniqueID;
+    };
+
+    typedef std::unordered_map<std::wstring, std::wstring> DataMap;
+    typedef std::pair<std::wstring, std::wstring> DataType;
+
+    template<typename ClassFor>
+    class JSONBase {
+    public:
+        std::wstring ToJSON() const {
+            return JSON::ClassJSONFnsInvoker<ClassFor,
+                                             &ClassFor::__THIS_JSON_CLASS_STRING__
+                                            >::InvokeToJSONFns(static_cast<const ClassFor&>(*this));
+        }
+    protected:
+        typedef ClassFor __JSONType;
     };
 
 ////////////////////////////////////////////////////////////////////////////////
