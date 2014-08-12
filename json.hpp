@@ -104,19 +104,37 @@
 #define JSON_ARRAY(TYPE, VARNAME, AR_DIMS, ...) \
     JSON_ARRAY_AND_KEY(TYPE, VARNAME, AR_DIMS, VARNAME, __VA_ARGS__)
 
+
+#define JSON_VARIABLES(ClassFor, ...)                                         \
+    namespace JSON {                                                          \
+        const static VariableSet<ClassFor, __VA_ARGS__> __JSON_VARIABLES__;   \
+    }                                                                         \
+
+#define __jref(Type_, Attr_)                    \
+        JSON::__jref_impl<Type_>(&Type_::Attr_)
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 //  These functions and definitions generate the to/from JSON functions for the class at compile
 //  time
 ////
 namespace JSON {
-
     template<typename C, const wchar_t* const* S> struct ClassJSONFnsInvoker;
+
+    template<typename ClassFor, size_t... VariableDiffs>
+    struct VariableSet {
+        static constexpr size_t VariableOffsets[sizeof...(VariableDiffs)] = {VariableDiffs...};
+    };
 
     /* Helpers for the template programs */
     template<unsigned int uniqueID>
     struct VarToJSONIdentifier {
         static constexpr unsigned int help = uniqueID;
     };
+
+    template <typename T, typename U>
+    constexpr size_t __jref_impl(U T::* a) {
+        return (char const*)&(((T*)0)->*a) - (char const*)0;
+    }
 
     typedef std::unordered_map<std::wstring, std::wstring> DataMap;
     typedef std::pair<std::wstring, std::wstring> DataType;

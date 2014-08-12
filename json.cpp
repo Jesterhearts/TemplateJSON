@@ -37,6 +37,8 @@ public:
     JSON_VAR(int*, myptr);
 );
 
+JSON_VARIABLES(HasPTR, __jref(HasPTR, myptr));
+
 JSON_CLASS(HasArray,
 public:
     JSON_ARRAY(int, myintarr, [3]);
@@ -57,9 +59,11 @@ int main() {
     json = a.ToJSON();
     std::wcout << json << std::endl;
 
+
     Nested n;
     json = n.ToJSON();
     std::wcout << json << std::endl;
+
 
     HasVector v;
     v.myvec.push_back('a');
@@ -93,6 +97,11 @@ int main() {
     ha.myintarr[0] = 1;
     ha.myintarr[1] = 1;
     ha.myintarr[2] = 2;
+    json = ha.ToJSON();
+    std::wcout << json << std::endl;
+
+    size_t offA = offsetof(HasArray, myintarr);
+    reinterpret_cast<int*>(&ha + offA)[1] = 120;
     json = ha.ToJSON();
     std::wcout << json << std::endl;
 
