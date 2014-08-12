@@ -1,6 +1,6 @@
 #pragma once
-#ifndef __JSON_HPP_
-#define __JSON_HPP_
+#ifndef __JSON_HPP__
+#define __JSON_HPP__
 
 #include "json_common_macros.hpp"
 #include "json_value_parser.hpp"
@@ -28,7 +28,6 @@
         /* This gives us the string for the class that we parse at compile time */              \
         static constexpr const wchar_t* __THIS_JSON_CLASS_STRING__ = WIDEN(#__VA_ARGS__);       \
                                                                                                 \
-    private:                                                                                    \
         /* Here we actually make the rest of the class for them */                              \
         __VA_ARGS__                                                                             \
     }                                                                                           \
@@ -55,15 +54,14 @@
 /////
 #define JSON_VAR_IMPL(TYPE, VARNAME, JSONKEY, KEY, ...)                                     \
     JSON_VAR_PREAMBLE(TYPE, VARNAME, JSONKEY, KEY, __VA_ARGS__)                             \
-                                                                                            \
     /* This function does the actual work */                                                \
-    static void VarToJSON(const JSONBase::__JSONType& classFrom,                            \
+    static void VarToJSON(const JSONBase::__JSONType* classFrom,                            \
                           std::wstring& jsonData,                                           \
                           const JSON::VarToJSONIdentifier<                                  \
                                     JSON::VarNameHasher<&KEY>::Hash()>&& key) {             \
         jsonData += L"\"" #JSONKEY L"\":";                                                  \
         jsonData += JSON::TypeJSONFnInvoker<TYPE>                                           \
-                        ::ToJSON(static_cast<TYPE>(classFrom.VARNAME));                     \
+                        ::ToJSON(&classFrom->VARNAME);                                      \
     }
 
 /* This makes sure our JSON key (KEY_ARG) for hashing and searching are the same */
@@ -73,7 +71,7 @@
 /* Make a variable and use a specific key. The key must be in plain text (not a string).
  */
 #define JSON_VAR_AND_KEY(TYPE, VARNAME, JSONKEY, ...)    \
-    JSON_VAR_HELPER(TYPE, VARNAME, JSONKEY, MAKE_UNIQUE_VAL(JSONKEY), __VA_ARGS__)
+    JSON_VAR_HELPER(TYPE, VARNAME, JSONKEY, MAKE_UNIQUE_VAL(VARNAME), __VA_ARGS__)
 
 /* Make a variable. The varargs will become the the value the variable is initialized to, if
    specified. The variable name becomes the key in JSON
@@ -88,20 +86,20 @@
     JSON_VAR_PREAMBLE(TYPE, VARNAME AR_DIMS, JSONKEY, KEY, __VA_ARGS__)                     \
                                                                                             \
     /* This function does the actual work */                                                \
-    static void VarToJSON(const JSONBase::__JSONType& classFrom,                            \
+    static void VarToJSON(const JSONBase::__JSONType* classFrom,                            \
                           std::wstring& jsonData,                                           \
                           const JSON::VarToJSONIdentifier<                                  \
                                     JSON::VarNameHasher<&KEY>::Hash()>&& key) {             \
         jsonData += L"\"" #JSONKEY L"\":";                                                  \
         jsonData += JSON::JSONArrayHandler<const TYPE AR_DIMS>                              \
-                        ::ToJSON(classFrom.VARNAME);                                        \
+                        ::ToJSON(classFrom->VARNAME);                                       \
     }
 
 #define JSON_ARRAY_HELPER(TYPE, VARNAME, AR_DIMS, JSONKEY, KEY_ARG, ...)    \
     JSON_ARRAY_IMPL(TYPE, VARNAME, AR_DIMS, JSONKEY, KEY_ARG, __VA_ARGS__)
 
 #define JSON_ARRAY_AND_KEY(TYPE, VARNAME, AR_DIMS, JSONKEY, ...) \
-    JSON_ARRAY_HELPER(TYPE, VARNAME, AR_DIMS, JSONKEY, MAKE_UNIQUE_VAL(JSONKEY), __VA_ARGS__)
+    JSON_ARRAY_HELPER(TYPE, VARNAME, AR_DIMS, JSONKEY, MAKE_UNIQUE_VAL(VARNAME), __VA_ARGS__)
 
 #define JSON_ARRAY(TYPE, VARNAME, AR_DIMS, ...) \
     JSON_ARRAY_AND_KEY(TYPE, VARNAME, AR_DIMS, VARNAME, __VA_ARGS__)
@@ -129,7 +127,7 @@ namespace JSON {
         std::wstring ToJSON() const {
             return JSON::ClassJSONFnsInvoker<ClassFor,
                                              &ClassFor::__THIS_JSON_CLASS_STRING__
-                                            >::InvokeToJSONFns(static_cast<const ClassFor&>(*this));
+                                            >::InvokeToJSONFns(static_cast<const ClassFor*>(this));
         }
     protected:
         typedef ClassFor __JSONType;
@@ -142,7 +140,7 @@ namespace JSON {
              const wchar_t *const *classString,
              size_t offset>
     struct VarJSONFnInvoker {
-        inline static void ToJSON(const classOn& classFrom, std::wstring& jsonData) json_finline {
+        inline static void ToJSON(const classOn* classFrom, std::wstring& jsonData) json_finline {
             constexpr unsigned int id = VarNameHasher<classString, offset>::Hash();
             classOn::VarToJSON(classFrom, jsonData, JSON::VarToJSONIdentifier<id>());
         }
@@ -158,7 +156,7 @@ namespace JSON {
              bool started = false,
              bool noMoreVars = false>
     struct ClassJSONFnsBuilder {
-        inline static void BuildFns (const ClassFor& classOn, std::wstring& jsonData) json_finline {
+        inline static void BuildFns (const ClassFor* classOn, std::wstring& jsonData) json_finline {
             constexpr size_t tokenEnd = ClassParserTokenFinder<classInfo, offset>::FindJSONToken();
             ClassJSONFnsBuilder<ClassFor,
                                 classInfo,
@@ -180,7 +178,7 @@ namespace JSON {
                                first,
                                /* started */ true,
                                /* noMoreVars */ false> {
-        inline static void BuildFns (const ClassFor& classOn, std::wstring& jsonData) json_finline {
+        inline static void BuildFns (const ClassFor* classOn, std::wstring& jsonData) json_finline {
             if(!first) {
                 jsonData += L",";
             }
@@ -210,14 +208,14 @@ namespace JSON {
                                first,
                                /* started */ true,
                                /* noMoreVars */ true> {
-        inline static void BuildFns (const ClassFor& classOn, std::wstring& jsonData) json_finline {
+        inline static void BuildFns (const ClassFor* classOn, std::wstring& jsonData) json_finline {
         }
     };
 
     template<typename ClassFor,
              const wchar_t *const *classInfo>
     struct ClassJSONFnsInvoker {
-        inline static std::wstring InvokeToJSONFns(const ClassFor& classOn) json_finline {
+        inline static std::wstring InvokeToJSONFns(const ClassFor* classOn) json_finline {
             std::wstring jsonData(L"{");
             ClassJSONFnsBuilder<ClassFor, classInfo>::BuildFns(classOn, jsonData);
             jsonData += L"}";

@@ -3,51 +3,53 @@
 #include <vector>
 #include <tuple>
 #include <map>
+#include <memory>
 
 JSON_CLASS(Test,
 public:
-     /* variable type, variable name */
      static const JSON_VAR(char, mychar, = 'x');
 );
 
 JSON_CLASS(Nested,
 public:
-     /* variable type, variable name */
      JSON_VAR(Test, mytest);
 );
 
 JSON_CLASS(HasVector, 
 public:
-     /* variable type, variable name */
      JSON_VAR(std::vector<char>, myvec);
 );
 
 JSON_CLASS(UsesTuple,
 public:
-     /* variable type, variable name */
     typedef std::tuple<char, int, double, long> tupletype;
     JSON_VAR(tupletype, mytuple);
 );
 
 JSON_CLASS(HasMap,
 public:
-     /* variable type, variable name */
     typedef std::map<int, double> maptype;
     JSON_VAR(maptype, mymap);
 );
 
 JSON_CLASS(HasPTR,
 public:
-     /* variable type, variable name */
     JSON_VAR(int*, myptr);
 );
 
 JSON_CLASS(HasArray,
 public:
-     /* variable type, variable name */
     JSON_ARRAY(int, myintarr, [3]);
     JSON_ARRAY(int, mynestedarr, [3][3]);
 );
+
+JSON_CLASS(HasSmrtPtrs,
+public:
+    JSON_VAR(std::unique_ptr<int>, mysmartint);
+    JSON_VAR(std::shared_ptr<int>, myshrdint);
+);
+
+const char Test::mychar;
 
 int main() {
     std::wstring json;
@@ -92,6 +94,15 @@ int main() {
     ha.myintarr[1] = 1;
     ha.myintarr[2] = 2;
     json = ha.ToJSON();
+    std::wcout << json << std::endl;
+
+    HasSmrtPtrs hsp;
+    json = hsp.ToJSON();
+    std::wcout << json << std::endl;
+
+    hsp.mysmartint.reset(new int(10));
+    hsp.myshrdint.reset(new int(11));
+    json = hsp.ToJSON();
     std::wcout << json << std::endl;
 
     return 0;
