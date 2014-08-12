@@ -2,7 +2,7 @@
 #ifndef __JSON_COMMON_MACROS_HPP__
 #define __JSON_COMMON_MACROS_HPP__
 
-#define json_finline __attribute__((always_inline))
+#define json_finline [[gnu::always_inline]]
 
 #define WIDEN(STRING)   \
     L ## STRING

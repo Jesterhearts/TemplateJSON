@@ -140,7 +140,7 @@ namespace JSON {
              const wchar_t *const *classString,
              size_t offset>
     struct VarJSONFnInvoker {
-        inline static void ToJSON(const classOn* classFrom, std::wstring& jsonData) json_finline {
+        json_finline inline static void ToJSON(const classOn* classFrom, std::wstring& jsonData) {
             constexpr unsigned int id = VarNameHasher<classString, offset>::Hash();
             classOn::VarToJSON(classFrom, jsonData, JSON::VarToJSONIdentifier<id>());
         }
@@ -156,7 +156,7 @@ namespace JSON {
              bool started = false,
              bool noMoreVars = false>
     struct ClassJSONFnsBuilder {
-        inline static void BuildFns (const ClassFor* classOn, std::wstring& jsonData) json_finline {
+        json_finline inline static void BuildFns (const ClassFor* classOn, std::wstring& jsonData) {
             constexpr size_t tokenEnd = ClassParserTokenFinder<classInfo, offset>::FindJSONToken();
             ClassJSONFnsBuilder<ClassFor,
                                 classInfo,
@@ -178,7 +178,7 @@ namespace JSON {
                                first,
                                /* started */ true,
                                /* noMoreVars */ false> {
-        inline static void BuildFns (const ClassFor* classOn, std::wstring& jsonData) json_finline {
+        json_finline inline static void BuildFns (const ClassFor* classOn, std::wstring& jsonData) {
             if(!first) {
                 jsonData += L",";
             }
@@ -208,14 +208,14 @@ namespace JSON {
                                first,
                                /* started */ true,
                                /* noMoreVars */ true> {
-        inline static void BuildFns (const ClassFor* classOn, std::wstring& jsonData) json_finline {
+        json_finline inline static void BuildFns (const ClassFor* classOn, std::wstring& jsonData) {
         }
     };
 
     template<typename ClassFor,
              const wchar_t *const *classInfo>
     struct ClassJSONFnsInvoker {
-        inline static std::wstring InvokeToJSONFns(const ClassFor* classOn) json_finline {
+        json_finline inline static std::wstring InvokeToJSONFns(const ClassFor* classOn) {
             std::wstring jsonData(L"{");
             ClassJSONFnsBuilder<ClassFor, classInfo>::BuildFns(classOn, jsonData);
             jsonData += L"}";
