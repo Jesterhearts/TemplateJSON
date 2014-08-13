@@ -12,8 +12,9 @@ public:
 
 JSON_ENABLE(Test, mychar);
 
-class Nested : public JSON::JSONBase<Nested> {
+class Nested : public JSON::JSONBase<Nested>, Test {
 public:
+     JSON_INHERITS(Nested, Test);
      Test mytest;
 };
 
