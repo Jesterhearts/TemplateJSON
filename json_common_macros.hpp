@@ -4,22 +4,4 @@
 
 #define json_finline [[gnu::always_inline]]
 
-#define WIDEN(STRING)   \
-    L ## STRING
-
-#define EXPAND_MACRO_WIDEN_IMPL(MACRO)  \
-    WIDEN(#MACRO)
-
-#define EXPAND_MACRO_WIDEN(MACRO) \
-    EXPAND_MACRO_WIDEN_IMPL(MACRO)
-
-#define MAKE_UNIQUE_VAL_IMPL(VARNAME, NUMBER)   \
-    VARNAME ##_## NUMBER
-
-#define MAKE_UNIQUE_VAL_HELPER(VARNAME, NUMBER) \
-    MAKE_UNIQUE_VAL_IMPL(VARNAME, NUMBER)
-
-#define MAKE_UNIQUE_VAL(VARNAME)    \
-    MAKE_UNIQUE_VAL_HELPER(VARNAME, __COUNTER__)
-
 #endif
