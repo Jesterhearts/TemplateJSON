@@ -8,9 +8,10 @@
 #include <boost/preprocessor/punctuation/comma.hpp>
 
 #include <boost/preprocessor/seq/for_each.hpp>
-#include <boost/preprocessor/seq/seq.hpp>
+#include <boost/preprocessor/seq/pop_front.hpp>
 
 #include <boost/preprocessor/variadic/to_seq.hpp>
+#include <boost/preprocessor/variadic/elem.hpp>
 #include <boost/preprocessor/wstringize.hpp>
 
 #include "json_common_macros.hpp"
@@ -24,25 +25,37 @@
 #define JSON_PRIVATE_ACCESS()   \
     template<typename __JSON_FRIEND_TYPE__> friend JSONEnabler;
 
-#define JSON_MAKE_JSONENABLE_BODY(s, IGNORED, VARNAME)                      \
+#define JSON_START_JSONENABLE_BODY(VARNAME)                                 \
         jsonData += L"\"" BOOST_PP_WSTRINGIZE(VARNAME) L"\":";              \
         typedef decltype(classFor->VARNAME) BOOST_PP_CAT(__type, VARNAME);  \
         jsonData += JSON::JSONFnInvoker<BOOST_PP_CAT(__type, VARNAME)>      \
                         ::ToJSON(&classFor->VARNAME);                       \
 
-#define JSON_ENABLE(CLASS_NAME, ...)                                      \
-namespace JSON {                                                          \
-    template<>                                                            \
-    struct JSONEnabler<CLASS_NAME> {                                      \
-        json_finline static void ToJSON(const CLASS_NAME* classFor,       \
-                                        std::wstring& jsonData) {         \
-            BOOST_PP_SEQ_FOR_EACH(JSON_MAKE_JSONENABLE_BODY,              \
-                                  _,                                      \
-                                  BOOST_PP_VARIADIC_TO_SEQ(__VA_ARGS__)   \
-                                 )                                        \
-        }                                                                 \
-    };                                                                    \
-}                                                                         \
+#define JSON_MAKE_JSONENABLE_BODY(s, IGNORED, VARNAME)                      \
+        jsonData += L",\"" BOOST_PP_WSTRINGIZE(VARNAME) L"\":";             \
+        typedef decltype(classFor->VARNAME) BOOST_PP_CAT(__type, VARNAME);  \
+        jsonData += JSON::JSONFnInvoker<BOOST_PP_CAT(__type, VARNAME)>      \
+                        ::ToJSON(&classFor->VARNAME);                       \
+
+#define JSON_ENABLE(CLASS_NAME, ...)                                  \
+namespace JSON {                                                      \
+    template<>                                                        \
+    struct JSONEnabler<CLASS_NAME> {                                  \
+        json_finline static void ToJSON(const CLASS_NAME* classFor,   \
+                                        std::wstring& jsonData) {     \
+            JSON_START_JSONENABLE_BODY(                               \
+                BOOST_PP_VARIADIC_ELEM(0, __VA_ARGS__)                \
+                                      )                               \
+                                                                      \
+            BOOST_PP_SEQ_FOR_EACH(                                    \
+                JSON_MAKE_JSONENABLE_BODY, _,                         \
+                    BOOST_PP_SEQ_POP_FRONT(                           \
+                        BOOST_PP_VARIADIC_TO_SEQ(__VA_ARGS__)         \
+                                           )                          \
+                                )                                     \
+        }                                                             \
+    };                                                                \
+}                                                                     \
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 //  These functions and definitions generate the to/from JSON functions for the class at compile

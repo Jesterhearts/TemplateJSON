@@ -183,15 +183,16 @@ template<typename T> struct JSONFnInvoker;
             if(*classFrom == nullptr) {
                 return L"null";
             }
-
-            return JSONFnInvoker<const ClassOn>::ToJSON(*classFrom);
+            //classFrom is pointer to pointer
+            typedef decltype(**classFrom) nextype;
+            return JSONFnInvoker<const nextype>::ToJSON(**classFrom);
         }
     };
 
     template<typename ClassOn, bool Arithmetic, bool IsPtr>
     struct JSONFnInvokerDecider<ClassOn, Arithmetic, IsPtr, /* Array */ true> {
         json_finline inline static std::wstring ToJSON(const ClassOn* classFrom) {
-            return JSONArrayHandler<const ClassOn>::ToJSON(classFrom);
+            return JSONArrayHandler<const ClassOn>::ToJSON(*classFrom);
         }
     };
 

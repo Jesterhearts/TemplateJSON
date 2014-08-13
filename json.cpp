@@ -26,34 +26,42 @@ public:
 
 JSON_ENABLE(HasVector, myvec);
 
-// class UsesTuple : public JSON::JSONBase<UsesTuple> {
-// public:
-//     typedef std::tuple<char, int, double, long> tupletype;
-//     tupletype mytuple;
-// };
+class UsesTuple : public JSON::JSONBase<UsesTuple> {
+public:
+    std::tuple<char, int, double, long> mytuple;
+};
 
-// class HasMap : public JSON::JSONBase<HasMap> {
-// public:
-//     typedef std::map<int, double> maptype;
-//     maptype mymap;
-// };
+JSON_ENABLE(UsesTuple, mytuple);
 
-// class HasPTR : public JSON::JSONBase<HasPTR> {
-// public:
-//     int* myptr;
-// };
+class HasMap : public JSON::JSONBase<HasMap> {
+public:
+    std::map<int, double> mymap;
+};
 
-// class HasArray : public JSON::JSONBase<HasArray> {
-// public:
-//     int myintarr[3];
-//     int mynestedarr [3][3];
-// };
+JSON_ENABLE(HasMap, mymap);
 
-// class HasSmrtPtrs : public JSON::JSONBase<HasSmrtPtrs> {
-// public:
-//     std::unique_ptr<int> mysmartint;
-//     std::shared_ptr<int> myshrdint;
-// };
+class HasPTR : public JSON::JSONBase<HasPTR> {
+public:
+    int* myptr;
+};
+
+JSON_ENABLE(HasPTR, myptr);
+
+class HasArray : public JSON::JSONBase<HasArray> {
+public:
+    int myintarr[3];
+    int mynestedarr [3][3];
+};
+
+JSON_ENABLE(HasArray, myintarr, mynestedarr);
+
+class HasSmrtPtrs : public JSON::JSONBase<HasSmrtPtrs> {
+public:
+    std::unique_ptr<int> mysmartint;
+    std::shared_ptr<int> myshrdint;
+};
+
+JSON_ENABLE(HasSmrtPtrs, mysmartint, myshrdint);
 
 const char Test::mychar;
 
@@ -75,47 +83,42 @@ int main() {
     json = v.ToJSON();
     std::wcout << json << std::endl;
 
-    // UsesTuple ut;
-    // ut.mytuple = std::make_tuple('t', 10, 12.5, 100);
-    // json = ut.ToJSON();
-    // std::wcout << json << std::endl;
+    UsesTuple ut;
+    ut.mytuple = std::make_tuple('t', 10, 12.5, 100);
+    json = ut.ToJSON();
+    std::wcout << json << std::endl;
 
-    // HasMap hm;
-    // hm.mymap.insert(std::make_pair(1337, 3.14));
-    // hm.mymap.insert(std::make_pair(3.14159, 100.0));
-    // json = hm.ToJSON();
-    // std::wcout << json << std::endl;
+    HasMap hm;
+    hm.mymap.insert(std::make_pair(1337, 3.14));
+    hm.mymap.insert(std::make_pair(3.14159, 100.0));
+    json = hm.ToJSON();
+    std::wcout << json << std::endl;
 
-    // HasPTR p;
-    // p.myptr = nullptr;
-    // json = p.ToJSON();
-    // std::wcout << json << std::endl;
+    HasPTR p;
+    p.myptr = nullptr;
+    json = p.ToJSON();
+    std::wcout << json << std::endl;
 
-    // p.myptr = new int(10);
-    // json = p.ToJSON();
-    // std::wcout << json << std::endl;
-    // delete p.myptr;
+    p.myptr = new int(10);
+    json = p.ToJSON();
+    std::wcout << json << std::endl;
+    delete p.myptr;
 
-    // HasArray ha;
-    // ha.myintarr[0] = 1;
-    // ha.myintarr[1] = 1;
-    // ha.myintarr[2] = 2;
-    // json = ha.ToJSON();
-    // std::wcout << json << std::endl;
+    HasArray ha;
+    ha.myintarr[0] = 1;
+    ha.myintarr[1] = 1;
+    ha.myintarr[2] = 2;
+    json = ha.ToJSON();
+    std::wcout << json << std::endl;
 
-    // size_t offA = offsetof(HasArray, myintarr);
-    // reinterpret_cast<int*>(&ha + offA)[1] = 120;
-    // json = ha.ToJSON();
-    // std::wcout << json << std::endl;
+    HasSmrtPtrs hsp;
+    json = hsp.ToJSON();
+    std::wcout << json << std::endl;
 
-    // HasSmrtPtrs hsp;
-    // json = hsp.ToJSON();
-    // std::wcout << json << std::endl;
-
-    // hsp.mysmartint.reset(new int(10));
-    // hsp.myshrdint.reset(new int(11));
-    // json = hsp.ToJSON();
-    // std::wcout << json << std::endl;
+    hsp.mysmartint.reset(new int(10));
+    hsp.myshrdint.reset(new int(11));
+    json = hsp.ToJSON();
+    std::wcout << json << std::endl;
 
     return 0;
 }
