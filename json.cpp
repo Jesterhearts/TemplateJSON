@@ -10,7 +10,7 @@ public:
      static const char mychar = 'x';
 };
 
-JSON_ENABLE(Test, mychar);
+JSON_ENABLE(Test, (mychar, L"testchar"));
 
 class Nested : public JSON::JSONBase<Nested>, Test {
 public:
@@ -18,35 +18,35 @@ public:
      Test mytest;
 };
 
-JSON_ENABLE(Nested, mytest);
+JSON_ENABLE(Nested, (mytest));
 
 class HasVector : public  JSON::JSONBase<HasVector> { 
 public:
      std::vector<char> myvec;
 };
 
-JSON_ENABLE(HasVector, myvec);
+JSON_ENABLE(HasVector, (myvec));
 
 class UsesTuple : public JSON::JSONBase<UsesTuple> {
 public:
     std::tuple<char, int, double, long> mytuple;
 };
 
-JSON_ENABLE(UsesTuple, mytuple);
+JSON_ENABLE(UsesTuple, (mytuple));
 
 class HasMap : public JSON::JSONBase<HasMap> {
 public:
     std::map<int, double> mymap;
 };
 
-JSON_ENABLE(HasMap, mymap);
+JSON_ENABLE(HasMap, (mymap));
 
 class HasPTR : public JSON::JSONBase<HasPTR> {
 public:
     int* myptr;
 };
 
-JSON_ENABLE(HasPTR, myptr);
+JSON_ENABLE(HasPTR, (myptr));
 
 class HasArray : public JSON::JSONBase<HasArray> {
 public:
@@ -54,7 +54,7 @@ public:
     int mynestedarr [3][3];
 };
 
-JSON_ENABLE(HasArray, myintarr, mynestedarr);
+JSON_ENABLE(HasArray, (myintarr), (mynestedarr));
 
 class HasSmrtPtrs : public JSON::JSONBase<HasSmrtPtrs> {
 public:
@@ -62,7 +62,7 @@ public:
     std::shared_ptr<int> myshrdint;
 };
 
-JSON_ENABLE(HasSmrtPtrs, mysmartint, myshrdint);
+JSON_ENABLE(HasSmrtPtrs, (mysmartint), (myshrdint));
 
 const char Test::mychar;
 
