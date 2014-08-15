@@ -119,11 +119,11 @@
 
 
 #define JSON_MAKE_TOJSONENABLE_BODY_IMPL1(VARNAME)        \
-    JSON_MAKE_TOJSONENABLE_BODY_IMPL2(VARNAME, VARNAME)
+    JSON_MAKE_TOJSONENABLE_BODY_IMPL2(VARNAME, BOOST_PP_WSTRINGIZE(VARNAME))
 
 
 #define JSON_MAKE_TOJSONENABLE_BODY_IMPL2(VARNAME, JSONKEY)             \
-    jsonData += L",\"" BOOST_PP_WSTRINGIZE(JSONKEY) L"\":";             \
+    jsonData += L",\"" JSONKEY L"\":";                                  \
     typedef decltype(classFor->VARNAME) BOOST_PP_CAT(__type, VARNAME);  \
     jsonData += JSON::JSONFnInvoker<BOOST_PP_CAT(__type, VARNAME)>      \
                     ::ToJSON(&classFor->VARNAME);
@@ -213,7 +213,6 @@
 
 namespace JSON {
     typedef std::unordered_map<std::wstring, void*> DataMap;
-    typedef std::pair<std::wstring, std::wstring> DataType;
 
     template<typename ClassFor>
     struct JSONEnabler {
