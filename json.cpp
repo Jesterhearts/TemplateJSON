@@ -5,6 +5,13 @@
 #include <map>
 #include <memory>
 
+class Simple : public JSON::JSONBase<Simple> {
+public:
+    int s;
+};
+
+JSON_ENABLE(Simple, (s));
+
 class Test : public JSON::JSONBase<Test> {
 public:
      static const char mychar = 'x';
@@ -51,7 +58,7 @@ JSON_ENABLE(HasPTR, (myptr));
 class HasArray : public JSON::JSONBase<HasArray> {
 public:
     int myintarr[3];
-    int mynestedarr [3][3];
+    int mynestedarr[3][3];
 };
 
 JSON_ENABLE(HasArray, (myintarr), (mynestedarr));
@@ -64,10 +71,39 @@ public:
 
 JSON_ENABLE(HasSmrtPtrs, (mysmartint), (myshrdint));
 
+class HasStrings : public JSON::JSONBase<HasStrings> {
+public:
+    std::string mystring;
+    std::wstring mywstring;
+};
+
+JSON_ENABLE(HasStrings, (mystring), (mywstring));
+
 const char Test::mychar;
 
 int main() {
     std::wstring json;
+
+    Simple simple;
+    simple.s = 10;
+    json = simple.ToJSON();
+    std::wcout << json << std::endl;
+
+    try
+    {
+        Simple simple2 = Simple::FromJSON(json);
+        json = simple2.ToJSON();
+        std::wcout << L"deserialized: " << json << std::endl;
+    }
+    catch(const std::invalid_argument& e)
+    {
+        std::cout << e.what() << std::endl;
+    }
+    catch(boost::bad_lexical_cast& e)
+    {
+        std::cout << e.what() << std::endl;
+    }
+
     Test a;
     json = a.ToJSON();
     std::wcout << json << std::endl;
@@ -77,6 +113,7 @@ int main() {
     json = n.ToJSON();
     std::wcout << json << std::endl;
 
+
     HasVector v;
     v.myvec.push_back('a');
     v.myvec.push_back('b');
@@ -84,16 +121,19 @@ int main() {
     json = v.ToJSON();
     std::wcout << json << std::endl;
 
+
     UsesTuple ut;
     ut.mytuple = std::make_tuple('t', 10, 12.5, 100);
     json = ut.ToJSON();
     std::wcout << json << std::endl;
+
 
     HasMap hm;
     hm.mymap.insert(std::make_pair(1337, 3.14));
     hm.mymap.insert(std::make_pair(3.14159, 100.0));
     json = hm.ToJSON();
     std::wcout << json << std::endl;
+
 
     HasPTR p;
     p.myptr = nullptr;
@@ -105,12 +145,14 @@ int main() {
     std::wcout << json << std::endl;
     delete p.myptr;
 
+
     HasArray ha;
     ha.myintarr[0] = 1;
     ha.myintarr[1] = 1;
     ha.myintarr[2] = 2;
     json = ha.ToJSON();
     std::wcout << json << std::endl;
+
 
     HasSmrtPtrs hsp;
     json = hsp.ToJSON();
@@ -119,6 +161,13 @@ int main() {
     hsp.mysmartint.reset(new int(10));
     hsp.myshrdint.reset(new int(11));
     json = hsp.ToJSON();
+    std::wcout << json << std::endl;
+
+
+    HasStrings hs;
+    hs.mystring = "string";
+    hs.mywstring = L"wstring";
+    json = hs.ToJSON();
     std::wcout << json << std::endl;
 
     return 0;
