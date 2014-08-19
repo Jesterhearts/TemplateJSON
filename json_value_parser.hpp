@@ -449,7 +449,7 @@ template<typename T> struct JSONFnInvokerImpl;
     struct JSONFnInvokerImpl<std::string> {
         json_finline static stringt ToJSON(const std::string* classFrom) {
             stringt json(JSON_ST("\""));
-#ifdef JSON_USE_WIDE_STRING
+#ifdef JSON_USE_WIDE_STRINGS
             std::wstring wideString(classFrom->begin(), classFrom->end());
             json += wideString;
 #else
@@ -482,7 +482,7 @@ template<typename T> struct JSONFnInvokerImpl;
     struct JSONFnInvokerImpl<std::wstring> {
         json_finline static stringt ToJSON(const std::wstring* classFrom) {
             stringt json(JSON_ST("\""));
-#ifdef JSON_USE_WIDE_STRING
+#ifdef JSON_USE_WIDE_STRINGS
             json += *classFrom;
 #else
             std::string narrowString(classFrom->begin(), classFrom->end());
