@@ -101,6 +101,10 @@ namespace JSON {
         }
     };
 
+////////////////////////////////////////////////////////////////////////////////
+// JSONFnInvokerDecider implementation
+////
+    /* Any non-const object */
     template<typename ClassOn, bool Arithmetic, bool IsPtr, bool Array, bool Const>
     struct JSONFnInvokerDecider {
         json_finline static stringt ToJSON(const ClassOn* classFrom) {
@@ -112,6 +116,10 @@ namespace JSON {
         }
     };
 
+    /* Any const object.
+     * Deserialize is okay.
+     * Serialize generates a warning if JSON_NO_WARN_CONST is not defined
+     */
     template<typename ClassOn, bool Arithmetic, bool IsPtr, bool Array>
     struct JSONFnInvokerDecider<ClassOn, Arithmetic, IsPtr, Array, /* Const */ true> {
         json_finline static stringt ToJSON(const ClassOn* classFrom) {
@@ -126,6 +134,7 @@ namespace JSON {
         }
     };
 
+    /* Any number type, not a char or a wchar_t (since those get handled as strings) */
     template<typename ClassOn, bool IsPtr, bool Array>
     struct JSONFnInvokerDecider<ClassOn, /* Arithmetic */ true, IsPtr, Array, /* Const */ false> {
         json_finline static stringt ToJSON(const ClassOn* classFrom) {
@@ -143,6 +152,7 @@ namespace JSON {
         }
     };
 
+    /* char and wchar_t are handled specially, since they are "strings" in json */
     template<bool IsPtr, bool Array>
     struct JSONFnInvokerDecider<char, /* Arithmetic */ true, IsPtr, Array, /* Const */ false> {
         json_finline static stringt ToJSON(const char* classFrom) {
@@ -241,6 +251,7 @@ namespace JSON {
         }
     };
 
+    /* Handles all pointer types. */
     template<typename ClassOn, bool Arithmetic, bool Array>
     struct JSONFnInvokerDecider<ClassOn, Arithmetic, /* IsPtr */ true, Array, /* Const */ false> {
         json_finline static stringt ToJSON(const ClassOn* classFrom) {
@@ -272,6 +283,7 @@ namespace JSON {
         }
     };
 
+    /* Handles compile-time sized arrays */
     template<typename ClassOn, bool Arithmetic, bool IsPtr>
     struct JSONFnInvokerDecider<ClassOn, Arithmetic, IsPtr, /* Array */ true, /* Const */ false> {
         json_finline static stringt ToJSON(const ClassOn* classFrom) {
@@ -283,6 +295,7 @@ namespace JSON {
         }
     };
 
+    /* This handles the special needs of the std::string and std::wstring classes */
     template<>
     struct JSONFnInvokerImpl<std::string> {
         json_finline static stringt ToJSON(const std::string* classFrom) {
@@ -349,6 +362,7 @@ namespace JSON {
         }
     };
 
+    /* This handles all user defined objects */
     template<typename ClassOn>
     struct JSONFnInvokerImpl {
         json_finline static stringt ToJSON(const ClassOn* classFrom) {
@@ -361,7 +375,7 @@ namespace JSON {
         }
     };
 
-    /* stl flat iterable types */
+    /* stl flat iterable type handlers (non k-v pair types) */
     template<typename T, std::size_t A>
     JSON_ITERABLE_PARSER(array, T, A);
 
@@ -390,6 +404,7 @@ namespace JSON {
     template<typename K, typename T, typename C, typename A>
     JSON_ITERABLE_PARSER(map, K, T, C, A);
 
+    /* This special handler is for std::pair */
     template<typename T1, typename T2>
     struct JSONFnInvokerImpl<std::pair<T1, T2>> {
         json_finline static stringt ToJSON(const std::pair<T1, T2>* classFrom) {
@@ -441,6 +456,7 @@ namespace JSON {
         }
     };
 
+    /* stl smart pointer handlers */
     //WE DON'T OWN THESE SMART PTRS!
     template<typename T, typename D>
     struct  JSONFnInvokerImpl<std::unique_ptr<T, D>> {
@@ -472,6 +488,10 @@ namespace JSON {
     template<typename T>
     JSON_SMRTPTR_PARSER(auto_ptr, T);
 
+    /* This extracts the next key from the map when deserializing.
+     *
+     * g++ refused to let me use forward decls for this, which is why it's allll the way down here
+     */
     jsonIter ParseNextKey(jsonIter iter, jsonIter end, stringt& nextKey) {
         return JSONFnInvokerImpl<stringt>::FromJSON(iter, end, nextKey);
     }
