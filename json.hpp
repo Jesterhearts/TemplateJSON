@@ -23,7 +23,7 @@
 #include <unordered_map>
 
 #define JSON_PRIVATE_ACCESS()   \
-    template<typename __JSON_FRIEND_TYPE__> friend JSONEnabler;
+    template<typename __JSON_FRIEND_TYPE__> friend class JSON::JSONEnabler;
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -107,7 +107,7 @@
     jsonData += L"\"" JSONKEY L"\":";                                   \
     typedef decltype(classFor->VARNAME) BOOST_PP_CAT(__type, VARNAME);  \
     jsonData += JSON::JSONFnInvoker<BOOST_PP_CAT(__type, VARNAME)>      \
-    ::ToJSON(&classFor->VARNAME);
+                    ::ToJSON(&classFor->VARNAME);
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 #define JSON_MAKE_TOJSONENABLE_BODY(s, IGNORED, VARDATA)      \
@@ -119,11 +119,11 @@
 
 
 #define JSON_MAKE_TOJSONENABLE_BODY_IMPL1(VARNAME)        \
-    JSON_MAKE_TOJSONENABLE_BODY_IMPL2(VARNAME, BOOST_PP_WSTRINGIZE(VARNAME))
+    JSON_MAKE_TOJSONENABLE_BODY_IMPL2(VARNAME, VARNAME)
 
 
 #define JSON_MAKE_TOJSONENABLE_BODY_IMPL2(VARNAME, JSONKEY)             \
-    jsonData += L",\"" JSONKEY L"\":";                                  \
+    jsonData += L",\"" BOOST_PP_WSTRINGIZE(JSONKEY) L"\":";             \
     typedef decltype(classFor->VARNAME) BOOST_PP_CAT(__type, VARNAME);  \
     jsonData += JSON::JSONFnInvoker<BOOST_PP_CAT(__type, VARNAME)>      \
                     ::ToJSON(&classFor->VARNAME);
@@ -143,7 +143,7 @@
 
 
 #define JSON_COLLECT_FROMJSONENABLE_DATA_IMPL2(VARNAME, JSONKEY)    \
-    memberMap.insert(std::make_pair(JSONKEY, &classInto.VARNAME));  \
+    memberMap.insert(std::make_pair(JSONKEY, (void*)&classInto.VARNAME));  \
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 #define JSON_MAKE_FROMJSONENABLE_BODY(s, IGNORED, VARDATA)   \
@@ -177,11 +177,15 @@
     iter = JSON::JSONFnInvoker<BOOST_PP_CAT(__type, VARNAME)>           \
                       ::FromJSON(iter, end,                             \
            *static_cast<BOOST_PP_CAT(__type, VARNAME)*>(insertAt->second)); \
+    iter = AdvancePastWhitespace(iter, end);                            \
+    if(iter != end && *iter == L',') {                                  \
+        ++iter;                                                         \
+    }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 #define JSON_INHERITS(...)                                  \
-    const std::wstring ToJSON() {                           \
+    std::wstring ToJSON() {                                 \
         std::wstring jsonData(L"[");                        \
         JSON_START_JSONINHERITS_BODY(                       \
             BOOST_PP_VARIADIC_ELEM(0, __VA_ARGS__)          \
@@ -233,6 +237,10 @@ namespace JSON {
 
         static ClassFor FromJSON(const std::wstring& jsonString) {
             return JSONEnabler<ClassFor>::FromJSON(jsonString);
+        }
+
+        static jsonIter FromJSON(jsonIter iter, jsonIter end, ClassFor& into) {
+            return JSONEnabler<ClassFor>::FromJSON(iter, end, into);
         }
     };
 }
