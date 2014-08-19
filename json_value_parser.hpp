@@ -9,6 +9,7 @@
 #include <type_traits>
 
 #include "json_parsing_helpers.hpp"
+#include "json_iterable_parser.hpp"
 #include "json_tuple_parser.hpp"
 #include "json_array_parser.hpp"
 
@@ -37,18 +38,6 @@ namespace std {
     template<typename T> class auto_ptr;
 }
 
-#define JSON_ITRABLE_PARSER(STL_TYPE, ...)                                                              \
-    struct JSONFnInvokerImpl<std::STL_TYPE<__VA_ARGS__>> {                                              \
-        json_finline static stringt ToJSON(const std::STL_TYPE<__VA_ARGS__>* classFrom) {               \
-            return IterableParser<std::STL_TYPE<__VA_ARGS__>>::ToJSON(classFrom);                       \
-        }                                                                                               \
-                                                                                                        \
-        json_finline static jsonIter FromJSON(jsonIter iter, jsonIter end,                              \
-                                                     std::STL_TYPE<__VA_ARGS__>& into) {                \
-            return IterableParser<std::STL_TYPE<__VA_ARGS__>>::FromJSON(iter, end, into);               \
-        }                                                                                               \
-    }                                                                                                   \
-
 #define JSON_SMRTPTR_PARSER(STL_TYPE, PTR_TYPE)                                                     \
     struct JSONFnInvokerImpl<std::STL_TYPE<PTR_TYPE>> {                                             \
         json_finline static stringt ToJSON(const std::STL_TYPE<PTR_TYPE>* classFrom) {              \
@@ -69,77 +58,6 @@ namespace std {
 
 namespace JSON {
     const stringt nullToken(JSON_ST("null"));
-
-////////////////////////////////////////////////////////////////////////////////
-// IterableParser implementation
-// Transforms an iterable type into an array of its internal values
-////
-    template<typename Type, typename VType>
-    struct IterableInserter {
-        json_finline static void Insert(Type& type, VType& input) {
-            type.insert(input);
-        }
-    };
-
-    template<typename VType, typename A>
-    struct IterableInserter<std::vector<VType, A>, VType> {
-        json_finline static void Insert(std::vector<VType, A>& type, VType& input) {
-            type.push_back(input);
-        }
-    };
-
-    template<typename Type>
-    struct IterableParser {
-        json_finline static stringt ToJSON(const Type* value) {
-            stringt result(JSON_ST("["));
-
-            if(!value->empty()) {
-                auto iter = std::begin(*value);
-                auto endItr = std::prev(std::end(*value));
-                typedef decltype(*iter) valtype;
-
-                for(; iter != endItr; ++iter) {
-                    result += JSONFnInvoker<valtype>::ToJSON(*iter);
-                    result += JSON_ST(",");
-                }
-                result += JSONFnInvoker<valtype>::ToJSON(*iter);
-            }
-
-            result += JSON_ST("]");
-            return result;
-        }
-
-        json_finline static jsonIter FromJSON(jsonIter iter, jsonIter end, Type& into) {
-            if(end - iter < 2) {
-                ThrowBadJSONError(iter, end, "No array tokens");
-            }
-
-            iter = AdvancePastWhitespace(iter, end);
-            if(*iter != L'[') {
-                ThrowBadJSONError(iter, end, "No array start token");
-            }
-            ++iter;
-
-            while(iter != end && *iter != L']') {
-                typename Type::value_type input;
-                //Each call advances iter past the end of the token read by the call
-                iter = JSONFnInvoker<typename Type::value_type>::FromJSON(iter, end, input);
-                IterableInserter<Type, typename Type::value_type>::Insert(into, input);
-                iter = AdvancePastWhitespace(iter, end);
-
-                if(iter != end && *iter == L',') {
-                    ++iter;
-                }
-            }
-
-            if(iter == end) {
-                ThrowBadJSONError(iter, end, "No end to JSON array");
-            }
-
-            ++iter;
-            return iter;
-        }
-    };
 
 ////////////////////////////////////////////////////////////////////////////////
 // JSONFnInvoker implementation
@@ -445,32 +363,32 @@ namespace JSON {
 
     /* stl flat iterable types */
     template<typename T, std::size_t A>
-    JSON_ITRABLE_PARSER(array, T, A);
+    JSON_ITERABLE_PARSER(array, T, A);
 
     template<typename T, typename A>
-    JSON_ITRABLE_PARSER(deque, T, A);
+    JSON_ITERABLE_PARSER(deque, T, A);
 
     template<typename T, typename A>
-    JSON_ITRABLE_PARSER(forward_list, T, A);
+    JSON_ITERABLE_PARSER(forward_list, T, A);
 
     template<typename T, typename A>
-    JSON_ITRABLE_PARSER(list, T, A);
+    JSON_ITERABLE_PARSER(list, T, A);
 
     template<typename T, typename A>
-    JSON_ITRABLE_PARSER(vector, T, A);
+    JSON_ITERABLE_PARSER(vector, T, A);
 
     template<typename K, typename C, typename A>
-    JSON_ITRABLE_PARSER(set, K, C, A);
+    JSON_ITERABLE_PARSER(set, K, C, A);
 
     template<typename K, typename C, typename A>
-    JSON_ITRABLE_PARSER(multiset, K, C, A);
+    JSON_ITERABLE_PARSER(multiset, K, C, A);
 
     template<typename K, typename H, typename KE, typename A>
-    JSON_ITRABLE_PARSER(unordered_set, K, H, KE, A);
+    JSON_ITERABLE_PARSER(unordered_set, K, H, KE, A);
 
     /* stl map types */
     template<typename K, typename T, typename C, typename A>
-    JSON_ITRABLE_PARSER(map, K, T, C, A);
+    JSON_ITERABLE_PARSER(map, K, T, C, A);
 
     template<typename T1, typename T2>
     struct JSONFnInvokerImpl<std::pair<T1, T2>> {
