@@ -63,6 +63,8 @@ public:
 
 JSON_ENABLE(HasArray, (myintarr), (mynestedarr));
 
+#ifndef _MSC_VER
+/* Visual studio 2013.2 can't move-construct unique_ptrs */
 class HasSmrtPtrs : public JSON::JSONBase<HasSmrtPtrs> {
 public:
     std::unique_ptr<int> mysmartint;
@@ -70,6 +72,7 @@ public:
 };
 
 JSON_ENABLE(HasSmrtPtrs, (mysmartint), (myshrdint));
+#endif
 
 class HasStrings : public JSON::JSONBase<HasStrings> {
 public:
@@ -165,7 +168,7 @@ int main() {
 
     HasMap hm;
     hm.mymap.insert(std::make_pair(1337, 3.14));
-    hm.mymap.insert(std::make_pair(3.14159, 100.0));
+    hm.mymap.insert(std::make_pair(314159, 100.0));
     json = hm.ToJSON();
     std::wcout << json << std::endl;
 
@@ -227,7 +230,7 @@ int main() {
         std::cout << e.what() << std::endl;
     }
 
-
+#ifndef _MSC_VER
     HasSmrtPtrs hsp;
     json = hsp.ToJSON();
     std::wcout << json << std::endl;
@@ -256,7 +259,7 @@ int main() {
     {
         std::cout << e.what() << std::endl;
     }
-
+#endif
 
     HasStrings hs;
     hs.mystring = "string";

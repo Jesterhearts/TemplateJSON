@@ -23,7 +23,7 @@
 #include <unordered_map>
 
 #define JSON_PRIVATE_ACCESS()   \
-    template<typename __JSON_FRIEND_TYPE__> friend class JSON::JSONEnabler;
+    template<typename __JSON_FRIEND_TYPE__> friend struct JSON::JSONEnabler;
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -31,7 +31,7 @@
     namespace JSON {                                                              \
         template<>                                                                \
         struct JSONEnabler<CLASS_NAME> {                                          \
-            json_finline inline static void ToJSON(const CLASS_NAME* classFor,    \
+            json_finline static void ToJSON(const CLASS_NAME* classFor,           \
                                                    std::wstring& jsonData) {      \
                 JSON_START_TOJSONENABLE_BODY(                                     \
                     BOOST_PP_VARIADIC_ELEM(0, __VA_ARGS__)                        \
@@ -45,7 +45,7 @@
                                     )                                             \
             }                                                                     \
                                                                                   \
-            json_finline inline static CLASS_NAME FromJSON(const std::wstring& jsonData) {  \
+            json_finline static CLASS_NAME FromJSON(const std::wstring& jsonData) {  \
                 CLASS_NAME classInto;                                             \
                                                                                   \
                 auto iter = jsonData.begin();                                     \
@@ -55,7 +55,7 @@
                 return classInto;                                                 \
             }                                                                     \
                                                                                   \
-            json_finline inline static jsonIter FromJSON(jsonIter iter, jsonIter end, \
+            json_finline static jsonIter FromJSON(jsonIter iter, jsonIter end,    \
                                                         CLASS_NAME& classInto) {  \
                                                                                   \
                 iter = AdvancePastWhitespace(iter, end);                          \
@@ -95,8 +95,13 @@
     BOOST_PP_EXPAND(JSON_START_TOJSONENABLE_BODY_IMPL VARDATA)
 
 
+#ifndef _MSC_VER
 #define JSON_START_TOJSONENABLE_BODY_IMPL(...)                                      \
     BOOST_PP_OVERLOAD(JSON_START_TOJSONENABLE_BODY_IMPL, __VA_ARGS__)(__VA_ARGS__)
+#else
+#define JSON_START_TOJSONENABLE_BODY_IMPL(...)                                      \
+   BOOST_PP_CAT(BOOST_PP_OVERLOAD(JSON_START_TOJSONENABLE_BODY_IMPL,__VA_ARGS__)(__VA_ARGS__),BOOST_PP_EMPTY())
+#endif
 
 
 #define JSON_START_TOJSONENABLE_BODY_IMPL1(VARNAME)       \
@@ -114,8 +119,13 @@
     BOOST_PP_EXPAND(JSON_MAKE_TOJSONENABLE_BODY_IMPL VARDATA)
 
 
+#ifndef _MSC_VER
 #define JSON_MAKE_TOJSONENABLE_BODY_IMPL(...)                                      \
     BOOST_PP_OVERLOAD(JSON_MAKE_TOJSONENABLE_BODY_IMPL, __VA_ARGS__)(__VA_ARGS__)
+#else
+#define JSON_MAKE_TOJSONENABLE_BODY_IMPL(...)                                      \
+   BOOST_PP_CAT(BOOST_PP_OVERLOAD(JSON_MAKE_TOJSONENABLE_BODY_IMPL,__VA_ARGS__)(__VA_ARGS__),BOOST_PP_EMPTY())
+#endif
 
 
 #define JSON_MAKE_TOJSONENABLE_BODY_IMPL1(VARNAME)        \
@@ -134,8 +144,13 @@
     BOOST_PP_EXPAND(JSON_COLLECT_FROMJSONENABLE_DATA_IMPL VARDATA)
 
 
+#ifndef _MSC_VER
 #define JSON_COLLECT_FROMJSONENABLE_DATA_IMPL(...)                                      \
     BOOST_PP_OVERLOAD(JSON_COLLECT_FROMJSONENABLE_DATA_IMPL, __VA_ARGS__)(__VA_ARGS__)
+#else
+#define JSON_COLLECT_FROMJSONENABLE_DATA_IMPL(...)                                      \
+   BOOST_PP_CAT(BOOST_PP_OVERLOAD(JSON_COLLECT_FROMJSONENABLE_DATA_IMPL,__VA_ARGS__)(__VA_ARGS__),BOOST_PP_EMPTY())
+#endif
 
 
 #define JSON_COLLECT_FROMJSONENABLE_DATA_IMPL1(VARNAME)        \
@@ -149,9 +164,13 @@
 #define JSON_MAKE_FROMJSONENABLE_BODY(s, IGNORED, VARDATA)   \
     BOOST_PP_EXPAND(JSON_MAKE_FROMJSONENABLE_BODY_IMPL VARDATA)
 
-
+#ifndef _MSC_VER
 #define JSON_MAKE_FROMJSONENABLE_BODY_IMPL(...)                                      \
     BOOST_PP_OVERLOAD(JSON_MAKE_FROMJSONENABLE_BODY_IMPL, __VA_ARGS__)(__VA_ARGS__)
+#else
+#define JSON_MAKE_FROMJSONENABLE_BODY_IMPL(...)                                      \
+   BOOST_PP_CAT(BOOST_PP_OVERLOAD(JSON_MAKE_FROMJSONENABLE_BODY_IMPL,__VA_ARGS__)(__VA_ARGS__),BOOST_PP_EMPTY())
+#endif
 
 
 #define JSON_MAKE_FROMJSONENABLE_BODY_IMPL1(VARNAME)        \
@@ -220,9 +239,9 @@ namespace JSON {
 
     template<typename ClassFor>
     struct JSONEnabler {
-        json_finline inline static std::wstring ToJSON(const ClassFor*);
-        json_finline inline static std::wstring FromJSON(const std::wstring&);
-        json_finline inline static jsonIter FromJSON(jsonIter, jsonIter, ClassFor&);
+        json_finline static std::wstring ToJSON(const ClassFor*);
+        json_finline static std::wstring FromJSON(const std::wstring&);
+        json_finline static jsonIter FromJSON(jsonIter, jsonIter, ClassFor&);
     };
 
     template<typename ClassFor>
