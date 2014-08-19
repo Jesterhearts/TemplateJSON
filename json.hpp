@@ -12,15 +12,12 @@
 
 #include <boost/preprocessor/variadic/to_seq.hpp>
 #include <boost/preprocessor/variadic/elem.hpp>
-#include <boost/preprocessor/wstringize.hpp>
 
-#include "json_common_macros.hpp"
+#include "json_common_defs.hpp"
 #include "json_value_parser.hpp"
 
 #include <iostream>
 #include <sstream>
-#include <string>
-#include <unordered_map>
 
 #define JSON_PRIVATE_ACCESS()   \
     template<typename __JSON_FRIEND_TYPE__> friend struct JSON::JSONEnabler;
@@ -32,7 +29,7 @@
         template<>                                                                \
         struct JSONEnabler<CLASS_NAME> {                                          \
             json_finline static void ToJSON(const CLASS_NAME* classFor,           \
-                                                   std::wstring& jsonData) {      \
+                                                   stringt& jsonData) {           \
                 JSON_START_TOJSONENABLE_BODY(                                     \
                     BOOST_PP_VARIADIC_ELEM(0, __VA_ARGS__)                        \
                                           )                                       \
@@ -45,7 +42,7 @@
                                     )                                             \
             }                                                                     \
                                                                                   \
-            json_finline static CLASS_NAME FromJSON(const std::wstring& jsonData) {  \
+            json_finline static CLASS_NAME FromJSON(const stringt& jsonData) {    \
                 CLASS_NAME classInto;                                             \
                                                                                   \
                 auto iter = jsonData.begin();                                     \
@@ -59,12 +56,12 @@
                                                         CLASS_NAME& classInto) {  \
                                                                                   \
                 iter = AdvancePastWhitespace(iter, end);                          \
-                if(iter == end || *iter != L'{') {                                \
+                if(iter == end || *iter != JSON_ST('{')) {                        \
                     throw std::invalid_argument("No object start token");         \
                 }                                                                 \
                 ++iter;                                                           \
                                                                                   \
-                std::wstring nextKey;                                             \
+                stringt nextKey;                                                  \
                                                                                   \
                 DataMap memberMap;                                                \
                 DataMap::const_iterator insertAt;                                 \
@@ -80,7 +77,7 @@
                                     )                                             \
                                                                                   \
                 iter = AdvancePastWhitespace(iter, end);                          \
-                if(iter == end || *iter != L'}') {                                \
+                if(iter == end || *iter != JSON_ST('}')) {                        \
                     throw std::invalid_argument("No object end token");           \
                 }                                                                 \
                 ++iter;                                                           \
@@ -105,11 +102,11 @@
 
 
 #define JSON_START_TOJSONENABLE_BODY_IMPL1(VARNAME)       \
-    JSON_START_TOJSONENABLE_BODY_IMPL2(VARNAME, BOOST_PP_WSTRINGIZE(VARNAME))
+    JSON_START_TOJSONENABLE_BODY_IMPL2(VARNAME, BOOST_PP_STRINGIZE(VARNAME))
 
 
 #define JSON_START_TOJSONENABLE_BODY_IMPL2(VARNAME, JSONKEY)            \
-    jsonData += L"\"" JSONKEY L"\":";                                   \
+    jsonData += JSON_ST("\"") JSON_ST(JSONKEY) JSON_ST("\":");          \
     typedef decltype(classFor->VARNAME) BOOST_PP_CAT(__type, VARNAME);  \
     jsonData += JSON::JSONFnInvoker<BOOST_PP_CAT(__type, VARNAME)>      \
                     ::ToJSON(&classFor->VARNAME);
@@ -129,11 +126,11 @@
 
 
 #define JSON_MAKE_TOJSONENABLE_BODY_IMPL1(VARNAME)        \
-    JSON_MAKE_TOJSONENABLE_BODY_IMPL2(VARNAME, VARNAME)
+    JSON_MAKE_TOJSONENABLE_BODY_IMPL2(VARNAME, BOOST_PP_STRINGIZE(VARNAME))
 
 
 #define JSON_MAKE_TOJSONENABLE_BODY_IMPL2(VARNAME, JSONKEY)             \
-    jsonData += L",\"" BOOST_PP_WSTRINGIZE(JSONKEY) L"\":";             \
+    jsonData += JSON_ST(",\"") JSON_ST(JSONKEY) JSON_ST("\":");         \
     typedef decltype(classFor->VARNAME) BOOST_PP_CAT(__type, VARNAME);  \
     jsonData += JSON::JSONFnInvoker<BOOST_PP_CAT(__type, VARNAME)>      \
                     ::ToJSON(&classFor->VARNAME);
@@ -154,11 +151,11 @@
 
 
 #define JSON_COLLECT_FROMJSONENABLE_DATA_IMPL1(VARNAME)        \
-    JSON_COLLECT_FROMJSONENABLE_DATA_IMPL2(VARNAME, BOOST_PP_WSTRINGIZE(VARNAME))
+    JSON_COLLECT_FROMJSONENABLE_DATA_IMPL2(VARNAME, BOOST_PP_STRINGIZE(VARNAME))
 
 
 #define JSON_COLLECT_FROMJSONENABLE_DATA_IMPL2(VARNAME, JSONKEY)    \
-    memberMap.insert(std::make_pair(JSONKEY, (void*)&classInto.VARNAME));  \
+    memberMap.insert(std::make_pair(JSON_ST(JSONKEY), (void*)&classInto.VARNAME));  \
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 #define JSON_MAKE_FROMJSONENABLE_BODY(s, IGNORED, VARDATA)   \
@@ -174,13 +171,13 @@
 
 
 #define JSON_MAKE_FROMJSONENABLE_BODY_IMPL1(VARNAME)        \
-    JSON_MAKE_FROMJSONENABLE_BODY_IMPL2(VARNAME, BOOST_PP_WSTRINGIZE(VARNAME))
+    JSON_MAKE_FROMJSONENABLE_BODY_IMPL2(VARNAME, _)
 
 
-#define JSON_MAKE_FROMJSONENABLE_BODY_IMPL2(VARNAME, JSONKEY)           \
+#define JSON_MAKE_FROMJSONENABLE_BODY_IMPL2(VARNAME, IGNORED)           \
     iter = ParseNextKey(iter, end, nextKey);                            \
     iter = AdvancePastWhitespace(iter, end);                            \
-    if(iter == end || *iter != L':') {                                  \
+    if(iter == end || *iter != JSON_ST(':')) {                          \
         throw std::invalid_argument("Not a valid key map");             \
     }                                                                   \
                                                                         \
@@ -197,15 +194,15 @@
                       ::FromJSON(iter, end,                             \
            *static_cast<BOOST_PP_CAT(__type, VARNAME)*>(insertAt->second)); \
     iter = AdvancePastWhitespace(iter, end);                            \
-    if(iter != end && *iter == L',') {                                  \
+    if(iter != end && *iter == JSON_ST(',')) {                          \
         ++iter;                                                         \
     }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 #define JSON_INHERITS(...)                                  \
-    std::wstring ToJSON() {                                 \
-        std::wstring jsonData(L"[");                        \
+    stringt ToJSON() {                                      \
+        stringt jsonData(JSON_ST("["));                     \
         JSON_START_JSONINHERITS_BODY(                       \
             BOOST_PP_VARIADIC_ELEM(0, __VA_ARGS__)          \
                                   )                         \
@@ -215,28 +212,26 @@
                     BOOST_PP_VARIADIC_TO_SEQ(__VA_ARGS__)   \
                                        )                    \
                             )                               \
-        jsonData += L"]";                                   \
+        jsonData += JSON_ST("]");                           \
         return jsonData;                                    \
      }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 #define JSON_START_JSONINHERITS_BODY(CLASSNAME)                 \
-    jsonData += L"{\"" BOOST_PP_WSTRINGIZE(CLASSNAME) L"\":";   \
+    jsonData += JSON_ST("{\"") JSON_ST(BOOST_PP_STRINGIZE(CLASSNAME)) JSON_ST("\":");   \
     jsonData += JSON::JSONBase<CLASSNAME>::ToJSON();            \
-    jsonData += L"}";
+    jsonData += JSON_ST("}");
 
 
 #define JSON_MAKE_JSONINHERITS_BODY(s, IGNORED, CLASSNAME)      \
-    jsonData += L",{\"" BOOST_PP_WSTRINGIZE(CLASSNAME) L"\":";  \
+    jsonData += JSON_ST(",{\"") JSON_ST(BOOST_PP_STRINGIZE(CLASSNAME)) JSON_ST("\":");  \
     jsonData += CLASSNAME::ToJSON();                            \
-    jsonData += L"}";
+    jsonData += JSON_ST("}");
 
 
 
 namespace JSON {
-    typedef std::unordered_map<std::wstring, void*> DataMap;
-
     template<typename ClassFor>
     struct JSONEnabler {
         json_finline static std::wstring ToJSON(const ClassFor*);
@@ -247,14 +242,14 @@ namespace JSON {
     template<typename ClassFor>
     class JSONBase {
     public:
-        std::wstring ToJSON() const {
-            std::wstring json(L"{");
+        stringt ToJSON() const {
+            stringt json(JSON_ST("{"));
             JSONEnabler<ClassFor>::ToJSON(static_cast<const ClassFor*>(this), json);
-            json += L"}";
+            json += JSON_ST("}");
             return json;
         }
 
-        static ClassFor FromJSON(const std::wstring& jsonString) {
+        static ClassFor FromJSON(const stringt& jsonString) {
             return JSONEnabler<ClassFor>::FromJSON(jsonString);
         }
 
