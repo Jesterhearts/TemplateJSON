@@ -7,8 +7,10 @@
 #include <sstream>
 #include <string>
 #include <type_traits>
-/* I want to include as few headers as possible, but tuples suck to set up properly */
-#include <tuple>
+
+#include "json_parsing_helpers.hpp"
+#include "json_tuple_parser.hpp"
+#include "json_array_parser.hpp"
 
 namespace std {
 #ifdef _MSC_VER
@@ -66,86 +68,7 @@ namespace std {
     }                                                                                               \
 
 namespace JSON {
-    namespace {
-        const stringt nullToken(JSON_ST("null"));
-        typedef stringt::const_iterator jsonIter;
-
-        json_no_return void ThrowBadJSONError(jsonIter iter, jsonIter end,
-                                              const std::string&& errmsg) {
-            std::string badJson(iter, end);
-            throw std::invalid_argument(errmsg + ": " + badJson);
-        }
-    }
-
-template<typename T> struct JSONFnInvoker;
-template<typename T> struct JSONFnInvokerImpl;
-
-    jsonIter AdvancePastWhitespace(jsonIter iter, jsonIter end) {
-        while(iter != end) {
-            switch(*iter) {
-            case L' ':
-            case L'\t':
-            case L'\n':
-            case L'\r':
-                break;
-
-            default:
-                return iter;
-            }
-
-            ++iter;
-        }
-
-        return iter;
-    }
-
-    jsonIter AdvancePastNumbers(jsonIter iter, jsonIter end) {
-        if(iter != end &&
-           *iter == L'-') {
-            ++iter;
-        }
-
-        while(iter != end) {
-            switch(*iter) {
-            case L'.':
-            case L'0':
-            case L'1':
-            case L'2':
-            case L'3':
-            case L'4':
-            case L'5':
-            case L'6':
-            case L'7':
-            case L'8':
-            case L'9':
-                break;
-
-            default:
-                return iter;
-            }
-
-            ++iter;
-        }
-
-        return iter;
-    }
-
-    jsonIter AdvanceToEndOfString(jsonIter iter, jsonIter end) {
-        bool escaping = true;
-
-        while(iter != end) {
-            if(*iter == L'\\' || escaping) {
-                escaping = !escaping;
-            }
-            else if(!escaping && *iter == L'\"') {
-                return iter;
-            }
-
-            ++iter;
-        }
-
-        return iter;
-    }
+    const stringt nullToken(JSON_ST("null"));
 
 ////////////////////////////////////////////////////////////////////////////////
 // IterableParser implementation
@@ -221,9 +144,6 @@ template<typename T> struct JSONFnInvokerImpl;
 ////////////////////////////////////////////////////////////////////////////////
 // JSONFnInvoker implementation
 ////
-    template<typename T, size_t N = 1> struct JSONArrayHandler;
-    template<typename T, bool AM, bool IP, bool AR, bool C = false> struct JSONFnInvokerDecider;
-
     template<typename ClassOn>
     struct JSONFnInvoker {
         json_finline static stringt ToJSON(const ClassOn* classFrom) {
@@ -633,169 +553,6 @@ template<typename T> struct JSONFnInvokerImpl;
     //WE DON'T OWN THESE SMART PTRS!
     template<typename T>
     JSON_SMRTPTR_PARSER(auto_ptr, T);
-
-    /* ugh */
-    template<typename TupleType,
-             size_t curIndex,
-             bool lastValue,
-             typename curType,
-             typename... Types>
-    struct TupleHandler {
-        json_finline static void ToJSON(const TupleType* classFrom,
-                                               stringt& jsonString) {
-            jsonString += JSONFnInvoker<curType>::ToJSON(&std::get<curIndex>(*classFrom));
-            jsonString += JSON_ST(",");
-            TupleHandler<TupleType,
-                         curIndex + 1,
-                         sizeof...(Types) == 1,
-                         Types...
-                        >::ToJSON(classFrom, jsonString);
-        }
-
-        json_finline static jsonIter FromJSON(jsonIter iter, jsonIter end,
-                                                     TupleType& into) {
-            curType& value = std::get<curIndex>(into);
-
-            iter = JSONFnInvoker<curType>::FromJSON(iter, end, value);
-            iter = AdvancePastWhitespace(iter, end);
-            if(iter == end || *iter != L',') {
-                ThrowBadJSONError(iter, end, "Not a valid tuple value");
-            }
-            ++iter;
-            return TupleHandler<TupleType,
-                                curIndex + 1,
-                                sizeof...(Types) == 1,
-                                Types...
-                               >::FromJSON(iter, end, into);
-        }
-    };
-
-    template<typename TupleType,
-             size_t curIndex,
-             typename curType,
-             typename... Types>
-    struct TupleHandler <TupleType,
-                         curIndex,
-                         true,
-                         curType,
-                         Types...> {
-        json_finline static void ToJSON(const TupleType* classFrom,
-                                               stringt& jsonString) {
-            jsonString += JSONFnInvoker<curType>::ToJSON(&std::get<curIndex>(*classFrom));
-        }
-
-        json_finline static jsonIter FromJSON(jsonIter iter, jsonIter end,
-                                                     TupleType& into) {
-            curType& value = std::get<curIndex>(into);
-            iter = JSONFnInvoker<curType>::FromJSON(iter, end, value);
-            iter = AdvancePastWhitespace(iter, end);
-            if(iter == end || *iter != L']') {
-                ThrowBadJSONError(iter, end, "No tuple end token");
-            }
-            ++iter;
-            return iter;
-        }
-    };
-
-    template<typename... Types>
-    struct JSONFnInvokerImpl<std::tuple<Types...>> {
-        json_finline static stringt ToJSON(const std::tuple<Types...>* classFrom) {
-            stringt json(JSON_ST("["));
-            TupleHandler<std::tuple<Types...>,
-                         0,
-                         sizeof...(Types) == 1,
-                         Types...
-                        >::ToJSON(classFrom, json);
-            json += JSON_ST("]");
-            return json;
-        }
-
-        json_finline static jsonIter FromJSON(jsonIter iter, jsonIter end,
-                                                     std::tuple<Types...>& into) {
-            if(iter == end || *iter != L'[') {
-                ThrowBadJSONError(iter, end, "No tuple start token");
-            }
-            ++iter;
-
-            return TupleHandler<std::tuple<Types...>,
-                                0,
-                                sizeof...(Types) == 1,
-                                Types...
-                               >::FromJSON(iter, end, into);
-        }
-    };
-
-/////////////////////////////////////////
-// Compile-time sized array handler
-    template<typename ClassOn,
-             size_t rank>
-    struct JSONArrayHandler {
-        json_finline static stringt ToJSON(const ClassOn* classFrom) {
-            if(std::extent<ClassOn>::value == 0) {
-                return JSON_ST("[]");
-            }
-
-            typedef typename std::remove_extent<ClassOn>::type valueType;
-
-            stringt json(JSON_ST("["));
-            json += JSONArrayHandler<valueType, std::rank<valueType>::value>::ToJSON(&(*classFrom)[0]);
-
-            for(size_t i = 1; i < std::extent<ClassOn>::value; ++i) {
-                json += JSON_ST(",");
-                json += JSONArrayHandler<valueType, std::rank<valueType>::value>::ToJSON(&(*classFrom)[i]);
-            }
-            json += JSON_ST("]");
-            return json;
-        }
-
-        json_finline static jsonIter FromJSON(jsonIter iter, jsonIter end, ClassOn& into) {
-            if(end - iter < 2) {
-                ThrowBadJSONError(iter, end, "No array tokens");
-            }
-
-            iter = AdvancePastWhitespace(iter, end);
-            if(*iter != L'[') {
-                ThrowBadJSONError(iter, end, "No array start token");
-            }
-            ++iter;
-
-            typedef typename std::remove_extent<ClassOn>::type valueType;
-            for(size_t i = 0; i < std::extent<ClassOn>::value; ++i) {
-                iter = JSONArrayHandler<valueType, std::rank<valueType>::value>::FromJSON(iter, end, into[i]);
-                iter = AdvancePastWhitespace(iter, end);
-
-                if(iter == end) {
-                    ThrowBadJSONError(iter, end, "Not enough items in JSON array");
-                }
-
-                if(*iter != L',' && i < std::extent<ClassOn>::value - 1) {
-                    ThrowBadJSONError(iter, end, "Missing comma in JSON array");
-                }
-                else if(*iter == L',') {
-                    ++iter;
-                }
-            }
-
-            if(iter == end || *iter != L']') {
-                ThrowBadJSONError(iter, end, "No end or too many items in JSON array");
-            }
-
-            ++iter;
-            return iter;
-        }
-    };
-
-    /* Not an array */
-    template<typename ClassOn>
-    struct JSONArrayHandler<ClassOn, 0> {
-        json_finline static stringt ToJSON(const ClassOn* classFrom) {
-            return JSONFnInvoker<ClassOn>::ToJSON(classFrom);
-        }
-
-        json_finline static jsonIter FromJSON(jsonIter iter, jsonIter end, ClassOn& into) {
-            return JSONFnInvoker<ClassOn>::FromJSON(iter, end, into);
-        }
-    };
 
     jsonIter ParseNextKey(jsonIter iter, jsonIter end, stringt& nextKey) {
         return JSONFnInvokerImpl<stringt>::FromJSON(iter, end, nextKey);
