@@ -6,9 +6,9 @@ This is a simple way to make a C++ class serialize to/deserialize from JSON.
 ---
 To create a class:
 
-- &#35;include "json.hpp"
-- Inherit from JSON::JSONBase&lt;YourClass&gt;
-- Use the macro JSON_ENABLE(YourClass, (myfield1 [, "key"]), ...) in the global namespace
+- `#include "json.hpp"`
+- Inherit from `JSON::JSONBase<YourClass>`
+- Use the macro `JSON_ENABLE(YourClass, (myfield1 [, "key"]), ...)` in the global namespace
 - The list of tuples after "YourClass" in the JSON_ENABLE declaration will be the fields that are serialized and deserialized.
  - The first part of the tuple is the field name 
  - The second part is an optional key to use for the JSON. If left out, the stringified field name will be used as the key.
