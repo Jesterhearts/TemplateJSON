@@ -55,8 +55,7 @@ Calling ToJSON would produce:
 
 --- 
 #### Warning:
-
-There is no cycle detection logic. If deserializing encounters a cycle your program will most likely crash (or enter an infinite loop).
+There is no cycle detection logic. If deserializing encounters a cycle your program will most likely crash.
 
 ---
 ### Constant fields:
@@ -69,6 +68,10 @@ It is possible to disable this warning by defining JSON_NO_WARN_CONST
 By default json strings are output as std::string. This can be changed by defining JSON_USE_WIDE_STRINGS
 
 No changes need to be made to JSON_ENABLE declarations when switching between types. Only consumers and suppliers of json strings will need to be updated to handle the change.
+
+---
+### Dependencies
+This program requires the boost.preprocessor and boost.lexical_cast libraries.
 
 ---
 ### Tested compilers:
