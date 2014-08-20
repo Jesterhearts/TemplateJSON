@@ -6,7 +6,10 @@
 #include <memory>
 
 class Simple : public JSON::JSONBase<Simple> {
-    int s = 10;
+public:
+    Simple() : s(10) {};
+private:
+    int s;
     JSON_PRIVATE_ACCESS()
 };
 
@@ -34,12 +37,14 @@ public:
 
 JSON_ENABLE(HasVector, (myvec))
 
+#if !defined(_MSC_VER) || _MSC_VER >= 1800
 class UsesTuple : public JSON::JSONBase<UsesTuple> {
 public:
     std::tuple<char, int, double, long> mytuple;
 };
 
 JSON_ENABLE(UsesTuple, (mytuple))
+#endif
 
 class HasMap : public JSON::JSONBase<HasMap> {
 public:
@@ -156,6 +161,7 @@ int main() {
     }
 
 
+#if !defined(_MSC_VER) || _MSC_VER >= 1800
     UsesTuple ut;
     ut.mytuple = std::make_tuple('t', 10, 12.5, 100);
     json = ut.ToJSON();
@@ -170,7 +176,7 @@ int main() {
     {
         std::cout << e.what() << std::endl;
     }
-
+#endif
 
     HasMap hm;
     hm.mymap.insert(std::make_pair(1337, 3.14));

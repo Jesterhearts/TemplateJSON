@@ -70,8 +70,13 @@ namespace JSON {
         return iter;
     }
 
+#if defined(_MSC_VER) && _MSC_VER < 1700
     json_no_return void ThrowBadJSONError(jsonIter iter, jsonIter end,
-                                          const std::string&& errmsg) {
+                                          const std::string& errmsg) {
+#else
+	json_no_return void ThrowBadJSONError(jsonIter iter, jsonIter end,
+		const std::string&& errmsg) {
+#endif
         std::string badJson(iter, end);
         throw std::invalid_argument(errmsg + ": " + badJson);
     }

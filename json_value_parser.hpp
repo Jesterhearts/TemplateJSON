@@ -10,8 +10,11 @@
 
 #include "json_parsing_helpers.hpp"
 #include "json_iterable_parser.hpp"
-#include "json_tuple_parser.hpp"
 #include "json_array_parser.hpp"
+
+#if !defined(_MSC_VER) || _MSC_VER >= 1800
+#include "json_tuple_parser.hpp"
+#endif
 
 namespace std {
 #ifdef _MSC_VER
@@ -241,9 +244,9 @@ namespace JSON {
 
             //get the character
 #ifdef JSON_USE_WIDE_STRINGS
-            into = std::wstring(iter, endOfString)[0];
-#else
             into = *iter;
+#else
+            into = std::wstring(iter, endOfString)[0];
 #endif
             //Advance past the end
             ++endOfString;
@@ -311,7 +314,7 @@ namespace JSON {
         }
 
         json_finline static jsonIter FromJSON(jsonIter iter, jsonIter end,
-                                                     std::string& classInto) {
+                                              std::string& classInto) {
             iter = AdvancePastWhitespace(iter, end);
             if(iter == end || *iter != L'\"') {
                 ThrowBadJSONError(iter, end, "Not a valid string begin token");
@@ -344,7 +347,7 @@ namespace JSON {
         }
 
         json_finline static jsonIter FromJSON(jsonIter iter, jsonIter end,
-                                                     std::wstring& classInto) {
+                                              std::wstring& classInto) {
             iter = AdvancePastWhitespace(iter, end);
             if(iter == end || *iter != L'\"') {
                 ThrowBadJSONError(iter, end, "Not a valid string begin token");
