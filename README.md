@@ -6,47 +6,65 @@ This is a simple way to make a C++ class serialize to/deserialize from JSON.
 ---
 To create a class:
 
-- `#include "json.hpp"`
-- Inherit from `JSON::JSONBase<YourClass>`
-- Use the macro `JSON_ENABLE(YourClass, (myfield1 [, "key"]), ...)` in the global namespace
-- The list of tuples after "YourClass" in the JSON_ENABLE declaration will be the fields that are serialized and deserialized.
- - The first part of the tuple is the field name 
- - The second part is an optional key to use for the JSON. If left out, the stringified field name will be used as the key.
+- In your class .cpp file:
+ 1. `#include "json.hpp"`
+ 2. Use the macro `JSON_ENABLE(YourClass, (myfield1 [, "key"]), ...)` in the global namespace
+   - The list of tuples after "YourClass" in the JSON_ENABLE declaration will be the fields that are serialized and deserialized.
+   - The first part of the tuple is the field name 
+   - The second part is an optional key to use for the JSON. If left out, the stringified field name will be used as the key.
+
+To convert a class to/from json:
+- `#include "json_functions.hpp"`
+- Call `JSON::ToJSON<YourClass>(classInstance)`
+- Or `JSON::FromJSON<YourClass>()`
+
 
 --------
-For example (using the default key):
+For example (using default keys):
 
-    class MySimpleClass : public JSON::JSONBase<MySimpleClass> {
+MySimpleClass.hpp
+
+    /* MySimpleClass.hpp */
+    class MySimpleClass {
     public:
         MySimpleClass() : m_int(10) {};
         
         int m_int;
     };
     
+MySimpleClass.cpp
+
+    /* MySimpleClass.cpp */
+    #include "json.hpp"
     JSON_ENABLE(MySimpleClass, (m_int))
     
-Then to make the class into JSON:
+To convert the class to a JSON string:
 
+    #include "json_functions.hpp"
     MySimpleClass simple;
-    std::string json = simple.ToJSON();
+    std::string json = JSON::ToJSON<MySimpleClass>(simple);
     /* json == {"m_int":10} */
     
 To create an instance of the class from JSON:
     
-    MySimpleClass simple = MySimpleClass::FromJSON(json_string);
+    #include "json_functions.hpp"
+    MySimpleClass simple = JSON::FromJSON<MySimpleClass>(json);
     
 ---
 Json conversion is fully-recursive for any type that is JSON_ENABLED. This includes all stl types and any user-defined classes which are JSON-Enabled using this code.
 
 e.g.
 
-    class NestedContainer : public JSON::JSONBase<NestedContainer> {
+    /* NestedContainer.hpp */
+    class NestedContainer {
     public:
         NestedContainer() : m_simpleClass(), m_int(20) {};
         MySimpleClass m_simpleClass;
         int m_int;
     };
-    
+---
+    /* NestedContainer.cpp */
+    #include "json.hpp"
     JSON_ENABLE(NestedContainer, (m_simpleClass), (m_int, "not_nested_int"))
     
 Calling ToJSON would produce:
