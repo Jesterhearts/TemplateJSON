@@ -369,12 +369,11 @@ namespace JSON {
     template<typename ClassOn>
     struct JSONFnInvokerImpl {
         json_finline static stringt ToJSON(const ClassOn* classFrom) {
-            return classFrom->ToJSON();
+            return JSON::ToJSON<ClassOn>(*classFrom);
         }
 
-        json_finline static jsonIter FromJSON(jsonIter iter, jsonIter end,
-                                                     ClassOn& classInto) {
-            return ClassOn::FromJSON(iter, end, classInto);
+        json_finline static jsonIter FromJSON(jsonIter iter, jsonIter end, ClassOn& classInto) {
+            return JSON::FromJSON<ClassOn>(iter, end, classInto);
         }
     };
 

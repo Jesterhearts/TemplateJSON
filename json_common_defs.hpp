@@ -2,10 +2,7 @@
 #ifndef __JSON_COMMON_DEFS_HPP__
 #define __JSON_COMMON_DEFS_HPP__
 
-#include <string>
-#include <unordered_map>
-
-#include <boost/preprocessor/stringize.hpp>
+#include "json_functions.hpp"
 
 #ifndef _MSC_VER
 #define json_finline [[gnu::always_inline]] inline
@@ -29,17 +26,6 @@
 
 
 namespace JSON {
-#ifdef JSON_USE_WIDE_STRINGS
-#define JSON_ST(STRING) L ## STRING
-    typedef std::wstring stringt;
-#else
-#define JSON_ST(STRING) STRING
-    typedef std::string stringt;
-#endif
-
-    typedef stringt::const_iterator jsonIter;
-    typedef std::unordered_map<stringt, void*> DataMap;
-
     template<typename T> struct JSONFnInvoker;
     template<typename T> struct JSONFnInvokerImpl;
     template<typename T, size_t N = 1> struct JSONArrayHandler;

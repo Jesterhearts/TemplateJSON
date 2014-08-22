@@ -5,7 +5,7 @@
 #include <boost/preprocessor/cat.hpp>
 #include <boost/preprocessor/facilities/expand.hpp>
 
-#include <boost/preprocessor/punctuation/comma.hpp>
+#include <boost/preprocessor/stringize.hpp>
 
 #include <boost/preprocessor/seq/for_each.hpp>
 #include <boost/preprocessor/seq/pop_front.hpp>
@@ -16,74 +16,73 @@
 #include "json_common_defs.hpp"
 #include "json_value_parser.hpp"
 
-#include <iostream>
-#include <sstream>
-
-#define JSON_PRIVATE_ACCESS()   \
-    template<typename __JSON_FRIEND_TYPE__> friend struct JSON::JSONEnabler;
-
-
 ////////////////////////////////////////////////////////////////////////////////////////////////////
-#define JSON_ENABLE(CLASS_NAME, ...)                                              \
-    namespace JSON {                                                              \
-        template<>                                                                \
-        struct JSONEnabler<CLASS_NAME> {                                          \
-            json_finline static void ToJSON(const CLASS_NAME* classFor,           \
-                                                   stringt& jsonData) {           \
-                JSON_START_TOJSONENABLE_BODY(                                     \
-                    BOOST_PP_VARIADIC_ELEM(0, __VA_ARGS__)                        \
-                                          )                                       \
-                                                                                  \
-                BOOST_PP_SEQ_FOR_EACH(                                            \
-                    JSON_MAKE_TOJSONENABLE_BODY, _,                               \
-                        BOOST_PP_SEQ_POP_FRONT(                                   \
-                            BOOST_PP_VARIADIC_TO_SEQ(__VA_ARGS__)                 \
-                                               )                                  \
-                                    )                                             \
-            }                                                                     \
-                                                                                  \
-            json_finline static CLASS_NAME FromJSON(const stringt& jsonData) {    \
-                CLASS_NAME classInto;                                             \
-                                                                                  \
-                auto iter = jsonData.begin();                                     \
-                auto end = jsonData.end();                                        \
-                                                                                  \
-                FromJSON(iter, end, classInto);                                   \
-                return classInto;                                                 \
-            }                                                                     \
-                                                                                  \
-            json_finline static jsonIter FromJSON(jsonIter iter, jsonIter end,    \
-                                                        CLASS_NAME& classInto) {  \
-                                                                                  \
-                iter = AdvancePastWhitespace(iter, end);                          \
-                if(iter == end || *iter != JSON_ST('{')) {                        \
-                    throw std::invalid_argument("No object start token");         \
-                }                                                                 \
-                ++iter;                                                           \
-                                                                                  \
-                stringt nextKey;                                                  \
-                                                                                  \
-                DataMap memberMap;                                                \
-                DataMap::const_iterator insertAt;                                 \
-                                                                                  \
-                BOOST_PP_SEQ_FOR_EACH(                                            \
-                    JSON_COLLECT_FROMJSONENABLE_DATA, _,                          \
-                            BOOST_PP_VARIADIC_TO_SEQ(__VA_ARGS__)                 \
-                                    )                                             \
-                                                                                  \
-                BOOST_PP_SEQ_FOR_EACH(                                            \
-                    JSON_MAKE_FROMJSONENABLE_BODY, _,                             \
-                            BOOST_PP_VARIADIC_TO_SEQ(__VA_ARGS__)                 \
-                                    )                                             \
-                                                                                  \
-                iter = AdvancePastWhitespace(iter, end);                          \
-                if(iter == end || *iter != JSON_ST('}')) {                        \
-                    throw std::invalid_argument("No object end token");           \
-                }                                                                 \
-                ++iter;                                                           \
-                return iter;                                                      \
-            }                                                                     \
-        };                                                                        \
+#define JSON_ENABLE(CLASS_NAME, ...)                                                \
+    namespace JSON {                                                                \
+        template<>                                                                  \
+        stringt ToJSON<CLASS_NAME>(const CLASS_NAME& classFrom) {                   \
+                                                                                    \
+            const CLASS_NAME* classFor = static_cast<const CLASS_NAME*>(&classFrom);\
+            stringt jsonData(JSON_ST("{"));                                         \
+                                                                                    \
+            JSON_START_TOJSONENABLE_BODY(                                           \
+                BOOST_PP_VARIADIC_ELEM(0, __VA_ARGS__)                              \
+                                      )                                             \
+                                                                                    \
+            BOOST_PP_SEQ_FOR_EACH(                                                  \
+                JSON_MAKE_TOJSONENABLE_BODY, _,                                     \
+                    BOOST_PP_SEQ_POP_FRONT(                                         \
+                        BOOST_PP_VARIADIC_TO_SEQ(__VA_ARGS__)                       \
+                                           )                                        \
+                                )                                                   \
+                                                                                    \
+            jsonData += JSON_ST("}");                                               \
+            return jsonData;                                                        \
+        }                                                                           \
+                                                                                    \
+        template<>                                                                  \
+        jsonIter FromJSON<CLASS_NAME>(jsonIter iter, jsonIter end,                  \
+                                      CLASS_NAME& classInto) {                      \
+                                                                                    \
+            iter = AdvancePastWhitespace(iter, end);                                \
+            if(iter == end || *iter != JSON_ST('{')) {                              \
+                throw std::invalid_argument("No object start token");               \
+            }                                                                       \
+            ++iter;                                                                 \
+                                                                                    \
+            stringt nextKey;                                                        \
+                                                                                    \
+            DataMap memberMap;                                                      \
+            DataMap::const_iterator insertAt;                                       \
+                                                                                    \
+            BOOST_PP_SEQ_FOR_EACH(                                                  \
+                JSON_COLLECT_FROMJSONENABLE_DATA, _,                                \
+                        BOOST_PP_VARIADIC_TO_SEQ(__VA_ARGS__)                       \
+                                )                                                   \
+                                                                                    \
+            BOOST_PP_SEQ_FOR_EACH(                                                  \
+                JSON_MAKE_FROMJSONENABLE_BODY, _,                                   \
+                        BOOST_PP_VARIADIC_TO_SEQ(__VA_ARGS__)                       \
+                                )                                                   \
+                                                                                    \
+            iter = AdvancePastWhitespace(iter, end);                                \
+            if(iter == end || *iter != JSON_ST('}')) {                              \
+                throw std::invalid_argument("No object end token");                 \
+            }                                                                       \
+            ++iter;                                                                 \
+            return iter;                                                            \
+        }                                                                           \
+                                                                                    \
+        template<>                                                                  \
+        CLASS_NAME FromJSON<CLASS_NAME>(const stringt& jsonData) {                  \
+            CLASS_NAME classInto;                                                   \
+                                                                                    \
+            auto iter = jsonData.begin();                                           \
+            auto end = jsonData.end();                                              \
+                                                                                    \
+            FromJSON<CLASS_NAME>(iter, end, classInto);                             \
+            return classInto;                                                       \
+        }                                                                           \
     }
 
 
@@ -229,33 +228,4 @@
     jsonData += CLASSNAME::ToJSON();                            \
     jsonData += JSON_ST("}");
 
-
-
-namespace JSON {
-    template<typename ClassFor>
-    struct JSONEnabler {
-        json_finline static void ToJSON(const ClassFor* classFor, stringt& jsonData);
-        json_finline static ClassFor FromJSON(const stringt& jsonData);
-        json_finline static jsonIter FromJSON(jsonIter iter, jsonIter end, ClassFor& classInto);
-    };
-
-    template<typename ClassFor>
-    class JSONBase {
-    public:
-        stringt ToJSON() const {
-            stringt json(JSON_ST("{"));
-            JSONEnabler<ClassFor>::ToJSON(static_cast<const ClassFor*>(this), json);
-            json += JSON_ST("}");
-            return json;
-        }
-
-        static ClassFor FromJSON(const stringt& jsonString) {
-            return JSONEnabler<ClassFor>::FromJSON(jsonString);
-        }
-
-        static jsonIter FromJSON(jsonIter iter, jsonIter end, ClassFor& into) {
-            return JSONEnabler<ClassFor>::FromJSON(iter, end, into);
-        }
-    };
-}
 #endif
