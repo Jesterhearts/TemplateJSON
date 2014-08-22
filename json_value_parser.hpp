@@ -41,23 +41,23 @@ namespace std {
     template<typename T> class auto_ptr;
 }
 
-#define JSON_SMRTPTR_PARSER(STL_TYPE, PTR_TYPE)                                                     \
-    struct JSONFnInvokerImpl<std::STL_TYPE<PTR_TYPE>> {                                             \
-        json_finline static stringt ToJSON(const std::STL_TYPE<PTR_TYPE>* classFrom) {              \
-            if(!*classFrom) {                                                                       \
-                return nullToken;                                                                   \
-            }                                                                                       \
-            return JSONFnInvoker<PTR_TYPE>::ToJSON((*classFrom).get());                             \
-        }                                                                                           \
-                                                                                                    \
-        json_finline static jsonIter FromJSON(jsonIter iter, jsonIter end,                          \
-                                                     std::STL_TYPE<PTR_TYPE>& into) {               \
-            PTR_TYPE* temp;                                                                         \
-            iter = JSONFnInvoker<PTR_TYPE*>::FromJSON(iter, end, temp);                             \
-            into.reset(temp);                                                                       \
-            return iter;                                                                            \
-        }                                                                                           \
-    }                                                                                               \
+#define JSON_SMRTPTR_PARSER(STL_TYPE, PTR_TYPE)                                         \
+    struct JSONFnInvokerImpl<std::STL_TYPE<PTR_TYPE>> {                                 \
+        json_finline static stringt ToJSON(const std::STL_TYPE<PTR_TYPE>* classFrom) {  \
+            if(!*classFrom) {                                                           \
+                return nullToken;                                                       \
+            }                                                                           \
+            return JSONFnInvoker<PTR_TYPE>::ToJSON((*classFrom).get());                 \
+        }                                                                               \
+                                                                                        \
+        json_finline static jsonIter FromJSON(jsonIter iter, jsonIter end,              \
+                                                     std::STL_TYPE<PTR_TYPE>& into) {   \
+            PTR_TYPE* temp;                                                             \
+            iter = JSONFnInvoker<PTR_TYPE*>::FromJSON(iter, end, temp);                 \
+            into.reset(temp);                                                           \
+            return iter;                                                                \
+        }                                                                               \
+    }
 
 namespace JSON {
     const stringt nullToken(JSON_ST("null"));
@@ -495,7 +495,7 @@ namespace JSON {
      *
      * g++ refused to let me use forward decls for this, which is why it's allll the way down here
      */
-    jsonIter ParseNextKey(jsonIter iter, jsonIter end, stringt& nextKey) {
+    inline jsonIter ParseNextKey(jsonIter iter, jsonIter end, stringt& nextKey) {
         return JSONFnInvokerImpl<stringt>::FromJSON(iter, end, nextKey);
     }
 }

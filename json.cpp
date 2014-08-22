@@ -15,6 +15,24 @@ private:
 
 JSON_ENABLE(Simple, (s))
 
+class MySimpleClass : public JSON::JSONBase<MySimpleClass> {
+public:
+    MySimpleClass() : m_int(10) {};
+
+    int m_int;
+};
+
+JSON_ENABLE(MySimpleClass, (m_int))
+
+class NestedContainer : public JSON::JSONBase<NestedContainer> {
+public:
+    NestedContainer() : m_simpleClass(), m_int(20) {};
+    MySimpleClass m_simpleClass;
+    int m_int;
+};
+
+JSON_ENABLE(NestedContainer, (m_simpleClass), (m_int, "not_nested_int"))
+
 class Test : public JSON::JSONBase<Test> {
 public:
      static const char mychar = 'x';
@@ -112,6 +130,11 @@ int main() {
     {
         std::cout << e.what() << std::endl;
     }
+
+
+    NestedContainer nc;
+    json = nc.ToJSON();
+    output << json << std::endl;
 
     Test a;
     json = a.ToJSON();

@@ -3,7 +3,7 @@
 #define __JSON_PARSING_HELPERS_HPP__
 
 namespace JSON {
-    jsonIter AdvancePastWhitespace(jsonIter iter, jsonIter end) {
+    inline jsonIter AdvancePastWhitespace(jsonIter iter, jsonIter end) {
         while(iter != end) {
             switch(*iter) {
             case L' ':
@@ -22,7 +22,7 @@ namespace JSON {
         return iter;
     }
 
-    jsonIter AdvancePastNumbers(jsonIter iter, jsonIter end) {
+    inline jsonIter AdvancePastNumbers(jsonIter iter, jsonIter end) {
         if(iter != end &&
            *iter == L'-') {
             ++iter;
@@ -53,7 +53,7 @@ namespace JSON {
         return iter;
     }
 
-    jsonIter AdvanceToEndOfString(jsonIter iter, jsonIter end) {
+    inline jsonIter AdvanceToEndOfString(jsonIter iter, jsonIter end) {
         bool escaping = true;
 
         while(iter != end) {
@@ -71,11 +71,11 @@ namespace JSON {
     }
 
 #if defined(_MSC_VER) && _MSC_VER < 1700
-    json_no_return void ThrowBadJSONError(jsonIter iter, jsonIter end,
-                                          const std::string& errmsg) {
+    json_no_return inline void ThrowBadJSONError(jsonIter iter, jsonIter end,
+                                                 const std::string& errmsg) {
 #else
-	json_no_return void ThrowBadJSONError(jsonIter iter, jsonIter end,
-		const std::string&& errmsg) {
+    json_no_return inline void ThrowBadJSONError(jsonIter iter, jsonIter end,
+                                                 const std::string&& errmsg) {
 #endif
         std::string badJson(iter, end);
         throw std::invalid_argument(errmsg + ": " + badJson);

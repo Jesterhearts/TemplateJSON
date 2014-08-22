@@ -234,9 +234,9 @@
 namespace JSON {
     template<typename ClassFor>
     struct JSONEnabler {
-        json_finline static std::wstring ToJSON(const ClassFor*);
-        json_finline static std::wstring FromJSON(const std::wstring&);
-        json_finline static jsonIter FromJSON(jsonIter, jsonIter, ClassFor&);
+        json_finline static void ToJSON(const ClassFor* classFor, stringt& jsonData);
+        json_finline static ClassFor FromJSON(const stringt& jsonData);
+        json_finline static jsonIter FromJSON(jsonIter iter, jsonIter end, ClassFor& classInto);
     };
 
     template<typename ClassFor>
