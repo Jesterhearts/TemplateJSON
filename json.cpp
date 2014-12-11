@@ -21,8 +21,8 @@ int main() {
 
     try
     {
-        Simple simple2 = JSON::FromJSON<Simple>(json);
-        json = JSON::ToJSON<Simple>(simple2);
+        Simple simple = JSON::FromJSON<Simple>(json);
+        json = JSON::ToJSON<Simple>(simple);
         output << JSON_ST("deserialized: ") << json << std::endl << std::endl;
     }
     catch(const std::invalid_argument& e)
@@ -30,10 +30,35 @@ int main() {
         std::cout << e.what() << std::endl;
     }
 
+    Simple2 simple2;
+    json = JSON::ToJSON<Simple2>(simple2);
+    output << json << std::endl;
+
+    try
+    {
+        Simple2 simple2 = JSON::FromJSON<Simple2>(json);
+        json = JSON::ToJSON<Simple2>(simple2);
+        output << JSON_ST("deserialized: ") << json << std::endl << std::endl;
+    }
+    catch(const std::invalid_argument& e)
+    {
+        std::cout << e.what() << std::endl;
+    }
 
     NestedContainer nc;
     json = JSON::ToJSON<NestedContainer>(nc);
     output << json << std::endl;
+
+    try
+    {
+        NestedContainer nc2 = JSON::FromJSON<NestedContainer>(json);
+        json = JSON::ToJSON<NestedContainer>(nc2);
+        output << JSON_ST("deserialized: ") << json << std::endl << std::endl;
+    }
+    catch(const std::invalid_argument& e)
+    {
+        std::cout << e.what() << std::endl;
+    }
 
     Test a;
     json = JSON::ToJSON<Test>(a);

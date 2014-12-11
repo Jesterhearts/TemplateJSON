@@ -10,13 +10,14 @@ namespace JSON {
 #ifdef JSON_USE_WIDE_STRINGS
 #define JSON_ST(STRING) L ## STRING
     typedef std::wstring stringt;
+    typedef wchar_t char_t;
 #else
 #define JSON_ST(STRING) STRING
     typedef std::string stringt;
+    typedef char char_t;
 #endif
 
     typedef stringt::const_iterator jsonIter;
-    typedef std::unordered_map<stringt, void*> DataMap;
 
     template<typename ClassFor>
     stringt ToJSON(const ClassFor& classFrom);
@@ -26,6 +27,12 @@ namespace JSON {
 
     template<typename ClassFor>
     jsonIter FromJSON(jsonIter iter, jsonIter end, ClassFor& into);
+
+    template<typename classType>
+    struct ClassMap;
+
+    template<typename classType>
+    struct MembersHolder;
 }
 
 #endif

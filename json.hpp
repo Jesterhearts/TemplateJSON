@@ -15,146 +15,192 @@
 
 #include "json_common_defs.hpp"
 #include "json_value_parser.hpp"
+#include "json_member_mapper.hpp"
+
+namespace JSON {
+    template<typename classFor, typename underlyingType>
+    json_finline static stringt MemberToJSON(const classFor& classFrom, underlyingType classFor::* member) {
+        return JSONFnInvoker<decltype(classFrom.*member)>::ToJSON(classFrom.*member);
+    }
+
+    template<typename classFor, typename underlyingType>
+    json_finline static stringt MemberToJSON(const classFor& classFrom, underlyingType* member) {
+        return JSONFnInvoker<underlyingType>::ToJSON(member);
+    }
+
+    template<typename classFor,
+             const char_t* key, const char_t*... keys,
+             template<const char_t*...> class K,
+             typename type, typename... types,
+             template<typename... M> class ML>
+    json_finline static stringt MembersToJSON(const classFor& classFrom,
+                                              const K<key, keys...>& k1,
+                                              const ML<type, types...>& ml) {
+        stringt json(1, JSON_ST('\"'));
+        json.append(key);
+        json.append(JSON_ST("\":"), 2);
+
+        json.append(MemberToJSON(classFrom, type::value));
+        if(sizeof...(keys) > 0)
+        {
+            json.append(1, JSON_ST(','));
+        }
+        json.append(MembersToJSON(classFrom, KeyList<keys...>(), MemberList<types...>()));
+        return json;
+    }
+
+    template<typename classFor,
+             template<const char_t*...> class K,
+             template<typename... M> class ML>
+    json_finline static stringt MembersToJSON(const classFor& classFrom,
+                                              const K<>& k1,
+                                              const ML<>& ml) {
+        return JSON_ST("");
+    }
+
+    template<typename classType>
+    struct KeysHolder;
+
+    template<typename classFor>
+    stringt ToJSON(const classFor& classFrom) {
+        stringt json(JSON_ST("{"));
+
+        json.append(MembersToJSON(classFrom,
+                                  JSON::KeysHolder<classFor>::keys,
+                                  JSON::MembersHolder<classFor>::members
+            )
+        );
+
+        json.append(JSON_ST("}"));
+        return json;
+    }
+
+    template<typename classFor>
+    classFor FromJSON(const stringt& jsonData) {
+        classFor classInto;
+        auto iter = jsonData.begin();
+        auto end = jsonData.end();
+
+        FromJSON<classFor>(iter, end, classInto);
+        return classInto;
+    }
+};
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 #define JSON_ENABLE(CLASS_NAME, ...)                                                \
     namespace JSON {                                                                \
-        template<>                                                                  \
-        stringt ToJSON<CLASS_NAME>(const CLASS_NAME& classFrom) {                   \
+        JSON_CREATE_KEYS(CLASS_NAME, __VA_ARGS__)                                   \
+        JSON_CREATE_MEMBERS(CLASS_NAME, __VA_ARGS__)                                \
+        JSON_MAKE_MEMBER_MAP(CLASS_NAME, __VA_ARGS__)                               \
                                                                                     \
-            const CLASS_NAME* classFor = static_cast<const CLASS_NAME*>(&classFrom);\
-            stringt jsonData(JSON_ST("{"));                                         \
-                                                                                    \
-            JSON_START_TOJSONENABLE_BODY(                                           \
-                BOOST_PP_VARIADIC_ELEM(0, __VA_ARGS__)                              \
-                                      )                                             \
-                                                                                    \
-            BOOST_PP_SEQ_FOR_EACH(                                                  \
-                JSON_MAKE_TOJSONENABLE_BODY, _,                                     \
-                    BOOST_PP_SEQ_POP_FRONT(                                         \
-                        BOOST_PP_VARIADIC_TO_SEQ(__VA_ARGS__)                       \
-                                           )                                        \
-                                )                                                   \
-                                                                                    \
-            jsonData += JSON_ST("}");                                               \
-            return jsonData;                                                        \
-        }                                                                           \
+        template stringt ToJSON<CLASS_NAME>(const CLASS_NAME&);                     \
                                                                                     \
         template<>                                                                  \
         jsonIter FromJSON<CLASS_NAME>(jsonIter iter, jsonIter end,                  \
                                       CLASS_NAME& classInto) {                      \
-                                                                                    \
-            iter = AdvancePastWhitespace(iter, end);                                \
-            if(iter == end || *iter != JSON_ST('{')) {                              \
-                throw std::invalid_argument("No object start token");               \
-            }                                                                       \
-            ++iter;                                                                 \
-                                                                                    \
+            typedef CLASS_NAME classFor;                                            \
             stringt nextKey;                                                        \
+            typedef decltype(MemberMap<classFor>::mapping.values.begin()) memberIter;\
+            memberIter insertAt;                                                    \
                                                                                     \
-            DataMap memberMap;                                                      \
-            DataMap::const_iterator insertAt;                                       \
-                                                                                    \
-            BOOST_PP_SEQ_FOR_EACH(                                                  \
-                JSON_COLLECT_FROMJSONENABLE_DATA, _,                                \
-                        BOOST_PP_VARIADIC_TO_SEQ(__VA_ARGS__)                       \
-                                )                                                   \
+            iter = ValidateObjectStart(iter, end);                                  \
                                                                                     \
             BOOST_PP_SEQ_FOR_EACH(                                                  \
                 JSON_MAKE_FROMJSONENABLE_BODY, _,                                   \
                         BOOST_PP_VARIADIC_TO_SEQ(__VA_ARGS__)                       \
                                 )                                                   \
                                                                                     \
-            iter = AdvancePastWhitespace(iter, end);                                \
-            if(iter == end || *iter != JSON_ST('}')) {                              \
-                throw std::invalid_argument("No object end token");                 \
-            }                                                                       \
-            ++iter;                                                                 \
-            return iter;                                                            \
+            return ValidateObjectEnd(iter, end);                                    \
         }                                                                           \
                                                                                     \
-        template<>                                                                  \
-        CLASS_NAME FromJSON<CLASS_NAME>(const stringt& jsonData) {                  \
-            CLASS_NAME classInto;                                                   \
-                                                                                    \
-            auto iter = jsonData.begin();                                           \
-            auto end = jsonData.end();                                              \
-                                                                                    \
-            FromJSON<CLASS_NAME>(iter, end, classInto);                             \
-            return classInto;                                                       \
-        }                                                                           \
+        template CLASS_NAME FromJSON<CLASS_NAME>(const stringt&);                   \
     }
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
-#define JSON_START_TOJSONENABLE_BODY(VARDATA)                   \
-    BOOST_PP_EXPAND(JSON_START_TOJSONENABLE_BODY_IMPL VARDATA)
+#define JSON_CREATE_KEYS(CLASS_NAME, ...)                               \
+    template<>                                                          \
+    struct KeysHolder<CLASS_NAME> {                                     \
+    private:                                                            \
+        BOOST_PP_SEQ_FOR_EACH(                                          \
+            JSON_CREATE_KEYS_IMPL, ~,                                   \
+            BOOST_PP_VARIADIC_TO_SEQ(__VA_ARGS__)                       \
+        )                                                               \
+    public:                                                             \
+        static constexpr const auto keys =                              \
+            JSON::KeyList<JSON_LIST_KEYS(CLASS_NAME, __VA_ARGS__)>();   \
+    };                                                                  \
+                                                                        \
+    BOOST_PP_SEQ_FOR_EACH(                                              \
+        JSON_REFERENCE_KEY, KeysHolder<CLASS_NAME>::,                   \
+        BOOST_PP_VARIADIC_TO_SEQ(__VA_ARGS__)                           \
+    )                                                                   \
+                                                                        \
+    constexpr const JSON::KeyList<                                      \
+        JSON_LIST_KEYS(CLASS_NAME, __VA_ARGS__)                         \
+    > KeysHolder<CLASS_NAME>::keys;
+
+
+#define JSON_CREATE_KEYS_IMPL(s, IGNORED, VARDATA)  \
+    BOOST_PP_EXPAND(JSON_KEY_CREATOR VARDATA)
 
 
 #ifndef _MSC_VER
-#define JSON_START_TOJSONENABLE_BODY_IMPL(...)                                      \
-    BOOST_PP_OVERLOAD(JSON_START_TOJSONENABLE_BODY_IMPL, __VA_ARGS__)(__VA_ARGS__)
+#define JSON_KEY_CREATOR(...)                                      \
+    BOOST_PP_OVERLOAD(JSON_KEY_CREATOR, __VA_ARGS__)(__VA_ARGS__)
 #else
-#define JSON_START_TOJSONENABLE_BODY_IMPL(...)                                      \
-   BOOST_PP_CAT(BOOST_PP_OVERLOAD(JSON_START_TOJSONENABLE_BODY_IMPL,__VA_ARGS__)(__VA_ARGS__),BOOST_PP_EMPTY())
+#define JSON_KEY_CREATOR(...)                                      \
+    BOOST_PP_CAT(BOOST_PP_OVERLOAD(JSON_KEY_CREATOR, __VA_ARGS__)(__VA_ARGS__),BOOST_PP_EMPTY())
 #endif
 
 
-#define JSON_START_TOJSONENABLE_BODY_IMPL1(VARNAME)       \
-    JSON_START_TOJSONENABLE_BODY_IMPL2(VARNAME, BOOST_PP_STRINGIZE(VARNAME))
+#define JSON_KEY_CREATOR1(VARNAME)                          \
+    JSON_KEY_CREATOR2(VARNAME, BOOST_PP_STRINGIZE(VARNAME))
 
 
-#define JSON_START_TOJSONENABLE_BODY_IMPL2(VARNAME, JSONKEY)            \
-    jsonData += JSON_ST("\"") JSON_ST(JSONKEY) JSON_ST("\":");          \
-    typedef decltype(classFor->VARNAME) BOOST_PP_CAT(__type, VARNAME);  \
-    jsonData += JSON::JSONFnInvoker<BOOST_PP_CAT(__type, VARNAME)>      \
-                    ::ToJSON(&classFor->VARNAME);
+#define JSON_KEY_CREATOR2(VARNAME, JSONKEY)                                 \
+    static constexpr const char_t VARNAME##__JSON_KEY[] = JSON_ST(JSONKEY);
+
+//////////////////////////////////////////////////
+#define JSON_REFERENCE_KEY(s, CLASS, VARDATA)                                       \
+    constexpr const char_t CLASS BOOST_PP_EXPAND(JSON_KEY_REFERENCE VARDATA)
+
+
+#ifndef _MSC_VER
+#define JSON_KEY_REFERENCE(...)                                      \
+    BOOST_PP_OVERLOAD(JSON_KEY_REFERENCE, __VA_ARGS__)(__VA_ARGS__)
+#else
+#define JSON_KEY_REFERENCE(...)                                      \
+    BOOST_PP_CAT(BOOST_PP_OVERLOAD(JSON_KEY_REFERENCE, __VA_ARGS__)(__VA_ARGS__),BOOST_PP_EMPTY())
+#endif
+
+
+#define JSON_KEY_REFERENCE2(VARNAME, JSONKEY)                   \
+    JSON_KEY_REFERENCE1(VARNAME)
+
+
+#define JSON_KEY_REFERENCE1(VARNAME)    \
+     VARNAME##__JSON_KEY[];
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
-#define JSON_MAKE_TOJSONENABLE_BODY(s, IGNORED, VARDATA)      \
-    BOOST_PP_EXPAND(JSON_MAKE_TOJSONENABLE_BODY_IMPL VARDATA)
+#define JSON_LIST_MEMBERS(CLASS_NAME, ...)          \
+    JSON_FIRST_MEMBER_POINTER(                      \
+        CLASS_NAME,                                 \
+        BOOST_PP_VARIADIC_ELEM(0, __VA_ARGS__)      \
+    )                                               \
+    BOOST_PP_SEQ_FOR_EACH(                          \
+        JSON_CREATE_MEMBER_POINTER, CLASS_NAME,    \
+        BOOST_PP_SEQ_POP_FRONT(                     \
+            BOOST_PP_VARIADIC_TO_SEQ(__VA_ARGS__)   \
+        )                                           \
+    )
 
+#define JSON_CREATE_MEMBER_POINTER(s, CLASS_NAME, VARDATA)    \
+    , decltype(MembersHolder<CLASS_NAME>:: JSON_MEMBER_NAME VARDATA)
 
-#ifndef _MSC_VER
-#define JSON_MAKE_TOJSONENABLE_BODY_IMPL(...)                                      \
-    BOOST_PP_OVERLOAD(JSON_MAKE_TOJSONENABLE_BODY_IMPL, __VA_ARGS__)(__VA_ARGS__)
-#else
-#define JSON_MAKE_TOJSONENABLE_BODY_IMPL(...)                                      \
-   BOOST_PP_CAT(BOOST_PP_OVERLOAD(JSON_MAKE_TOJSONENABLE_BODY_IMPL,__VA_ARGS__)(__VA_ARGS__),BOOST_PP_EMPTY())
-#endif
-
-
-#define JSON_MAKE_TOJSONENABLE_BODY_IMPL1(VARNAME)        \
-    JSON_MAKE_TOJSONENABLE_BODY_IMPL2(VARNAME, BOOST_PP_STRINGIZE(VARNAME))
-
-
-#define JSON_MAKE_TOJSONENABLE_BODY_IMPL2(VARNAME, JSONKEY)             \
-    jsonData += JSON_ST(",\"") JSON_ST(JSONKEY) JSON_ST("\":");         \
-    typedef decltype(classFor->VARNAME) BOOST_PP_CAT(__type, VARNAME);  \
-    jsonData += JSON::JSONFnInvoker<BOOST_PP_CAT(__type, VARNAME)>      \
-                    ::ToJSON(&classFor->VARNAME);
-
-
-////////////////////////////////////////////////////////////////////////////////////////////////////
-#define JSON_COLLECT_FROMJSONENABLE_DATA(s, IGNORED, VARDATA)   \
-    BOOST_PP_EXPAND(JSON_COLLECT_FROMJSONENABLE_DATA_IMPL VARDATA)
-
-
-#ifndef _MSC_VER
-#define JSON_COLLECT_FROMJSONENABLE_DATA_IMPL(...)                                      \
-    BOOST_PP_OVERLOAD(JSON_COLLECT_FROMJSONENABLE_DATA_IMPL, __VA_ARGS__)(__VA_ARGS__)
-#else
-#define JSON_COLLECT_FROMJSONENABLE_DATA_IMPL(...)                                      \
-   BOOST_PP_CAT(BOOST_PP_OVERLOAD(JSON_COLLECT_FROMJSONENABLE_DATA_IMPL,__VA_ARGS__)(__VA_ARGS__),BOOST_PP_EMPTY())
-#endif
-
-
-#define JSON_COLLECT_FROMJSONENABLE_DATA_IMPL1(VARNAME)        \
-    JSON_COLLECT_FROMJSONENABLE_DATA_IMPL2(VARNAME, BOOST_PP_STRINGIZE(VARNAME))
-
-
-#define JSON_COLLECT_FROMJSONENABLE_DATA_IMPL2(VARNAME, JSONKEY)    \
-    memberMap.insert(std::make_pair(JSON_ST(JSONKEY), (void*)&classInto.VARNAME));  \
+//////////////////////////////////////////////
+#define JSON_FIRST_MEMBER_POINTER(CLASS_NAME, VARDATA)  \
+    decltype(MembersHolder<CLASS_NAME>:: JSON_MEMBER_NAME VARDATA)
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 #define JSON_MAKE_FROMJSONENABLE_BODY(s, IGNORED, VARDATA)   \
@@ -173,59 +219,29 @@
     JSON_MAKE_FROMJSONENABLE_BODY_IMPL2(VARNAME, _)
 
 
-#define JSON_MAKE_FROMJSONENABLE_BODY_IMPL2(VARNAME, IGNORED)           \
-    iter = ParseNextKey(iter, end, nextKey);                            \
-    iter = AdvancePastWhitespace(iter, end);                            \
-    if(iter == end || *iter != JSON_ST(':')) {                          \
-        throw std::invalid_argument("Not a valid key map");             \
-    }                                                                   \
-                                                                        \
-    ++iter;                                                             \
-    iter = AdvancePastWhitespace(iter, end);                            \
-    typedef decltype(classInto.VARNAME) BOOST_PP_CAT(__type, VARNAME);  \
-                                                                        \
-    insertAt = memberMap.find(nextKey);                                 \
-    if(insertAt == memberMap.end()) {                                   \
-        throw std::invalid_argument("No key in object");                \
-    }                                                                   \
-                                                                        \
-    iter = JSON::JSONFnInvoker<BOOST_PP_CAT(__type, VARNAME)>           \
-                      ::FromJSON(iter, end,                             \
-           *static_cast<BOOST_PP_CAT(__type, VARNAME)*>(insertAt->second)); \
-    iter = AdvancePastWhitespace(iter, end);                            \
-    if(iter != end && *iter == JSON_ST(',')) {                          \
-        ++iter;                                                         \
+#define JSON_MAKE_FROMJSONENABLE_BODY_IMPL2(VARNAME, IGNORED)                   \
+    iter = ParseNextKey(iter, end, nextKey);                                    \
+    iter = ValidateKeyValueMapping(iter, end);                                  \
+                                                                                \
+    iter = AdvancePastWhitespace(iter, end);                                    \
+                                                                                \
+    insertAt = MemberMap<classFor>::mapping.values.find(nextKey.c_str());       \
+    if(insertAt == MemberMap<classFor>::mapping.values.end()) {                 \
+        ThrowBadJSONError(iter, end, JSON_ST("No key in object"));              \
+    }                                                                           \
+                                                                                \
+    iter = JSON::JSONFnInvoker<decltype(classFor::VARNAME)>::FromJSON(iter, end,\
+                *reinterpret_cast<decltype(classFor::VARNAME)*>(                \
+                    insertAt->second.GetPointer(classInto)                      \
+                )                                                               \
+            );                                                                  \
+                                                                                \
+    iter = AdvancePastWhitespace(iter, end);                                    \
+    if(iter != end && *iter == JSON_ST(',') ) {                                 \
+        ++iter;                                                                 \
+    }                                                                           \
+    else if (*iter != JSON_ST('}')) {                                           \
+        ThrowBadJSONError(iter, end, JSON_ST("Missing key separator"));         \
     }
-
-////////////////////////////////////////////////////////////////////////////////////////////////////
-
-#define JSON_INHERITS(...)                                  \
-    stringt ToJSON() {                                      \
-        stringt jsonData(JSON_ST("["));                     \
-        JSON_START_JSONINHERITS_BODY(                       \
-            BOOST_PP_VARIADIC_ELEM(0, __VA_ARGS__)          \
-                                  )                         \
-        BOOST_PP_SEQ_FOR_EACH(                              \
-            JSON_MAKE_JSONINHERITS_BODY, _,                 \
-                BOOST_PP_SEQ_POP_FRONT(                     \
-                    BOOST_PP_VARIADIC_TO_SEQ(__VA_ARGS__)   \
-                                       )                    \
-                            )                               \
-        jsonData += JSON_ST("]");                           \
-        return jsonData;                                    \
-     }
-
-////////////////////////////////////////////////////////////////////////////////////////////////////
-
-#define JSON_START_JSONINHERITS_BODY(CLASSNAME)                 \
-    jsonData += JSON_ST("{\"") JSON_ST(BOOST_PP_STRINGIZE(CLASSNAME)) JSON_ST("\":");   \
-    jsonData += JSON::JSONBase<CLASSNAME>::ToJSON();            \
-    jsonData += JSON_ST("}");
-
-
-#define JSON_MAKE_JSONINHERITS_BODY(s, IGNORED, CLASSNAME)      \
-    jsonData += JSON_ST(",{\"") JSON_ST(BOOST_PP_STRINGIZE(CLASSNAME)) JSON_ST("\":");  \
-    jsonData += CLASSNAME::ToJSON();                            \
-    jsonData += JSON_ST("}");
 
 #endif

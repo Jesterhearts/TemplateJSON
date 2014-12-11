@@ -461,7 +461,7 @@ namespace JSON {
     /* stl smart pointer handlers */
     //WE DON'T OWN THESE SMART PTRS!
     template<typename T, typename D>
-    struct  JSONFnInvokerImpl<std::unique_ptr<T, D>> {
+    struct JSONFnInvokerImpl<std::unique_ptr<T, D>> {
         json_finline static stringt ToJSON(const std::unique_ptr<T, D>* classFrom) {
             if(!*classFrom) {
                 return JSON_ST("null");
@@ -494,7 +494,7 @@ namespace JSON {
      *
      * g++ refused to let me use forward decls for this, which is why it's allll the way down here
      */
-    inline jsonIter ParseNextKey(jsonIter iter, jsonIter end, stringt& nextKey) {
+    json_finline jsonIter ParseNextKey(jsonIter iter, jsonIter end, stringt& nextKey) {
         return JSONFnInvokerImpl<stringt>::FromJSON(iter, end, nextKey);
     }
 }

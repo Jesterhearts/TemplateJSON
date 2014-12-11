@@ -17,6 +17,13 @@ private:
     JSON_PRIVATE_ACCESS()
 };
 
+class Simple2 {
+public:
+    Simple2() : s(10), s2(11) {};
+    int s;
+    int s2;
+};
+
 
 class MySimpleClass {
 public:
@@ -40,7 +47,7 @@ public:
 };
 
 
-class Nested {
+class Nested : Test {
 public:
      // JSON_INHERITS(Nested, Test);
      Simple mytest;

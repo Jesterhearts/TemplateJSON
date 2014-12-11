@@ -12,6 +12,12 @@
     friend ClassFor JSON::FromJSON(const JSON::stringt&);   \
                                                             \
     template<typename ClassFor>                             \
+    friend struct JSON::ClassMap;                           \
+                                                            \
+    template<typename ClassFor>                             \
+    friend struct JSON::MembersHolder;                      \
+                                                            \
+    template<typename ClassFor>                             \
     friend JSON::jsonIter JSON::FromJSON(JSON::jsonIter, JSON::jsonIter, ClassFor&);
 
 #endif

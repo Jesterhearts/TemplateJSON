@@ -3,6 +3,8 @@
 
 JSON_ENABLE(Simple, (s))
 
+JSON_ENABLE(Simple2, (s), (s2))
+
 JSON_ENABLE(MySimpleClass, (m_int))
 
 JSON_ENABLE(NestedContainer, (m_simpleClass), (m_int, "not_nested_int"))

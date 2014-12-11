@@ -70,6 +70,34 @@ namespace JSON {
         return iter;
     }
 
+    inline jsonIter ValidateObjectStart(jsonIter iter, jsonIter end) {
+        iter = AdvancePastWhitespace(iter, end);
+        if(iter == end || *iter != JSON_ST('{')) {
+            throw std::invalid_argument("No object start token");
+        }
+        ++iter;
+
+        return iter;
+    }
+
+    inline jsonIter ValidateObjectEnd(jsonIter iter, jsonIter end) {
+        iter = AdvancePastWhitespace(iter, end);
+        if(iter == end || *iter != JSON_ST('}')) {
+            throw std::invalid_argument("No object end token");
+        }
+        ++iter;
+        return iter;
+    }
+
+    inline jsonIter ValidateKeyValueMapping(jsonIter iter, jsonIter end) {
+        iter = AdvancePastWhitespace(iter, end);
+        if(iter == end || *iter != JSON_ST(':')) {
+            throw std::invalid_argument("Not a valid key-value mapping");
+        }
+        ++iter;
+        return iter;
+    }
+
 #if defined(_MSC_VER) && _MSC_VER < 1700
     json_no_return inline void ThrowBadJSONError(jsonIter iter, jsonIter end,
                                                  const std::string& errmsg) {
