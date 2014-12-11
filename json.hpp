@@ -41,8 +41,7 @@ namespace JSON {
         json.append(JSON_ST("\":"), 2);
 
         json.append(MemberToJSON(classFrom, type::value));
-        if(sizeof...(keys) > 0)
-        {
+        if(sizeof...(keys) > 0) {
             json.append(1, JSON_ST(','));
         }
         json.append(MembersToJSON(classFrom, KeyList<keys...>(), MemberList<types...>()));

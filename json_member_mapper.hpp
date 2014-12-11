@@ -105,30 +105,31 @@ namespace JSON {
     constexpr static const MapTypes::maptype<classFor> CreateMap(K<>&& k3,
                                                                  ML<>&& ml,
                                                                  value_types&&... pairs) {
-        return { pairs...};
+        return { pairs... };
     }
 
-#define JSON_MAKE_MEMBER_MAP(CLASS_NAME, ...)                                               \
-    template<>                                                                              \
-    struct ClassMap<CLASS_NAME> {                                                           \
-        typedef CLASS_NAME classFor;                                                        \
-                                                                                            \
-        ClassMap() :                                                                        \
-            values(CreateMap<CLASS_NAME>(                                                   \
-                    JSON::KeysHolder<CLASS_NAME>::keys,                                     \
-                    JSON::MembersHolder<CLASS_NAME>::members)                               \
-            )                                                                               \
-        {}                                                                                  \
-                                                                                            \
-    public:                                                                                 \
-        const MapTypes::maptype<classFor> values;                                           \
-    };                                                                                      \
-                                                                                            \
-    template<>                                                                              \
-    struct MemberMap<CLASS_NAME> {                                                          \
-        static const ClassMap<CLASS_NAME> mapping;                                          \
-    };                                                                                      \
-                                                                                            \
+#define JSON_MAKE_MEMBER_MAP(CLASS_NAME, ...)                   \
+    template<>                                                  \
+    struct ClassMap<CLASS_NAME> {                               \
+        typedef CLASS_NAME classFor;                            \
+                                                                \
+        ClassMap() :                                            \
+            values(                                             \
+                CreateMap<CLASS_NAME>(                          \
+                    JSON::KeysHolder<CLASS_NAME>::keys,         \
+                    JSON::MembersHolder<CLASS_NAME>::members    \
+                )                                               \
+            )                                                   \
+        {}                                                      \
+                                                                \
+        const MapTypes::maptype<classFor> values;               \
+    };                                                          \
+                                                                \
+    template<>                                                  \
+    struct MemberMap<CLASS_NAME> {                              \
+        static const ClassMap<CLASS_NAME> mapping;              \
+    };                                                          \
+                                                                \
     const ClassMap<CLASS_NAME> MemberMap<CLASS_NAME>::mapping;
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
