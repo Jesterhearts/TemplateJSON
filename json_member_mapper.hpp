@@ -107,53 +107,24 @@ namespace JSON {
         return { pairs... };
     }
 
-////////////////////////////////////////////////////////////////////////////////////////////////////
-#define JSON_LIST_KEYS(CLASS_NAME, ...)             \
-    JSON_FIRST_KEY(                                 \
+#define JSON_LIST_MEMBERS(CLASS_NAME, ...)          \
+    JSON_FIRST_MEMBER_POINTER(                      \
         CLASS_NAME,                                 \
         BOOST_PP_VARIADIC_ELEM(0, __VA_ARGS__)      \
     )                                               \
     BOOST_PP_SEQ_FOR_EACH(                          \
-        JSON_LIST_KEYS_IMPL, CLASS_NAME,            \
+        JSON_CREATE_MEMBER_POINTER, CLASS_NAME,     \
         BOOST_PP_SEQ_POP_FRONT(                     \
             BOOST_PP_VARIADIC_TO_SEQ(__VA_ARGS__)   \
         )                                           \
     )
 
-#define JSON_LIST_KEYS_IMPL(s, CLASS_NAME, VARDATA)    \
-    , KeysHolder<CLASS_NAME>:: JSON_KEY_LISTER VARDATA
-
-#ifndef _MSC_VER
-#define JSON_KEY_LISTER(...)                                      \
-    BOOST_PP_OVERLOAD(JSON_KEY_LISTER, __VA_ARGS__)(__VA_ARGS__)
-#else
-#define JSON_KEY_LISTER(...)                                      \
-    BOOST_PP_CAT(BOOST_PP_OVERLOAD(JSON_KEY_LISTER, __VA_ARGS__)(__VA_ARGS__),BOOST_PP_EMPTY())
-#endif
-
-#define JSON_KEY_LISTER2(VARNAME, JSONKEY)  \
-    JSON_KEY_LISTER1(VARNAME)
-
-#define JSON_KEY_LISTER1(VARNAME)   \
-    VARNAME##__JSON_KEY
+#define JSON_CREATE_MEMBER_POINTER(s, CLASS_NAME, VARDATA)    \
+    , decltype(MembersHolder<CLASS_NAME>:: JSON_MEMBER_NAME VARDATA)
 
 //////////////////////////////////////////////
-#define JSON_FIRST_KEY(CLASS_NAME, VARDATA)     \
-    KeysHolder<CLASS_NAME>:: JSON_FIRST_KEY_IMPL VARDATA
-
-#ifndef _MSC_VER
-#define JSON_FIRST_KEY_IMPL(...)                                     \
-    BOOST_PP_OVERLOAD(JSON_FIRST_KEY_IMPL, __VA_ARGS__)(__VA_ARGS__)
-#else
-#define JSON_FIRST_KEY_IMPL(...)                                      \
-    BOOST_PP_CAT(BOOST_PP_OVERLOAD(JSON_FIRST_KEY_IMPL,__VA_ARGS__)(__VA_ARGS__),BOOST_PP_EMPTY())
-#endif
-
-#define JSON_FIRST_KEY_IMPL2(VARNAME, JSONKEY)   \
-    JSON_FIRST_KEY_IMPL1(VARNAME)
-
-#define JSON_FIRST_KEY_IMPL1(VARNAME)    \
-    VARNAME##__JSON_KEY
+#define JSON_FIRST_MEMBER_POINTER(CLASS_NAME, VARDATA)  \
+    decltype(MembersHolder<CLASS_NAME>:: JSON_MEMBER_NAME VARDATA)
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 #define JSON_CREATE_MEMBERS(CLASS_NAME, ...)                            \

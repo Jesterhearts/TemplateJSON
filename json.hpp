@@ -15,6 +15,7 @@
 
 #include "json_common_defs.hpp"
 #include "json_value_parser.hpp"
+#include "json_keys_handler.hpp"
 #include "json_member_mapper.hpp"
 
 namespace JSON {
@@ -117,9 +118,6 @@ namespace JSON {
         return JSONReader<classFor, sizeof...(types)>::MembersFromJSON(classInto, iter, end);
     }
 
-    template<typename classType>
-    struct KeysHolder;
-
     template<typename classFor>
     stringt ToJSON(const classFor& classFrom) {
         stringt json(JSON_ST("{"));
@@ -183,91 +181,5 @@ namespace JSON {
         template stringt ToJSON<CLASS_NAME>(const CLASS_NAME&);     \
         template CLASS_NAME FromJSON<CLASS_NAME>(const stringt&);   \
     }
-
-
-////////////////////////////////////////////////////////////////////////////////////////////////////
-#define JSON_CREATE_KEYS(CLASS_NAME, ...)                               \
-    template<>                                                          \
-    struct KeysHolder<CLASS_NAME> {                                     \
-    private:                                                            \
-        BOOST_PP_SEQ_FOR_EACH(                                          \
-            JSON_CREATE_KEYS_IMPL, ~,                                   \
-            BOOST_PP_VARIADIC_TO_SEQ(__VA_ARGS__)                       \
-        )                                                               \
-    public:                                                             \
-        static constexpr const auto keys =                              \
-            JSON::KeyList<JSON_LIST_KEYS(CLASS_NAME, __VA_ARGS__)>();   \
-    };                                                                  \
-                                                                        \
-    BOOST_PP_SEQ_FOR_EACH(                                              \
-        JSON_REFERENCE_KEY, KeysHolder<CLASS_NAME>::,                   \
-        BOOST_PP_VARIADIC_TO_SEQ(__VA_ARGS__)                           \
-    )                                                                   \
-                                                                        \
-    constexpr const JSON::KeyList<                                      \
-        JSON_LIST_KEYS(CLASS_NAME, __VA_ARGS__)                         \
-    > KeysHolder<CLASS_NAME>::keys;
-
-
-#define JSON_CREATE_KEYS_IMPL(s, IGNORED, VARDATA)  \
-    BOOST_PP_EXPAND(JSON_KEY_CREATOR VARDATA)
-
-
-#ifndef _MSC_VER
-#define JSON_KEY_CREATOR(...)                                      \
-    BOOST_PP_OVERLOAD(JSON_KEY_CREATOR, __VA_ARGS__)(__VA_ARGS__)
-#else
-#define JSON_KEY_CREATOR(...)                                      \
-    BOOST_PP_CAT(BOOST_PP_OVERLOAD(JSON_KEY_CREATOR, __VA_ARGS__)(__VA_ARGS__),BOOST_PP_EMPTY())
-#endif
-
-
-#define JSON_KEY_CREATOR1(VARNAME)                          \
-    JSON_KEY_CREATOR2(VARNAME, BOOST_PP_STRINGIZE(VARNAME))
-
-
-#define JSON_KEY_CREATOR2(VARNAME, JSONKEY)                                 \
-    static constexpr const char_t VARNAME##__JSON_KEY[] = JSON_ST(JSONKEY);
-
-//////////////////////////////////////////////////
-#define JSON_REFERENCE_KEY(s, CLASS, VARDATA)                                       \
-    constexpr const char_t CLASS BOOST_PP_EXPAND(JSON_KEY_REFERENCE VARDATA)
-
-
-#ifndef _MSC_VER
-#define JSON_KEY_REFERENCE(...)                                      \
-    BOOST_PP_OVERLOAD(JSON_KEY_REFERENCE, __VA_ARGS__)(__VA_ARGS__)
-#else
-#define JSON_KEY_REFERENCE(...)                                      \
-    BOOST_PP_CAT(BOOST_PP_OVERLOAD(JSON_KEY_REFERENCE, __VA_ARGS__)(__VA_ARGS__),BOOST_PP_EMPTY())
-#endif
-
-
-#define JSON_KEY_REFERENCE2(VARNAME, JSONKEY)                   \
-    JSON_KEY_REFERENCE1(VARNAME)
-
-
-#define JSON_KEY_REFERENCE1(VARNAME)    \
-     VARNAME##__JSON_KEY[];
-
-////////////////////////////////////////////////////////////////////////////////////////////////////
-#define JSON_LIST_MEMBERS(CLASS_NAME, ...)          \
-    JSON_FIRST_MEMBER_POINTER(                      \
-        CLASS_NAME,                                 \
-        BOOST_PP_VARIADIC_ELEM(0, __VA_ARGS__)      \
-    )                                               \
-    BOOST_PP_SEQ_FOR_EACH(                          \
-        JSON_CREATE_MEMBER_POINTER, CLASS_NAME,    \
-        BOOST_PP_SEQ_POP_FRONT(                     \
-            BOOST_PP_VARIADIC_TO_SEQ(__VA_ARGS__)   \
-        )                                           \
-    )
-
-#define JSON_CREATE_MEMBER_POINTER(s, CLASS_NAME, VARDATA)    \
-    , decltype(MembersHolder<CLASS_NAME>:: JSON_MEMBER_NAME VARDATA)
-
-//////////////////////////////////////////////
-#define JSON_FIRST_MEMBER_POINTER(CLASS_NAME, VARDATA)  \
-    decltype(MembersHolder<CLASS_NAME>:: JSON_MEMBER_NAME VARDATA)
 
 #endif
