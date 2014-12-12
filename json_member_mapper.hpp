@@ -23,35 +23,34 @@ namespace JSON {
     };
 
     template<typename classType>
-    constexpr void* GetPointer(classType& classOn);
+    jsonIter MemberToJSON(classType& classOn, jsonIter iter, jsonIter end);
 
     template<typename classType, typename underlyingType>
-    constexpr void* ResolvePointerType(classType& classOn, underlyingType classType::* member) {
-        return &(classOn.*member);
+    jsonIter ResolveMemberToJSONImpl(classType& classOn, jsonIter iter, jsonIter end,
+                                     underlyingType classType::* member) {
+        return JSONFnInvoker<underlyingType>::FromJSON(iter, end, classOn.*member);
     }
 
     template<typename classType, typename underlyingType>
-    constexpr void* ResolvePointerType(classType& classOn, underlyingType* member) {
-        return (void*)member;
+    jsonIter ResolveMemberToJSONImpl(classType& classOn, jsonIter iter, jsonIter end,
+                                     underlyingType* member) {
+        return JSONFnInvoker<underlyingType>::FromJSON(iter, end, *member);
     }
 
     template<typename classType, typename memberType>
-    constexpr void* GetPointer(classType& classOn) {
-        return ResolvePointerType(classOn, memberType::value);
+    jsonIter MemberToJSON(classType& classOn, jsonIter iter, jsonIter end) {
+        return ResolveMemberToJSONImpl(classOn, iter, end, memberType::value);
     }
 
     template<typename classType, typename memberType>
-    struct DeclareGetPointer {
-        typedef memberType type;
-        typedef typename std::decay<memberType>::type underlying_type;
-
-        constexpr static void* (*const fn)(classType&) = &JSON::GetPointer<classType, memberType>;
+    struct DeclareMemberToJSON {
+        constexpr static jsonIter (*const fn)(classType&, jsonIter, jsonIter) = &MemberToJSON<classType, memberType>;
     };
 
     template<typename classType>
     struct VirtualAccessor {
-        constexpr VirtualAccessor(void* (*const access)(classType&)) : GetPointer(access) {};
-        void* (*const GetPointer)(classType&);
+        constexpr VirtualAccessor(jsonIter (*const fn)(classType&, jsonIter, jsonIter)) : MemberToJSON(fn) {};
+        jsonIter (*const MemberToJSON)(classType&, jsonIter, jsonIter);
     };
 
     template<typename classType>
@@ -59,7 +58,7 @@ namespace JSON {
 
     namespace MapTypes {
         template<typename T>
-        using maptype = std::unordered_map<JSON::stringt, VirtualAccessor<T>>;
+        using maptype = std::unordered_map<stringt, VirtualAccessor<T>>;
 
         template<typename T>
         using value_type = typename maptype<T>::value_type;
@@ -75,7 +74,7 @@ namespace JSON {
         return CreateMap<classFor>(KeyList<keys...>(), MemberList<types...>(),
                          MapTypes::value_type<classFor>{
                             stringt(key),
-                            VirtualAccessor<classFor>(DeclareGetPointer<classFor, type>::fn)
+                            VirtualAccessor<classFor>(DeclareMemberToJSON<classFor, type>::fn)
                         }
                 );
     }
@@ -92,7 +91,7 @@ namespace JSON {
         return CreateMap<classFor>(KeyList<keys...>(), MemberList<types...>(),
                          MapTypes::value_type<classFor>{
                             stringt(key),
-                            VirtualAccessor<classFor>(DeclareGetPointer<classFor, type>::fn)
+                            VirtualAccessor<classFor>(DeclareMemberToJSON<classFor, type>::fn)
                         },
                         pairs...
                 );
@@ -107,30 +106,6 @@ namespace JSON {
                                                                  value_types&&... pairs) {
         return { pairs... };
     }
-
-#define JSON_MAKE_MEMBER_MAP(CLASS_NAME, ...)                   \
-    template<>                                                  \
-    struct ClassMap<CLASS_NAME> {                               \
-        typedef CLASS_NAME classFor;                            \
-                                                                \
-        ClassMap() :                                            \
-            values(                                             \
-                CreateMap<CLASS_NAME>(                          \
-                    JSON::KeysHolder<CLASS_NAME>::keys,         \
-                    JSON::MembersHolder<CLASS_NAME>::members    \
-                )                                               \
-            )                                                   \
-        {}                                                      \
-                                                                \
-        const MapTypes::maptype<classFor> values;               \
-    };                                                          \
-                                                                \
-    template<>                                                  \
-    struct MemberMap<CLASS_NAME> {                              \
-        static const ClassMap<CLASS_NAME> mapping;              \
-    };                                                          \
-                                                                \
-    const ClassMap<CLASS_NAME> MemberMap<CLASS_NAME>::mapping;
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 #define JSON_LIST_KEYS(CLASS_NAME, ...)             \
@@ -181,31 +156,31 @@ namespace JSON {
     VARNAME##__JSON_KEY
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
-#define JSON_CREATE_MEMBERS(CLASS_NAME, ...)                                \
-    template<>                                                              \
-    struct MembersHolder<CLASS_NAME> {                                      \
-    private:                                                                \
-        BOOST_PP_SEQ_FOR_EACH(                                              \
-            JSON_CREATE_MEMBERS_IMPL, CLASS_NAME,                           \
-            BOOST_PP_VARIADIC_TO_SEQ(__VA_ARGS__)                           \
-        )                                                                   \
-    public:                                                                 \
-        static constexpr const auto members =                               \
-            JSON::MemberList<JSON_LIST_MEMBERS(CLASS_NAME, __VA_ARGS__)>(); \
-    };                                                                      \
-                                                                            \
-    BOOST_PP_SEQ_FOR_EACH(                                                  \
-        JSON_REFERENCE_MEMBER, CLASS_NAME,                                  \
-        BOOST_PP_VARIADIC_TO_SEQ(__VA_ARGS__)                               \
-    )                                                                       \
-                                                                            \
-    constexpr const JSON::MemberList<                                       \
-        JSON_LIST_MEMBERS(CLASS_NAME, __VA_ARGS__)                          \
+#define JSON_CREATE_MEMBERS(CLASS_NAME, ...)                            \
+    template<>                                                          \
+    struct MembersHolder<CLASS_NAME> {                                  \
+    private:                                                            \
+        BOOST_PP_SEQ_FOR_EACH(                                          \
+            JSON_CREATE_MEMBERS_IMPL, CLASS_NAME,                       \
+            BOOST_PP_VARIADIC_TO_SEQ(__VA_ARGS__)                       \
+        )                                                               \
+    public:                                                             \
+        static constexpr const auto members =                           \
+            MemberList<JSON_LIST_MEMBERS(CLASS_NAME, __VA_ARGS__)>();   \
+    };                                                                  \
+                                                                        \
+    BOOST_PP_SEQ_FOR_EACH(                                              \
+        JSON_REFERENCE_MEMBER, CLASS_NAME,                              \
+        BOOST_PP_VARIADIC_TO_SEQ(__VA_ARGS__)                           \
+    )                                                                   \
+                                                                        \
+    constexpr const MemberList<                                         \
+        JSON_LIST_MEMBERS(CLASS_NAME, __VA_ARGS__)                      \
     > MembersHolder<CLASS_NAME>::members;
 
-#define JSON_CREATE_MEMBERS_IMPL(s, CLASS_NAME, VARDATA)                            \
-    static constexpr const auto JSON_MEMBER_NAME VARDATA =                          \
-        JSON::Member<decltype(&CLASS_NAME:: JSON_VARNAME VARDATA),                  \
+#define JSON_CREATE_MEMBERS_IMPL(s, CLASS_NAME, VARDATA)        \
+    static constexpr const auto JSON_MEMBER_NAME VARDATA =      \
+        Member<decltype(&CLASS_NAME:: JSON_VARNAME VARDATA),    \
                      &CLASS_NAME:: JSON_VARNAME VARDATA>();
 
 #ifndef _MSC_VER
@@ -238,8 +213,8 @@ namespace JSON {
 
 //////////////////////////////////////////////////
 #define JSON_REFERENCE_MEMBER(s, CLASS_NAME, VARDATA)       \
-    constexpr const JSON::Member<                           \
-        decltype(&CLASS_NAME:: JSON_VARNAME VARDATA),        \
+    constexpr const Member<                                 \
+        decltype(&CLASS_NAME:: JSON_VARNAME VARDATA),       \
         &CLASS_NAME:: JSON_VARNAME VARDATA                  \
     > MembersHolder<CLASS_NAME>:: JSON_MEMBER_NAME VARDATA; \
 
