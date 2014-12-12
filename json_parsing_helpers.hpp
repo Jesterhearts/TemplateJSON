@@ -3,6 +3,18 @@
 #define __JSON_PARSING_HELPERS_HPP__
 
 namespace JSON {
+#if defined(_MSC_VER) && _MSC_VER < 1700
+    json_no_return inline void ThrowBadJSONError(jsonIter iter, jsonIter end,
+                                                 const std::string& errmsg) {
+#else
+    json_no_return inline void ThrowBadJSONError(jsonIter iter, jsonIter end,
+                                                 const std::string&& errmsg) {
+#endif
+        jsonIter endIter = (std::distance(iter, end) > 1000) ? iter + 1000 : end;
+        std::string badJson(iter, endIter);
+        throw std::invalid_argument(errmsg + ": " + badJson);
+    }
+
     inline jsonIter AdvancePastWhitespace(jsonIter iter, jsonIter end) {
         while(iter != end) {
             switch(*iter) {
@@ -73,7 +85,7 @@ namespace JSON {
     inline jsonIter ValidateObjectStart(jsonIter iter, jsonIter end) {
         iter = AdvancePastWhitespace(iter, end);
         if(iter == end || *iter != JSON_ST('{')) {
-            throw std::invalid_argument("No object start token");
+            ThrowBadJSONError(iter, end, JSON_ST("No object start token"));
         }
         ++iter;
 
@@ -83,7 +95,7 @@ namespace JSON {
     inline jsonIter ValidateObjectEnd(jsonIter iter, jsonIter end) {
         iter = AdvancePastWhitespace(iter, end);
         if(iter == end || *iter != JSON_ST('}')) {
-            throw std::invalid_argument("No object end token");
+            ThrowBadJSONError(iter, end, JSON_ST("No object end token"));
         }
         ++iter;
         return iter;
@@ -92,21 +104,10 @@ namespace JSON {
     inline jsonIter ValidateKeyValueMapping(jsonIter iter, jsonIter end) {
         iter = AdvancePastWhitespace(iter, end);
         if(iter == end || *iter != JSON_ST(':')) {
-            throw std::invalid_argument("Not a valid key-value mapping");
+            ThrowBadJSONError(iter, end, JSON_ST("Not a valid key-value mapping"));
         }
         ++iter;
         return iter;
-    }
-
-#if defined(_MSC_VER) && _MSC_VER < 1700
-    json_no_return inline void ThrowBadJSONError(jsonIter iter, jsonIter end,
-                                                 const std::string& errmsg) {
-#else
-    json_no_return inline void ThrowBadJSONError(jsonIter iter, jsonIter end,
-                                                 const std::string&& errmsg) {
-#endif
-        std::string badJson(iter, end);
-        throw std::invalid_argument(errmsg + ": " + badJson);
     }
 }
 #endif
