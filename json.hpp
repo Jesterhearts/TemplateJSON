@@ -55,45 +55,66 @@ namespace JSON {
         return JSON_ST("");
     }
 
-    template<typename classFor,
-             const char_t* key, const char_t*... keys,
-             template<const char_t*...> class K,
-             typename type, typename... types,
-             template<typename... M> class ML>
-    json_finline jsonIter MembersFromJSON(classFor& classInto,
-                                          jsonIter iter, jsonIter end,
-                                          const K<key, keys...>& k1,
-                                          const ML<type, types...>& ml) {
-        stringt nextKey;
-        iter = ParseNextKey(iter, end, nextKey);
-        iter = ValidateKeyValueMapping(iter, end);
+    template<typename classFor, size_t membersRemaining>
+    struct JSONReader {
+        json_finline static jsonIter MembersFromJSON(classFor& classInto, jsonIter iter, jsonIter end) {
+            stringt nextKey;
+            iter = ParseNextKey(iter, end, nextKey);
+            iter = ValidateKeyValueMapping(iter, end);
 
-        iter = AdvancePastWhitespace(iter, end);
+            iter = AdvancePastWhitespace(iter, end);
 
-        auto insertAt = MemberMap<classFor>::mapping.values.find(nextKey.c_str());
-        if(insertAt == MemberMap<classFor>::mapping.values.end()) {
-            ThrowBadJSONError(iter, end, JSON_ST("No key in object"));
+            auto insertAt = MemberMap<classFor>::mapping.values.find(nextKey.c_str());
+            if(insertAt == MemberMap<classFor>::mapping.values.end()) {
+                ThrowBadJSONError(iter, end, JSON_ST("No key in object"));
+            }
+
+            iter = insertAt->second.MemberToJSON(classInto, iter, end);
+
+            iter = AdvancePastWhitespace(iter, end);
+            if(iter != end && *iter == JSON_ST(',') ) {
+                ++iter;
+            }
+            else {
+                ThrowBadJSONError(iter, end, JSON_ST("Missing key separator"));
+            }
+
+            return JSONReader<classFor, membersRemaining - 1>::MembersFromJSON(classInto, iter, end);
         }
+    };
 
-        iter = insertAt->second.MemberToJSON(classInto, iter, end);
+    template<typename classFor>
+    struct JSONReader<classFor, 1> {
+        json_finline static jsonIter MembersFromJSON(classFor& classInto, jsonIter iter, jsonIter end) {
+            stringt nextKey;
+            iter = ParseNextKey(iter, end, nextKey);
+            iter = ValidateKeyValueMapping(iter, end);
 
-        iter = AdvancePastWhitespace(iter, end);
-        if(iter != end && *iter == JSON_ST(',') ) {
-            ++iter;
+            iter = AdvancePastWhitespace(iter, end);
+
+            auto insertAt = MemberMap<classFor>::mapping.values.find(nextKey.c_str());
+            if(insertAt == MemberMap<classFor>::mapping.values.end()) {
+                ThrowBadJSONError(iter, end, JSON_ST("No key in object"));
+            }
+
+            iter = insertAt->second.MemberToJSON(classInto, iter, end);
+
+            iter = AdvancePastWhitespace(iter, end);
+            if(iter != end && *iter == JSON_ST(',')) {
+                ++iter;
+            }
+            else if(*iter != JSON_ST('}')) {
+                ThrowBadJSONError(iter, end, JSON_ST("Missing key separator"));
+            }
+
+            return iter;
         }
-        else if (*iter != JSON_ST('}')) {
-            ThrowBadJSONError(iter, end, JSON_ST("Missing key separator"));
-        }
+    };
 
-        return MembersFromJSON(classInto, iter, end, K<keys...>(), ML<types...>());
-    }
-
-    template<typename classFor,
-             template<const char_t*...> class K,
-             template<typename... M> class ML>
-    json_finline jsonIter MembersFromJSON(classFor& classInto, jsonIter iter, jsonIter end, K<>&& k1,
-                                          ML<>&& ml) {
-        return iter;
+    template<typename classFor, typename... types, template<typename... M> class ML>
+    json_finline jsonIter MembersFromJSON(classFor& classInto, jsonIter iter, jsonIter end,
+                                          const ML<types...> ml) {
+        return JSONReader<classFor, sizeof...(types)>::MembersFromJSON(classInto, iter, end);
     }
 
     template<typename classType>
@@ -117,10 +138,7 @@ namespace JSON {
     jsonIter FromJSON(jsonIter iter, jsonIter end, classFor& classInto) {
         iter = ValidateObjectStart(iter, end);
 
-        iter = MembersFromJSON<classFor>(classInto, iter, end,
-                                         KeysHolder<classFor>::keys,
-                                         MembersHolder<classFor>::members
-               );
+        iter = MembersFromJSON<classFor>(classInto, iter, end, MembersHolder<classFor>::members);
 
         return ValidateObjectEnd(iter, end);
     }
