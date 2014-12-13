@@ -19,6 +19,7 @@
 #include "json_member_mapper.hpp"
 
 namespace JSON {
+
     template<typename classFor, typename underlyingType>
     json_finline stringt MemberToJSON(const classFor& classFrom, underlyingType classFor::* member) {
         return JSONFnInvoker<decltype(classFrom.*member)>::ToJSON(classFrom.*member);
@@ -30,18 +31,26 @@ namespace JSON {
     }
 
     template<typename classFor,
-             const char_t* key, const char_t*... keys,
-             template<const char_t*...> class K,
+             typename underlyingType, underlyingType member,
+             template<typename UT, UT MT> class Member>
+    json_finline stringt MemberToJSON(const classFor& classFrom,
+                                      Member<underlyingType, member>&& m) {
+        return MemberToJSON(classFrom, member);
+    }
+
+    template<typename classFor,
+             const stringt& key, const stringt&... keys,
+             template<const stringt&...> class K,
              typename type, typename... types,
              template<typename... M> class ML>
     json_finline stringt MembersToJSON(const classFor& classFrom,
-                                       const K<key, keys...>& k1,
-                                       const ML<type, types...>& ml) {
+                                       K<key, keys...>&& k1,
+                                       ML<type, types...>&& ml) {
         stringt json(1, JSON_ST('\"'));
         json.append(key);
         json.append(JSON_ST("\":"), 2);
 
-        json.append(MemberToJSON(classFrom, type::value));
+        json.append(MemberToJSON(classFrom, type()));
         if(sizeof...(keys) > 0) {
             json.append(1, JSON_ST(','));
         }
@@ -50,7 +59,7 @@ namespace JSON {
     }
 
     template<typename classFor,
-             template<const char_t*...> class K,
+             template<const stringt&...> class K,
              template<typename... M> class ML>
     json_finline stringt MembersToJSON(const classFor& classFrom, K<>&& k1, ML<>&& ml) {
         return JSON_ST("");
@@ -65,12 +74,12 @@ namespace JSON {
 
             iter = AdvancePastWhitespace(iter, end);
 
-            auto insertAt = MemberMap<classFor>::mapping.values.find(nextKey.c_str());
-            if(insertAt == MemberMap<classFor>::mapping.values.end()) {
+            auto insertAt = MemberMap<classFor>::map.find(nextKey);
+            if(insertAt == MemberMap<classFor>::map.end()) {
                 ThrowBadJSONError(iter, end, JSON_ST("No key in object"));
             }
 
-            iter = insertAt->second.MemberToJSON(classInto, iter, end);
+            iter = insertAt->second.MemberFromJSON(classInto, iter, end);
 
             iter = AdvancePastWhitespace(iter, end);
             if(iter != end && *iter == JSON_ST(',') ) {
@@ -93,12 +102,12 @@ namespace JSON {
 
             iter = AdvancePastWhitespace(iter, end);
 
-            auto insertAt = MemberMap<classFor>::mapping.values.find(nextKey.c_str());
-            if(insertAt == MemberMap<classFor>::mapping.values.end()) {
+            auto insertAt = MemberMap<classFor>::map.find(nextKey);
+            if(insertAt == MemberMap<classFor>::map.end()) {
                 ThrowBadJSONError(iter, end, JSON_ST("No key in object"));
             }
 
-            iter = insertAt->second.MemberToJSON(classInto, iter, end);
+            iter = insertAt->second.MemberFromJSON(classInto, iter, end);
 
             iter = AdvancePastWhitespace(iter, end);
             if(iter != end && *iter == JSON_ST(',')) {
@@ -123,8 +132,8 @@ namespace JSON {
         stringt json(JSON_ST("{"));
 
         json.append(MembersToJSON(classFrom,
-                                  KeysHolder<classFor>::keys,
-                                  MembersHolder<classFor>::members
+                                  KeysHolder<classFor>::keys(),
+                                  MembersHolder<classFor>::members()
             )
         );
 
@@ -136,7 +145,7 @@ namespace JSON {
     jsonIter FromJSON(jsonIter iter, jsonIter end, classFor& classInto) {
         iter = ValidateObjectStart(iter, end);
 
-        iter = MembersFromJSON<classFor>(classInto, iter, end, MembersHolder<classFor>::members);
+        iter = MembersFromJSON<classFor>(classInto, iter, end, MembersHolder<classFor>::members());
 
         return ValidateObjectEnd(iter, end);
     }
@@ -153,21 +162,14 @@ namespace JSON {
     }
 
     template<typename classFor>
-    struct ClassMap {
-        ClassMap()
-            : values(CreateMap<classFor>(KeysHolder<classFor>::keys, MembersHolder<classFor>::members))
-        {}
-
-        const MapTypes::maptype<classFor> values;
-    };
-
-    template<typename classFor>
     struct MemberMap {
-        static const ClassMap<classFor> mapping;
+        static const MapTypes::maptype<classFor> map;
     };
 
     template<typename classFor>
-    const ClassMap<classFor> MemberMap<classFor>::mapping;
+    const MapTypes::maptype<classFor> MemberMap<classFor>::map = CreateMap<classFor>(
+        KeysHolder<classFor>::keys(), MembersHolder<classFor>::members()
+    );
 };
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
