@@ -19,6 +19,7 @@
     #else
         #define json_deserialize_const_warning  \
             __declspec(deprecated("Cannot deserialize into a const value!"))
+        #define constexpr
     #endif
 #else
     #define json_deserialize_const_warning

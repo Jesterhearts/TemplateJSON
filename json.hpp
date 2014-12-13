@@ -74,7 +74,7 @@ namespace JSON {
                 ThrowBadJSONError(iter, end, JSON_ST("No key in object"));
             }
 
-            iter = insertAt->second.MemberFromJSON(classInto, iter, end);
+            iter = insertAt->second(classInto, iter, end);
 
             iter = AdvancePastWhitespace(iter, end);
             if(iter != end && *iter == JSON_ST(',') ) {
@@ -102,7 +102,7 @@ namespace JSON {
                 ThrowBadJSONError(iter, end, JSON_ST("No key in object"));
             }
 
-            iter = insertAt->second.MemberFromJSON(classInto, iter, end);
+            iter = insertAt->second(classInto, iter, end);
 
             iter = AdvancePastWhitespace(iter, end);
             if(iter != end && *iter == JSON_ST(',')) {

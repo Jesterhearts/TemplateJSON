@@ -39,24 +39,13 @@ namespace JSON {
         return MemberFromJSON(classOn, iter, end, memberType());
     }
 
-    template<typename classType, typename memberType>
-    struct DeclareMemberFromJSON {
-        constexpr static jsonIter (*const fn)(classType&, jsonIter, jsonIter) = &MemberFromJSON<classType, memberType>;
-    };
-
-    template<typename classType>
-    struct VirtualAccessor {
-        constexpr VirtualAccessor(jsonIter (*const fn)(classType&, jsonIter, jsonIter)) : MemberFromJSON(fn) {};
-        jsonIter (*const MemberFromJSON)(classType&, jsonIter, jsonIter);
-    };
-
     template<typename classType>
     struct MemberMap;
 
     namespace MapTypes {
         template<typename T>
         using maptype = std::unordered_map<std::reference_wrapper<const stringt>,
-                                           VirtualAccessor<T>,
+                                           jsonIter (*const)(T&, jsonIter, jsonIter),
                                            std::hash<stringt>,
                                            std::equal_to<stringt>>;
 
@@ -71,7 +60,7 @@ namespace JSON {
         return CreateMap<classFor>(MemberList<members...>(),
                          MapTypes::value_type<classFor>{
                             std::reference_wrapper<const stringt>(member::key),
-                            VirtualAccessor<classFor>(DeclareMemberFromJSON<classFor, member>::fn)
+                            &MemberFromJSON<classFor, member>
                         }
                 );
     }
@@ -85,7 +74,7 @@ namespace JSON {
         return CreateMap<classFor>(MemberList<members...>(),
                          MapTypes::value_type<classFor>{
                             std::reference_wrapper<const stringt>(member::key),
-                            VirtualAccessor<classFor>(DeclareMemberFromJSON<classFor, member>::fn)
+                            &MemberFromJSON<classFor, member>
                         },
                         pairs...
                 );
