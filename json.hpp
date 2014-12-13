@@ -39,29 +39,24 @@ namespace JSON {
     }
 
     template<typename classFor,
-             const stringt& key, const stringt&... keys,
-             template<const stringt&...> class K,
-             typename type, typename... types,
+             typename member, typename... members,
              template<typename... M> class ML>
-    json_finline stringt MembersToJSON(const classFor& classFrom,
-                                       K<key, keys...>&& k1,
-                                       ML<type, types...>&& ml) {
+    json_finline stringt MembersToJSON(const classFor& classFrom, ML<member, members...>&& ml) {
         stringt json(1, JSON_ST('\"'));
-        json.append(key);
+        json.append(member::key);
         json.append(JSON_ST("\":"), 2);
 
-        json.append(MemberToJSON(classFrom, type()));
-        if(sizeof...(keys) > 0) {
+        json.append(MemberToJSON(classFrom, member()));
+        if(sizeof...(members) > 0) {
             json.append(1, JSON_ST(','));
         }
-        json.append(MembersToJSON(classFrom, K<keys...>(), ML<types...>()));
+        json.append(MembersToJSON(classFrom, ML<members...>()));
         return json;
     }
 
     template<typename classFor,
-             template<const stringt&...> class K,
              template<typename... M> class ML>
-    json_finline stringt MembersToJSON(const classFor& classFrom, K<>&& k1, ML<>&& ml) {
+    json_finline stringt MembersToJSON(const classFor& classFrom, ML<>&& ml) {
         return JSON_ST("");
     }
 
@@ -131,11 +126,7 @@ namespace JSON {
     stringt ToJSON(const classFor& classFrom) {
         stringt json(JSON_ST("{"));
 
-        json.append(MembersToJSON(classFrom,
-                                  KeysHolder<classFor>::keys(),
-                                  MembersHolder<classFor>::members()
-            )
-        );
+        json.append(MembersToJSON(classFrom, MembersHolder<classFor>::members()));
 
         json.append(JSON_ST("}"));
         return json;
@@ -168,7 +159,7 @@ namespace JSON {
 
     template<typename classFor>
     const MapTypes::maptype<classFor> MemberMap<classFor>::map = CreateMap<classFor>(
-        KeysHolder<classFor>::keys(), MembersHolder<classFor>::members()
+        MembersHolder<classFor>::members()
     );
 };
 

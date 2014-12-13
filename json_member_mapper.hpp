@@ -3,9 +3,10 @@
 #define __JSON_MEMBER_MAPPER_HPP__
 
 namespace JSON {
-
     template<typename memberType, memberType member>
-    struct Member {};
+    struct MemberInfo {
+        static const stringt key;
+    };
 
     template<typename... members>
     struct MemberList {};
@@ -27,9 +28,9 @@ namespace JSON {
 
     template<typename classType,
              typename underlyingType, underlyingType member,
-             template<typename UT, UT MT> class Member>
+             template<typename UT, UT MT> class MemberInfo>
     json_finline jsonIter MemberFromJSON(classType& classOn, jsonIter iter, jsonIter end,
-                                         Member<underlyingType, member>&& m) {
+                                         MemberInfo<underlyingType, member>&& m) {
         return MemberFromJSON(classOn, iter, end, member);
     }
 
@@ -64,45 +65,37 @@ namespace JSON {
     }
 
     template<typename classFor,
-             const stringt& key, const stringt&... keys,
-             template<const stringt&...> class K,
-             typename type, typename... types,
+             typename member, typename... members,
              template<typename... M> class ML>
-    json_finline constexpr static const MapTypes::maptype<classFor> CreateMap(K<key, keys...>&& k1,
-                                                                 ML<type, types...>&& ml) {
-        return CreateMap<classFor>(KeyList<keys...>(), MemberList<types...>(),
+    json_finline constexpr static const MapTypes::maptype<classFor> CreateMap(ML<member, members...>&& ml) {
+        return CreateMap<classFor>(MemberList<members...>(),
                          MapTypes::value_type<classFor>{
-                            std::reference_wrapper<const stringt>(key),
-                            VirtualAccessor<classFor>(DeclareMemberFromJSON<classFor, type>::fn)
+                            std::reference_wrapper<const stringt>(member::key),
+                            VirtualAccessor<classFor>(DeclareMemberFromJSON<classFor, member>::fn)
                         }
                 );
     }
 
     template<typename classFor,
-             const stringt& key, const stringt&... keys,
-             template<const stringt&...> class K,
-             typename type, typename... types,
+             typename member, typename... members,
              template<typename... M> class ML,
              typename... value_types>
-    json_finline constexpr static const MapTypes::maptype<classFor> CreateMap(K<key, keys...>&& k2,
-                                                                 ML<type, types...>&& ml,
-                                                                 value_types&&... pairs) {
-        return CreateMap<classFor>(KeyList<keys...>(), MemberList<types...>(),
+    json_finline constexpr static const MapTypes::maptype<classFor> CreateMap(ML<member, members...>&& ml,
+                                                                              value_types&&... pairs) {
+        return CreateMap<classFor>(MemberList<members...>(),
                          MapTypes::value_type<classFor>{
-                            std::reference_wrapper<const stringt>(key),
-                            VirtualAccessor<classFor>(DeclareMemberFromJSON<classFor, type>::fn)
+                            std::reference_wrapper<const stringt>(member::key),
+                            VirtualAccessor<classFor>(DeclareMemberFromJSON<classFor, member>::fn)
                         },
                         pairs...
                 );
     }
 
     template<typename classFor,
-             template<const stringt&... T> class K,
              template<typename... M> class ML,
              typename... value_types>
-    json_finline constexpr static const MapTypes::maptype<classFor> CreateMap(K<>&& k3,
-                                                                 ML<>&& ml,
-                                                                 value_types&&... pairs) {
+    json_finline constexpr static const MapTypes::maptype<classFor> CreateMap(ML<>&& ml,
+                                                                              value_types&&... pairs) {
         return { pairs... };
     }
 
@@ -122,9 +115,9 @@ namespace JSON {
     , JSON_MEMBER_POINTER(CLASS_NAME, VARDATA)
 
 //////////////////////////////////////////////
-#define JSON_MEMBER_POINTER(CLASS_NAME, VARDATA)        \
-    Member<decltype(&CLASS_NAME:: JSON_VARNAME VARDATA),\
-                    &CLASS_NAME:: JSON_VARNAME VARDATA> \
+#define JSON_MEMBER_POINTER(CLASS_NAME, VARDATA)                \
+    MemberInfo<decltype(&CLASS_NAME:: JSON_VARNAME VARDATA),    \
+               &CLASS_NAME:: JSON_VARNAME VARDATA>
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 #define JSON_CREATE_MEMBERS(CLASS_NAME, ...)                            \
