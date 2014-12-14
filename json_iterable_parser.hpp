@@ -22,7 +22,7 @@ namespace JSON {
 ////
     template<typename Type, typename VType>
     struct IterableInserter {
-        json_finline static void Insert(Type& type, VType& input) {
+        json_finline static void Insert(Type& type, VType&& input) {
             type.emplace(std::move(input));
         }
     };
