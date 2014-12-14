@@ -80,11 +80,20 @@ namespace JSON {
                 );
     }
 
+#ifndef _MSC_VER
     template<typename classFor,
              template<typename... M> class ML,
              typename... value_types>
     json_finline constexpr static const MapTypes::maptype<classFor> CreateMap(ML<>&& ml,
                                                                               value_types&&... pairs) {
+#else
+    template<typename classFor,
+        typename... members,
+        template<typename... M> class ML,
+        typename... value_types>
+        json_finline constexpr static const MapTypes::maptype<classFor> CreateMap(ML<members...>&& ml,
+        value_types&&... pairs) {
+#endif
         return { pairs... };
     }
 

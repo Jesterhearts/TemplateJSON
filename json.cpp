@@ -4,7 +4,9 @@
 #include <iostream>
 #include <sstream>
 
+#ifndef _MSC_VER
 const char Test::mychar;
+#endif
 
 int main() {
     JSON::stringt json;
@@ -189,7 +191,6 @@ int main() {
         std::cout << e.what() << std::endl;
     }
 
-#ifndef _MSC_VER
     HasSmrtPtrs hsp;
     json = JSON::ToJSON<HasSmrtPtrs>(hsp);
     output << json << std::endl;
@@ -218,7 +219,6 @@ int main() {
     {
         std::cout << e.what() << std::endl;
     }
-#endif
 
     HasStrings hs;
     hs.mystring = "string";

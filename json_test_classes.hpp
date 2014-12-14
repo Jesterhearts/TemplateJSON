@@ -40,7 +40,6 @@ public:
     int m_int;
 };
 
-
 class Test {
 public:
      static const char mychar = 'x';
@@ -87,15 +86,17 @@ public:
 };
 
 
-#ifndef _MSC_VER
-/* Visual studio 2013.2 can't move-construct unique_ptrs */
 class HasSmrtPtrs {
 public:
+    HasSmrtPtrs() {}
+    HasSmrtPtrs(HasSmrtPtrs&& other)
+        : mysmartint(std::move(other.mysmartint)), myshrdint(std::move(other.mysmartint)) {};
+
     std::unique_ptr<int> mysmartint;
     std::shared_ptr<int> myshrdint;
+private:
+    HasSmrtPtrs(const HasSmrtPtrs&) = delete;
 };
-
-#endif
 
 class HasStrings {
 public:

@@ -6,7 +6,7 @@ namespace JSON {
 
 #define JSON_ITERABLE_PARSER(STL_TYPE, ...)                                                 \
     struct JSONFnInvokerImpl<std::STL_TYPE<__VA_ARGS__>> {                                  \
-        json_finline static stringt ToJSON(const std::STL_TYPE<__VA_ARGS__>* classFrom) {   \
+        json_finline static stringt ToJSON(const std::STL_TYPE<__VA_ARGS__>& classFrom) {   \
             return IterableParser<std::STL_TYPE<__VA_ARGS__>>::ToJSON(classFrom);           \
         }                                                                                   \
                                                                                             \
@@ -23,25 +23,25 @@ namespace JSON {
     template<typename Type, typename VType>
     struct IterableInserter {
         json_finline static void Insert(Type& type, VType& input) {
-            type.insert(input);
+            type.emplace(std::move(input));
         }
     };
 
     template<typename VType, typename A>
     struct IterableInserter<std::vector<VType, A>, VType> {
-        json_finline static void Insert(std::vector<VType, A>& type, VType& input) {
-            type.push_back(input);
+        json_finline static void Insert(std::vector<VType, A>& type, VType&& input) {
+            type.emplace_back(std::move(input));
         }
     };
 
     template<typename Type>
     struct IterableParser {
-        json_finline static stringt ToJSON(const Type* value) {
+        json_finline static stringt ToJSON(const Type& value) {
             stringt result(JSON_ST("["));
 
-            if(!value->empty()) {
-                auto iter = std::begin(*value);
-                auto endItr = std::prev(std::end(*value));
+            if(!value.empty()) {
+                auto iter = std::begin(value);
+                auto endItr = std::prev(std::end(value));
                 typedef decltype(*iter) valtype;
 
                 for(; iter != endItr; ++iter) {
@@ -70,7 +70,7 @@ namespace JSON {
                 typename Type::value_type input;
                 //Each call advances iter past the end of the token read by the call
                 iter = JSONFnInvoker<typename Type::value_type>::FromJSON(iter, end, input);
-                IterableInserter<Type, typename Type::value_type>::Insert(into, input);
+                IterableInserter<Type, typename Type::value_type>::Insert(into, std::move(input));
                 iter = AdvancePastWhitespace(iter, end);
 
                 if(iter != end && *iter == L',') {

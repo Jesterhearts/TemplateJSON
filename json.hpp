@@ -27,7 +27,7 @@ namespace JSON {
 
     template<typename classFor, typename underlyingType>
     json_finline stringt MemberToJSON(const classFor& classFrom, underlyingType* member) {
-        return JSONFnInvoker<underlyingType>::ToJSON(member);
+        return JSONFnInvoker<underlyingType>::ToJSON(*member);
     }
 
     template<typename classFor,
@@ -54,9 +54,16 @@ namespace JSON {
         return json;
     }
 
+#ifndef _MSC_VER
     template<typename classFor,
-             template<typename... M> class ML>
+        template<typename... M> class ML>
     json_finline stringt MembersToJSON(const classFor& classFrom, ML<>&& ml) {
+#else
+    template<typename classFor,
+             typename... members,
+             template<typename... M> class ML>
+    json_finline stringt MembersToJSON(const classFor& classFrom, ML<members...>&& ml) {
+#endif
         return JSON_ST("");
     }
 

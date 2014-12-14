@@ -25,8 +25,6 @@ JSON_ENABLE(HasPTR, (myptr))
 
 JSON_ENABLE(HasArray, (myintarr), (mynestedarr))
 
-#ifndef _MSC_VER
 JSON_ENABLE(HasSmrtPtrs, (mysmartint), (myshrdint))
-#endif
 
 JSON_ENABLE(HasStrings, (mystring), (mywstring))
