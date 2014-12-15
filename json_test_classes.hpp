@@ -43,6 +43,7 @@ public:
 class Test {
 public:
      static const char mychar = 'x';
+     static const char mychar2 = 'y';
 };
 
 

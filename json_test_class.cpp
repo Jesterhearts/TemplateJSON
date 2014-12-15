@@ -9,7 +9,7 @@ JSON_ENABLE(MySimpleClass, (m_int))
 
 JSON_ENABLE(NestedContainer, (m_simpleClass), (m_int, "not_nested_int"))
 
-JSON_ENABLE(Test, (mychar, "testchar"))
+JSON_ENABLE(Test, (mychar, "testchar"), (mychar2))
 
 JSON_ENABLE(Nested, (mytest, "nested_class"))
 

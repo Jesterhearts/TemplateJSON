@@ -148,8 +148,7 @@ namespace JSON {
             iter = AdvancePastWhitespace(iter, end);
             auto endOfNumber = AdvancePastNumbers(iter, end);
 
-            stringt number(iter, endOfNumber);
-            into = boost::lexical_cast<ClassOn>(number);
+            into = boost::lexical_cast<ClassOn>(&*iter, std::distance(iter, endOfNumber));
 
             return endOfNumber;
         }
@@ -478,15 +477,12 @@ namespace JSON {
         }
     };
 
-    //WE DON'T OWN THESE SMART PTRS!
     template<typename T>
     JSON_SMRTPTR_PARSER(shared_ptr, T);
 
-    //WE DON'T OWN THESE SMART PTRS!
     template<typename T>
     JSON_SMRTPTR_PARSER(weak_ptr, T);
 
-    //WE DON'T OWN THESE SMART PTRS!
     template<typename T>
     JSON_SMRTPTR_PARSER(auto_ptr, T);
 

@@ -29,9 +29,6 @@ namespace JSON {
     jsonIter FromJSON(jsonIter iter, jsonIter end, ClassFor& into);
 
     template<typename classType>
-    struct ClassMap;
-
-    template<typename classType>
     struct MembersHolder;
 }
 

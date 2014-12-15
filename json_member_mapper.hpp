@@ -39,9 +39,6 @@ namespace JSON {
         return MemberFromJSON(classOn, iter, end, memberType());
     }
 
-    template<typename classType>
-    struct MemberMap;
-
     namespace MapTypes {
         template<typename T>
         using maptype = std::unordered_map<std::reference_wrapper<const stringt>,
@@ -57,12 +54,13 @@ namespace JSON {
              typename member, typename... members,
              template<typename... M> class ML>
     json_finline constexpr static const MapTypes::maptype<classFor> CreateMap(ML<member, members...>&& ml) {
-        return CreateMap<classFor>(MemberList<members...>(),
-                         MapTypes::value_type<classFor>{
-                            std::reference_wrapper<const stringt>(member::key),
-                            &MemberFromJSON<classFor, member>
-                        }
-                );
+        return CreateMap<classFor>(
+            MemberList<members...>(),
+            MapTypes::value_type<classFor>{
+                std::reference_wrapper<const stringt>(member::key),
+                &MemberFromJSON<classFor, member>
+            }
+        );
     }
 
     template<typename classFor,
@@ -71,13 +69,14 @@ namespace JSON {
              typename... value_types>
     json_finline constexpr static const MapTypes::maptype<classFor> CreateMap(ML<member, members...>&& ml,
                                                                               value_types&&... pairs) {
-        return CreateMap<classFor>(MemberList<members...>(),
-                         MapTypes::value_type<classFor>{
-                            std::reference_wrapper<const stringt>(member::key),
-                            &MemberFromJSON<classFor, member>
-                        },
-                        pairs...
-                );
+        return CreateMap<classFor>(
+            MemberList<members...>(),
+            MapTypes::value_type<classFor>{
+                std::reference_wrapper<const stringt>(member::key),
+                &MemberFromJSON<classFor, member>
+            },
+            pairs...
+        );
     }
 
 #ifndef _MSC_VER
@@ -118,16 +117,18 @@ namespace JSON {
                &CLASS_NAME:: JSON_VARNAME VARDATA>
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
-#define JSON_CREATE_MEMBERS(CLASS_NAME, ...)                            \
-    template<>                                                          \
-    struct MembersHolder<CLASS_NAME> {                                  \
-        json_finline constexpr static MemberList<                       \
-            JSON_LIST_MEMBERS(CLASS_NAME, __VA_ARGS__)                  \
-        > members() {                                                   \
-            return MemberList<                                          \
-                        JSON_LIST_MEMBERS(CLASS_NAME, __VA_ARGS__)      \
-            >();                                                        \
-        }                                                               \
+#define JSON_CREATE_MEMBERS(CLASS_NAME, ...)                        \
+    template<>                                                      \
+    struct MembersHolder<CLASS_NAME> {                              \
+        json_finline constexpr static MemberList<                   \
+            JSON_LIST_MEMBERS(CLASS_NAME, __VA_ARGS__)              \
+        > members() {                                               \
+            return MemberList<                                      \
+                        JSON_LIST_MEMBERS(CLASS_NAME, __VA_ARGS__)  \
+            >();                                                    \
+        }                                                           \
+        MembersHolder() = delete;                                   \
+        ~MembersHolder() = delete;                                  \
     };
 
 #ifndef _MSC_VER

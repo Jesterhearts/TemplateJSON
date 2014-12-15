@@ -20,6 +20,19 @@
 
 namespace JSON {
 
+    template<typename classFor>
+    struct MemberMap {
+        static const MapTypes::maptype<classFor> map;
+
+        MemberMap() = delete;
+        ~MemberMap() = delete;
+    };
+
+    template<typename classFor>
+    const MapTypes::maptype<classFor> MemberMap<classFor>::map = CreateMap<classFor>(
+        MembersHolder<classFor>::members()
+    );
+
     template<typename classFor, typename underlyingType>
     json_finline stringt MemberToJSON(const classFor& classFrom, underlyingType classFor::* member) {
         return JSONFnInvoker<decltype(classFrom.*member)>::ToJSON(classFrom.*member);
@@ -125,7 +138,7 @@ namespace JSON {
 
     template<typename classFor, typename... types, template<typename... M> class ML>
     json_finline jsonIter MembersFromJSON(classFor& classInto, jsonIter iter, jsonIter end,
-                                          const ML<types...> ml) {
+                                          ML<types...>&& ml) {
         return JSONReader<classFor, sizeof...(types)>::MembersFromJSON(classInto, iter, end);
     }
 
@@ -158,16 +171,6 @@ namespace JSON {
 
         return classInto;
     }
-
-    template<typename classFor>
-    struct MemberMap {
-        static const MapTypes::maptype<classFor> map;
-    };
-
-    template<typename classFor>
-    const MapTypes::maptype<classFor> MemberMap<classFor>::map = CreateMap<classFor>(
-        MembersHolder<classFor>::members()
-    );
 };
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
