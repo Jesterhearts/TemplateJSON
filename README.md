@@ -93,9 +93,7 @@ This program requires the boost.preprocessor and boost.lexical_cast libraries.
 
 ---
 ### Tested compilers:
-- VS2010
-- VS2012
-- VS2013
+- VS2013.4
 - Cygwin g++ 4.8.3
 
 
