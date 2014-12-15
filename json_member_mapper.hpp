@@ -5,7 +5,7 @@
 namespace JSON {
     template<typename memberType, memberType member>
     struct MemberInfo {
-        static const stringt key;
+        static const std::string key;
     };
 
     template<typename... members>
@@ -41,10 +41,10 @@ namespace JSON {
 
     namespace MapTypes {
         template<typename T>
-        using maptype = std::unordered_map<std::reference_wrapper<const stringt>,
+        using maptype = std::unordered_map<std::reference_wrapper<const std::string>,
                                            jsonIter (*const)(T&, jsonIter, jsonIter),
-                                           std::hash<stringt>,
-                                           std::equal_to<stringt>>;
+                                           std::hash<std::string>,
+                                           std::equal_to<std::string>>;
 
         template<typename T>
         using value_type = typename maptype<T>::value_type;
@@ -57,7 +57,7 @@ namespace JSON {
         return CreateMap<classFor>(
             MemberList<members...>(),
             MapTypes::value_type<classFor>{
-                std::reference_wrapper<const stringt>(member::key),
+                std::reference_wrapper<const std::string>(member::key),
                 &MemberFromJSON<classFor, member>
             }
         );
@@ -72,7 +72,7 @@ namespace JSON {
         return CreateMap<classFor>(
             MemberList<members...>(),
             MapTypes::value_type<classFor>{
-                std::reference_wrapper<const stringt>(member::key),
+                std::reference_wrapper<const std::string>(member::key),
                 &MemberFromJSON<classFor, member>
             },
             pairs...

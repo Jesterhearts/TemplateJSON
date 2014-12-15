@@ -84,8 +84,8 @@ namespace JSON {
 
     inline jsonIter ValidateObjectStart(jsonIter iter, jsonIter end) {
         iter = AdvancePastWhitespace(iter, end);
-        if(iter == end || *iter != JSON_ST('{')) {
-            ThrowBadJSONError(iter, end, JSON_ST("No object start token"));
+        if(iter == end || *iter != '{') {
+            ThrowBadJSONError(iter, end, "No object start token");
         }
         ++iter;
 
@@ -94,8 +94,8 @@ namespace JSON {
 
     inline jsonIter ValidateObjectEnd(jsonIter iter, jsonIter end) {
         iter = AdvancePastWhitespace(iter, end);
-        if(iter == end || *iter != JSON_ST('}')) {
-            ThrowBadJSONError(iter, end, JSON_ST("No object end token"));
+        if(iter == end || *iter != '}') {
+            ThrowBadJSONError(iter, end, "No object end token");
         }
         ++iter;
         return iter;
@@ -103,8 +103,8 @@ namespace JSON {
 
     inline jsonIter ValidateKeyValueMapping(jsonIter iter, jsonIter end) {
         iter = AdvancePastWhitespace(iter, end);
-        if(iter == end || *iter != JSON_ST(':')) {
-            ThrowBadJSONError(iter, end, JSON_ST("Not a valid key-value mapping"));
+        if(iter == end || *iter != ':') {
+            ThrowBadJSONError(iter, end, "Not a valid key-value mapping");
         }
         ++iter;
         return iter;

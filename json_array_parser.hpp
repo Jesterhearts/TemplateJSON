@@ -8,21 +8,21 @@ namespace JSON {
     template<typename ClassOn,
              size_t rank>
     struct JSONArrayHandler {
-        json_finline static stringt ToJSON(const ClassOn& classFrom) {
+        json_finline static std::string ToJSON(const ClassOn& classFrom) {
             if(std::extent<ClassOn>::value == 0) {
-                return JSON_ST("[]");
+                return "[]";
             }
 
             typedef typename std::remove_extent<ClassOn>::type valueType;
 
-            stringt json(JSON_ST("["));
+            std::string json("[");
             json += JSONArrayHandler<valueType, std::rank<valueType>::value>::ToJSON(classFrom[0]);
 
             for(size_t i = 1; i < std::extent<ClassOn>::value; ++i) {
-                json += JSON_ST(",");
+                json += ",";
                 json += JSONArrayHandler<valueType, std::rank<valueType>::value>::ToJSON(classFrom[i]);
             }
-            json += JSON_ST("]");
+            json += "]";
             return json;
         }
 
@@ -66,7 +66,7 @@ namespace JSON {
     /* Not an array */
     template<typename ClassOn>
     struct JSONArrayHandler<ClassOn, 0> {
-        json_finline static stringt ToJSON(const ClassOn& classFrom) {
+        json_finline static std::string ToJSON(const ClassOn& classFrom) {
             return JSONFnInvoker<ClassOn>::ToJSON(classFrom);
         }
 

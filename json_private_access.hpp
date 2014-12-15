@@ -6,10 +6,10 @@
 
 #define JSON_PRIVATE_ACCESS()                               \
     template<typename ClassFor>                             \
-    friend JSON::stringt JSON::ToJSON(const ClassFor&);     \
+    friend std::string JSON::ToJSON(const ClassFor&);       \
                                                             \
     template<typename ClassFor>                             \
-    friend ClassFor JSON::FromJSON(const JSON::stringt&);   \
+    friend ClassFor JSON::FromJSON(const std::string&);     \
                                                             \
     template<typename ClassFor>                             \
     friend struct JSON::MembersHolder;                      \

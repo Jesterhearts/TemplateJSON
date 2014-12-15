@@ -10,10 +10,11 @@ namespace JSON {
         BOOST_PP_VARIADIC_TO_SEQ(__VA_ARGS__)           \
     )
 
-#define JSON_REFERENCE_KEY(s, CLASS_NAME, VARDATA)                                      \
-    template<> const stringt MemberInfo<decltype(&CLASS_NAME:: JSON_VARNAME VARDATA),   \
-                                        &CLASS_NAME:: JSON_VARNAME VARDATA>::key =      \
-                                        BOOST_PP_EXPAND(JSON_KEY_REFERENCE VARDATA)
+#define JSON_REFERENCE_KEY(s, CLASS_NAME, VARDATA)      \
+    template<> const std::string MemberInfo<            \
+        decltype(&CLASS_NAME:: JSON_VARNAME VARDATA),   \
+        &CLASS_NAME:: JSON_VARNAME VARDATA>::key =      \
+    BOOST_PP_EXPAND(JSON_KEY_REFERENCE VARDATA);
 
 #ifndef _MSC_VER
 #define JSON_KEY_REFERENCE(...)                                         \
@@ -24,7 +25,7 @@ namespace JSON {
 #endif
 
 #define JSON_KEY_REFERENCE2(VARNAME, JSONKEY)   \
-    JSON_ST(JSONKEY);
+    JSONKEY
 
 #define JSON_KEY_REFERENCE1(VARNAME)                            \
     JSON_KEY_REFERENCE2(VARNAME, BOOST_PP_STRINGIZE(VARNAME))

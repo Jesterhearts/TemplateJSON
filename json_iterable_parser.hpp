@@ -6,7 +6,7 @@ namespace JSON {
 
 #define JSON_ITERABLE_PARSER(STL_TYPE, ...)                                                 \
     struct JSONFnInvokerImpl<std::STL_TYPE<__VA_ARGS__>> {                                  \
-        json_finline static stringt ToJSON(const std::STL_TYPE<__VA_ARGS__>& classFrom) {   \
+        json_finline static std::string ToJSON(const std::STL_TYPE<__VA_ARGS__>& classFrom) {   \
             return IterableParser<std::STL_TYPE<__VA_ARGS__>>::ToJSON(classFrom);           \
         }                                                                                   \
                                                                                             \
@@ -36,8 +36,8 @@ namespace JSON {
 
     template<typename Type>
     struct IterableParser {
-        json_finline static stringt ToJSON(const Type& value) {
-            stringt result(JSON_ST("["));
+        json_finline static std::string ToJSON(const Type& value) {
+            std::string result("[");
 
             if(!value.empty()) {
                 auto iter = std::begin(value);
@@ -46,12 +46,12 @@ namespace JSON {
 
                 for(; iter != endItr; ++iter) {
                     result += JSONFnInvoker<valtype>::ToJSON(*iter);
-                    result += JSON_ST(",");
+                    result += ",";
                 }
                 result += JSONFnInvoker<valtype>::ToJSON(*iter);
             }
 
-            result += JSON_ST("]");
+            result += "]";
             return result;
         }
 
