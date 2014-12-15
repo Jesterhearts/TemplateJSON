@@ -147,8 +147,7 @@ namespace JSON {
                 into = boost::lexical_cast<ClassOn>(&*iter, std::distance(iter, endOfNumber));
             }
             catch(boost::bad_lexical_cast blc) {
-                std::string eMsg("Could not convert to type ");
-                ThrowBadJSONError(iter, end, std::move(eMsg) + static_cast<const char*>(typeid(into).name()));
+                ThrowBadJSONError(iter, end, std::string("Could not convert to type ") + typeid(into).name());
             }
 
             return endOfNumber;
