@@ -12,9 +12,7 @@
 #include "json_iterable_parser.hpp"
 #include "json_array_parser.hpp"
 
-#if !defined(_MSC_VER) || _MSC_VER >= 1800
 #include "json_tuple_parser.hpp"
-#endif
 
 namespace std {
 #ifdef _MSC_VER

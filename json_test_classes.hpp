@@ -59,14 +59,10 @@ public:
      std::vector<char> myvec;
 };
 
-
-#if !defined(_MSC_VER) || _MSC_VER >= 1800
 class UsesTuple {
 public:
     std::tuple<char, int, double, long> mytuple;
 };
-
-#endif
 
 class HasMap {
 public:

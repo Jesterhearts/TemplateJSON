@@ -15,9 +15,7 @@ JSON_ENABLE(Nested, (mytest, "nested_class"))
 
 JSON_ENABLE(HasVector, (myvec))
 
-#if !defined(_MSC_VER) || _MSC_VER >= 1800
 JSON_ENABLE(UsesTuple, (mytuple))
-#endif
 
 JSON_ENABLE(HasMap, (mymap))
 

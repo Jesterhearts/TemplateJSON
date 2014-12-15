@@ -3,11 +3,10 @@
 #define __JSON_FUNCTIONS_HPP__
 
 #include <string>
-#include <unordered_map>
 
 namespace JSON {
 
-    using jsonIter = std::string::const_iterator;
+   using jsonIter = std::string::const_iterator;
 
     template<typename ClassFor>
     std::string ToJSON(const ClassFor& classFrom);

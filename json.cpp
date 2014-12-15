@@ -104,8 +104,6 @@ int main() {
         std::cout << e.what() << std::endl;
     }
 
-
-#if !defined(_MSC_VER) || _MSC_VER >= 1800
     UsesTuple ut;
     ut.mytuple = std::make_tuple('t', 10, 12.5, 100);
     json = JSON::ToJSON<UsesTuple>(ut);
@@ -120,7 +118,6 @@ int main() {
     {
         std::cout << e.what() << std::endl;
     }
-#endif
 
     HasMap hm;
     hm.mymap.insert(std::make_pair(1337, 3.14));

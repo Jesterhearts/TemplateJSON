@@ -2,6 +2,8 @@
 #ifndef __JSON_MEMBER_MAPPER_HPP__
 #define __JSON_MEMBER_MAPPER_HPP__
 
+#include <unordered_map>
+
 namespace JSON {
     template<typename memberType, memberType member>
     struct MemberInfo {

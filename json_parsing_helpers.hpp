@@ -3,13 +3,8 @@
 #define __JSON_PARSING_HELPERS_HPP__
 
 namespace JSON {
-#if defined(_MSC_VER) && _MSC_VER < 1700
-    json_no_return inline void ThrowBadJSONError(jsonIter iter, jsonIter end,
-                                                 const std::string& errmsg) {
-#else
     json_no_return inline void ThrowBadJSONError(jsonIter iter, jsonIter end,
                                                  const std::string&& errmsg) {
-#endif
         jsonIter endIter = (std::distance(iter, end) > 1000) ? iter + 1000 : end;
         std::string badJson(iter, endIter);
         throw std::invalid_argument(errmsg + ": " + badJson);
