@@ -82,12 +82,6 @@ Specifying a const field to be included in the JSON is acceptable; However, a wa
 It is possible to disable this warning by defining JSON_NO_WARN_CONST
 
 ---
-### Wide string support
-By default json strings are output as std::string. This can be changed by defining JSON_USE_WIDE_STRINGS
-
-No changes need to be made to JSON_ENABLE declarations when switching between types. Only consumers and suppliers of json strings will need to be updated to handle the change.
-
----
 ### Dependencies
 This program requires the boost.preprocessor and boost.lexical_cast libraries.
 
