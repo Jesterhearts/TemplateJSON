@@ -1,28 +1,31 @@
 #include "json_test_classes.hpp"
 #include "json.hpp"
 
-JSON_ENABLE(Simple, (s))
+JSON_ENABLE(Simple, (s));
 
-JSON_ENABLE(Simple2, (s), (s2))
+JSON_ENABLE(Simple2, (s), (s2));
 
-JSON_ENABLE(MySimpleClass, (m_int))
+typedef Templated<int> TInt;
+JSON_ENABLE(TInt, (val));
 
-JSON_ENABLE(NestedContainer, (m_simpleClass), (m_int, "not_nested_int"))
+JSON_ENABLE(MySimpleClass, (m_int));
 
-JSON_ENABLE(Test, (mychar, "testchar"), (mychar2))
+JSON_ENABLE(NestedContainer, (m_simpleClass), (m_int, "not_nested_int"));
 
-JSON_ENABLE(Nested, (mytest, "nested_class"))
+JSON_ENABLE(Test, (mychar, "testchar"), (mychar2));
 
-JSON_ENABLE(HasVector, (myvec))
+JSON_ENABLE(Nested, (mytest, "nested_class"));
 
-JSON_ENABLE(UsesTuple, (mytuple))
+JSON_ENABLE(HasVector, (myvec));
 
-JSON_ENABLE(HasMap, (mymap))
+JSON_ENABLE(UsesTuple, (mytuple));
 
-JSON_ENABLE(HasPTR, (myptr))
+JSON_ENABLE(HasMap, (mymap));
 
-JSON_ENABLE(HasArray, (myintarr), (mynestedarr))
+JSON_ENABLE(HasPTR, (myptr));
 
-JSON_ENABLE(HasSmrtPtrs, (mysmartint), (myshrdint))
+JSON_ENABLE(HasArray, (myintarr), (mynestedarr));
 
-JSON_ENABLE(HasStrings, (mystring), (mywstring))
+JSON_ENABLE(HasSmrtPtrs, (mysmartint), (myshrdint));
+
+JSON_ENABLE(HasStrings, (mystring), (mywstring));

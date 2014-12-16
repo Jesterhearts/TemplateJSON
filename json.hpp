@@ -35,12 +35,12 @@ namespace JSON {
 
     template<typename classFor, typename underlyingType>
     json_finline std::string MemberToJSON(const classFor& classFrom, underlyingType classFor::* member) {
-        return JSONFnInvoker<decltype(classFrom.*member)>::ToJSON(classFrom.*member);
+        return detail::ToJSON(classFrom.*member);
     }
 
     template<typename classFor, typename underlyingType>
     json_finline std::string MemberToJSON(const classFor& classFrom, underlyingType* member) {
-        return JSONFnInvoker<underlyingType>::ToJSON(*member);
+        return detail::ToJSON(*member);
     }
 
     template<typename classFor,

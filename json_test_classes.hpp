@@ -24,6 +24,12 @@ public:
     int s2;
 };
 
+template<typename T>
+class Templated {
+public:
+    T val;
+};
+
 
 class MySimpleClass {
 public:

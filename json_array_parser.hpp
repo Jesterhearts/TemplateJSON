@@ -67,12 +67,19 @@ namespace JSON {
     template<typename ClassOn>
     struct JSONArrayHandler<ClassOn, 0> {
         json_finline static std::string ToJSON(const ClassOn& classFrom) {
-            return JSONFnInvoker<ClassOn>::ToJSON(classFrom);
+            return detail::ToJSON(classFrom);
         }
 
         json_finline static jsonIter FromJSON(jsonIter iter, jsonIter end, ClassOn& into) {
             return JSONFnInvoker<ClassOn>::FromJSON(iter, end, into);
         }
     };
+
+    namespace detail {
+        template<typename ClassType>
+        json_finline std::string ToJSON(const ClassType& from, _array&& a) {
+            return JSONArrayHandler<ClassType>::ToJSON(from);
+        }
+    }
 }
 #endif

@@ -6,10 +6,6 @@ namespace JSON {
 
 #define JSON_ITERABLE_PARSER(STL_TYPE, ...)                                                 \
     struct JSONFnInvokerImpl<std::STL_TYPE<__VA_ARGS__>> {                                  \
-        json_finline static std::string ToJSON(const std::STL_TYPE<__VA_ARGS__>& classFrom) {   \
-            return IterableParser<std::STL_TYPE<__VA_ARGS__>>::ToJSON(classFrom);           \
-        }                                                                                   \
-                                                                                            \
         json_finline static jsonIter FromJSON(jsonIter iter, jsonIter end,                  \
                                                      std::STL_TYPE<__VA_ARGS__>& into) {    \
             return IterableParser<std::STL_TYPE<__VA_ARGS__>>::FromJSON(iter, end, into);   \
@@ -45,13 +41,13 @@ namespace JSON {
                 typedef decltype(*iter) valtype;
 
                 for(; iter != endItr; ++iter) {
-                    result += JSONFnInvoker<valtype>::ToJSON(*iter);
-                    result += ",";
+                    result.append(detail::ToJSON(*iter));
+                    result.append(",");
                 }
-                result += JSONFnInvoker<valtype>::ToJSON(*iter);
+                result += detail::ToJSON(*iter);
             }
 
-            result += "]";
+            result.append("]");
             return result;
         }
 
@@ -86,5 +82,58 @@ namespace JSON {
             return iter;
         }
     };
+
+    namespace detail {
+        template<typename T, typename... O,
+                 template<typename T, typename... D> class Container>
+        json_finline static std::string ContainerToJSON(const Container<T, O...>& from) {
+            return IterableParser<Container<T, O...>>::ToJSON(from);
+        }
+    }
+
+    template<typename T, std::size_t A>
+    json_finline std::string ToJSON(const std::array<T, A>& from) {
+        return detail::ContainerToJSON(from);
+    }
+
+    template<typename T, typename A>
+    json_finline std::string ToJSON(const std::deque<T, A>& from) {
+        return detail::ContainerToJSON(from);
+    }
+
+    template<typename T, typename A>
+    json_finline std::string ToJSON(const std::forward_list<T, A>& from) {
+        return detail::ContainerToJSON(from);
+    }
+
+    template<typename T, typename A>
+    json_finline std::string ToJSON(const std::list<T, A>& from) {
+        return detail::ContainerToJSON(from);
+    }
+
+    template<typename T, typename A>
+    json_finline std::string ToJSON(const std::vector<T, A>& from) {
+        return detail::ContainerToJSON(from);
+    }
+
+    template<typename K, typename C, typename A>
+    json_finline std::string ToJSON(const std::set<K, C, A>& from) {
+        return detail::ContainerToJSON(from);
+    }
+
+    template<typename K, typename C, typename A>
+    json_finline std::string ToJSON(const std::multiset<K, C, A>& from) {
+        return detail::ContainerToJSON(from);
+    }
+
+    template<typename K, typename H, typename KE, typename A>
+    json_finline std::string ToJSON(const std::unordered_set<K, H, KE, A>& from) {
+        return detail::ContainerToJSON(from);
+    }
+
+    template<typename K, typename T, typename C, typename A>
+    json_finline std::string ToJSON(const std::map<K, T, C, A>& from) {
+        return detail::ContainerToJSON(from);
+    }
 }
 #endif

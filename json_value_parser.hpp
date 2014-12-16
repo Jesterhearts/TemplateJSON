@@ -8,11 +8,17 @@
 #include <string>
 #include <type_traits>
 
-#include "json_parsing_helpers.hpp"
-#include "json_iterable_parser.hpp"
-#include "json_array_parser.hpp"
+#include "json_type_info.hpp"
 
-#include "json_tuple_parser.hpp"
+namespace JSON { namespace detail {
+    template<typename ClassType, typename tag>
+    json_finline std::string ToJSON(const ClassType& from, tag&& a);
+
+    template<typename ClassType>
+    json_finline std::string ToJSON(const ClassType& from) {
+        return ToJSON(from, typename TypeInfo<ClassType>::type());
+    }
+}}
 
 namespace std {
 #ifdef _MSC_VER
@@ -39,15 +45,13 @@ namespace std {
     template<typename T> class auto_ptr;
 }
 
+#include "json_parsing_helpers.hpp"
+#include "json_iterable_parser.hpp"
+#include "json_array_parser.hpp"
+
 #define JSON_SMRTPTR_PARSER(STL_TYPE, PTR_TYPE)                                         \
+    template<typename PTR_TYPE>                                                                \
     struct JSONFnInvokerImpl<std::STL_TYPE<PTR_TYPE>> {                                 \
-        json_finline static std::string ToJSON(const std::STL_TYPE<PTR_TYPE>& classFrom) {  \
-            if(!classFrom) {                                                            \
-                return nullToken;                                                       \
-            }                                                                           \
-            return JSONFnInvoker<PTR_TYPE>::ToJSON(*classFrom.get());                   \
-        }                                                                               \
-                                                                                        \
         json_finline static jsonIter FromJSON(jsonIter iter, jsonIter end,              \
                                                      std::STL_TYPE<PTR_TYPE>& into) {   \
             PTR_TYPE* temp;                                                             \
@@ -55,25 +59,145 @@ namespace std {
             into.reset(temp);                                                           \
             return iter;                                                                \
         }                                                                               \
-    }
+    };                                                                                  \
 
 namespace JSON {
     const std::string nullToken("null");
+
+    namespace detail {
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+        template<typename ClassType>
+        json_finline std::string ToJSON(const ClassType& from, _const&& a) {
+            return ToJSON(from, typename TypeInfo<typename std::remove_const<ClassType>::type>::type());
+        }
+
+        template<typename ClassType>
+        json_finline std::string ToJSON(const ClassType& from, _enum&& a) {
+            //TODO fixme
+            return boost::lexical_cast<std::string>(from);
+        }
+
+        template<typename ClassType>
+        json_finline std::string ToJSON(const ClassType& from, _arithmetic&& a) {
+            return boost::lexical_cast<std::string>(from);
+        }
+
+        template<>
+        json_finline std::string ToJSON(const char& from, _arithmetic&& a) {
+            std::string json("\"");
+            json.append(1, from);
+            json += "\"";
+            return json;
+        }
+
+        template<>
+        json_finline std::string ToJSON(const wchar_t& from, _arithmetic&& a) {
+            std::string json("\"");
+
+            std::wstring wideChar(1, from);
+            std::string narrowChar(wideChar.begin(), wideChar.end());
+
+            json.append(narrowChar);
+            json.append("\"");
+            return json;
+        }
+
+        template<typename ClassType>
+        json_finline std::string ToJSON(const ClassType& from, _pointer&& a) {
+            if(from == nullptr) {
+                return nullToken;
+            }
+            return ToJSON(*from, typename TypeInfo<decltype(*from)>::type());
+        }
+
+        template<typename T, typename... D,
+                 template<typename T, typename... D> class SmartPointerType>
+        json_finline std::string SmartPointerToJSON(const SmartPointerType<T, D...>& from) {
+            if(!from) {
+                return nullToken;
+            }
+
+            return detail::ToJSON(*from.get());
+        }
+    }
+
+    template<>
+    json_finline std::string ToJSON(const std::string& from) {
+        std::string json("\"");
+        json.append(from);
+        json.append("\"");
+        return json;
+    }
+
+    template<>
+    json_finline std::string ToJSON(const std::wstring& from) {
+        std::string json("\"");
+        std::string narrowString(from.begin(), from.end());
+
+        json.append(narrowString);
+        json.append("\"");
+        return json;
+    }
+
+    template<typename T1, typename T2>
+    json_finline std::string ToJSON(const std::pair<T1, T2>& from) {
+        std::string json("[");
+        json.append(detail::ToJSON(from.first));
+        json.append(",");
+        json.append(detail::ToJSON(from.second));
+        json.append("]");
+
+        return json;
+    }
+
+    template<typename T>
+    json_finline std::string ToJSON(const std::shared_ptr<T>& from) {
+        return detail::SmartPointerToJSON(from);
+    }
+
+    template<typename T>
+    json_finline std::string ToJSON(const std::weak_ptr<T>& from) {
+        return detail::SmartPointerToJSON(from);
+    }
+
+    template<typename T>
+    json_finline std::string ToJSON(const std::auto_ptr<T>& from) {
+        return detail::SmartPointerToJSON(from);
+    }
+
+    template<typename T, typename D>
+    json_finline std::string ToJSON(const std::unique_ptr<T, D>& from) {
+        return detail::SmartPointerToJSON(from);
+    }
+}
+
+#include "json_tuple_parser.hpp"
+namespace JSON {
+    template<typename... Types>
+    json_finline static std::string ToJSON(const std::tuple<Types...>& from) {
+        std::string json("[");
+        TupleHandler<std::tuple<Types...>,
+                     0,
+                     sizeof...(Types) == 1,
+                     Types...
+                    >::ToJSON(from, json);
+        json.append("]");
+        return json;
+    }
+
+    namespace detail {
+        template<typename ClassType>
+        json_finline std::string ToJSON(const ClassType& from, _class&& a) {
+            JSON::ToJSON(from);
+        }
+    }
 
 ////////////////////////////////////////////////////////////////////////////////
 // JSONFnInvoker implementation
 ////
     template<typename ClassOn>
     struct JSONFnInvoker {
-        json_finline static std::string ToJSON(const ClassOn& classFrom) {
-            typedef typename std::remove_cv<ClassOn>::type type;
-            return JSONFnInvokerDecider<type,
-                                        std::is_arithmetic<ClassOn>::value,
-                                        std::is_pointer<ClassOn>::value,
-                                        std::is_array<ClassOn>::value
-                                       >::ToJSON(classFrom);
-        }
-
         json_finline static jsonIter FromJSON(jsonIter iter, jsonIter end, ClassOn& into) {
             typedef typename std::remove_cv<ClassOn>::type type;
             return JSONFnInvokerDecider<type,
@@ -85,28 +209,12 @@ namespace JSON {
         }
     };
 
-    template<typename ClassOn>
-    struct JSONFnInvoker<ClassOn&> {
-        json_finline static std::string ToJSON(const ClassOn& classFrom) {
-            typedef typename std::remove_cv<ClassOn>::type type;
-            return JSONFnInvokerDecider<type,
-                                        std::is_arithmetic<ClassOn>::value,
-                                        std::is_pointer<ClassOn>::value,
-                                        std::is_array<ClassOn>::value
-                                       >::ToJSON(classFrom);
-        }
-    };
-
 ////////////////////////////////////////////////////////////////////////////////
 // JSONFnInvokerDecider implementation
 ////
     /* Any non-const object */
     template<typename ClassOn, bool Arithmetic, bool IsPtr, bool Array, bool Const>
     struct JSONFnInvokerDecider {
-        json_finline static std::string ToJSON(const ClassOn& classFrom) {
-            return JSONFnInvokerImpl<ClassOn>::ToJSON(classFrom);
-        }
-
         json_finline static jsonIter FromJSON(jsonIter iter, jsonIter end, ClassOn& into) {
             return JSONFnInvokerImpl<ClassOn>::FromJSON(iter, end, into);
         }
@@ -118,10 +226,6 @@ namespace JSON {
      */
     template<typename ClassOn, bool Arithmetic, bool IsPtr, bool Array>
     struct JSONFnInvokerDecider<ClassOn, Arithmetic, IsPtr, Array, /* Const */ true> {
-        json_finline static std::string ToJSON(const ClassOn& classFrom) {
-            return JSONFnInvokerDecider<ClassOn, Arithmetic, IsPtr, Array, false>::ToJSON(classFrom);
-        }
-
         json_deserialize_const_warning
         json_finline static jsonIter FromJSON(jsonIter iter, jsonIter end, const ClassOn& into) {
             //TODO: allow advancing without generating data
@@ -133,10 +237,6 @@ namespace JSON {
     /* Any number type, not a char or a wchar_t (since those get handled as strings) */
     template<typename ClassOn, bool IsPtr, bool Array>
     struct JSONFnInvokerDecider<ClassOn, /* Arithmetic */ true, IsPtr, Array, /* Const */ false> {
-        json_finline static std::string ToJSON(const ClassOn& classFrom) {
-            return boost::lexical_cast<std::string>(classFrom);
-        }
-
         json_finline static jsonIter FromJSON(jsonIter iter, jsonIter end, ClassOn& into) {
             iter = AdvancePastWhitespace(iter, end);
             auto endOfNumber = AdvancePastNumbers(iter, end);
@@ -155,15 +255,6 @@ namespace JSON {
     /* char and wchar_t are handled specially, since they are "strings" in json */
     template<bool IsPtr, bool Array>
     struct JSONFnInvokerDecider<char, /* Arithmetic */ true, IsPtr, Array, /* Const */ false> {
-        json_finline static std::string ToJSON(const char& classFrom) {
-            std::string json("\"");
-
-            json += classFrom;
-
-            json += "\"";
-            return json;
-        }
-
         json_finline static jsonIter FromJSON(jsonIter iter, jsonIter end, char& into) {
             iter = AdvancePastWhitespace(iter, end);
             if(iter == end || *iter != L'\"') {
@@ -197,17 +288,6 @@ namespace JSON {
 
     template<bool IsPtr, bool Array>
     struct JSONFnInvokerDecider<wchar_t, /* Arithmetic */ true, IsPtr, Array, /* Const */ false> {
-        json_finline static std::string ToJSON(const wchar_t& classFrom) {
-            std::string json("\"");
-
-            std::wstring wideChar(classFrom);
-            std::string narrowChar(wideChar.begin(), wideChar.end());
-
-            json += narrowChar;
-            json += "\"";
-            return json;
-        }
-
         json_finline static jsonIter FromJSON(jsonIter iter, jsonIter end, wchar_t& into) {
             iter = AdvancePastWhitespace(iter, end);
             if(iter == end || *iter != L'\"') {
@@ -242,15 +322,6 @@ namespace JSON {
     /* Handles all pointer types. */
     template<typename ClassOn, bool Arithmetic, bool Array>
     struct JSONFnInvokerDecider<ClassOn, Arithmetic, /* IsPtr */ true, Array, /* Const */ false> {
-        json_finline static std::string ToJSON(const ClassOn& classFrom) {
-            if(classFrom == nullptr) {
-                return "null";
-            }
-            //classFrom is pointer to pointer
-            typedef decltype(*classFrom) nextype;
-            return JSONFnInvoker<nextype>::ToJSON(*classFrom);
-        }
-
         json_finline static jsonIter FromJSON(jsonIter iter, jsonIter end, ClassOn& into) {
             iter = AdvancePastWhitespace(iter, end);
 
@@ -274,10 +345,6 @@ namespace JSON {
     /* Handles compile-time sized arrays */
     template<typename ClassOn, bool Arithmetic, bool IsPtr>
     struct JSONFnInvokerDecider<ClassOn, Arithmetic, IsPtr, /* Array */ true, /* Const */ false> {
-        json_finline static std::string ToJSON(const ClassOn& classFrom) {
-            return JSONArrayHandler<ClassOn>::ToJSON(classFrom);
-        }
-
         json_finline static jsonIter FromJSON(jsonIter iter, jsonIter end, ClassOn& into) {
             return JSONArrayHandler<ClassOn>::FromJSON(iter, end, into);
         }
@@ -286,13 +353,6 @@ namespace JSON {
     /* This handles the special needs of the std::string and std::wstring classes */
     template<>
     struct JSONFnInvokerImpl<std::string> {
-        json_finline static std::string ToJSON(const std::string& classFrom) {
-            std::string json("\"");
-            json += classFrom;
-            json += "\"";
-            return json;
-        }
-
         json_finline static jsonIter FromJSON(jsonIter iter, jsonIter end,
                                               std::string& classInto) {
             iter = AdvancePastWhitespace(iter, end);
@@ -314,14 +374,6 @@ namespace JSON {
 
     template<>
     struct JSONFnInvokerImpl<std::wstring> {
-        json_finline static std::string ToJSON(const std::wstring& classFrom) {
-            std::string json("\"");
-            std::string narrowString(classFrom.begin(), classFrom.end());
-            json += narrowString;
-            json += "\"";
-            return json;
-        }
-
         json_finline static jsonIter FromJSON(jsonIter iter, jsonIter end,
                                               std::wstring& classInto) {
             iter = AdvancePastWhitespace(iter, end);
@@ -344,10 +396,6 @@ namespace JSON {
     /* This handles all user defined objects */
     template<typename ClassOn>
     struct JSONFnInvokerImpl {
-        json_finline static std::string ToJSON(const ClassOn& classFrom) {
-            return JSON::ToJSON<ClassOn>(classFrom);
-        }
-
         json_finline static jsonIter FromJSON(jsonIter iter, jsonIter end, ClassOn& classInto) {
             return JSON::FromJSON<ClassOn>(iter, end, classInto);
         }
@@ -385,16 +433,6 @@ namespace JSON {
     /* This special handler is for std::pair */
     template<typename T1, typename T2>
     struct JSONFnInvokerImpl<std::pair<T1, T2>> {
-        json_finline static std::string ToJSON(const std::pair<T1, T2>& classFrom) {
-            std::string json("[");
-            json += JSONFnInvoker<T1>::ToJSON(classFrom.first);
-            json += ",";
-            json += JSONFnInvoker<T2>::ToJSON(classFrom.second);
-            json += "]";
-
-            return json;
-        }
-
         json_finline static jsonIter FromJSON(jsonIter iter, jsonIter end,
                                                      std::pair<T1, T2>& into) {
             if(end - iter < 2) {
@@ -437,13 +475,6 @@ namespace JSON {
     /* stl smart pointer handlers */
     template<typename T, typename D>
     struct JSONFnInvokerImpl<std::unique_ptr<T, D>> {
-        json_finline static std::string ToJSON(const std::unique_ptr<T, D>& classFrom) {
-            if(!classFrom) {
-                return "null";
-            }
-            return JSONFnInvoker<T>::ToJSON(*classFrom.get());
-        }
-
         json_finline static jsonIter FromJSON(jsonIter iter, jsonIter end,
                                                      std::unique_ptr<T, D>& into) {
             T* temp;
@@ -453,13 +484,10 @@ namespace JSON {
         }
     };
 
-    template<typename T>
     JSON_SMRTPTR_PARSER(shared_ptr, T);
 
-    template<typename T>
     JSON_SMRTPTR_PARSER(weak_ptr, T);
 
-    template<typename T>
     JSON_SMRTPTR_PARSER(auto_ptr, T);
 
     /* This extracts the next key from the map when deserializing.

@@ -14,7 +14,7 @@ namespace JSON {
     struct TupleHandler {
         json_finline static void ToJSON(const TupleType& classFrom,
                                         std::string& jsonString) {
-            jsonString += JSONFnInvoker<curType>::ToJSON(std::get<curIndex>(classFrom));
+            jsonString += detail::ToJSON(std::get<curIndex>(classFrom));
             jsonString += ",";
             TupleHandler<TupleType,
                          curIndex + 1,
@@ -52,7 +52,7 @@ namespace JSON {
                          Types...> {
         json_finline static void ToJSON(const TupleType& classFrom,
                                                std::string& jsonString) {
-            jsonString += JSONFnInvoker<curType>::ToJSON(std::get<curIndex>(classFrom));
+            jsonString += detail::ToJSON(std::get<curIndex>(classFrom));
         }
 
         json_finline static jsonIter FromJSON(jsonIter iter, jsonIter end,
@@ -70,16 +70,6 @@ namespace JSON {
 
     template<typename... Types>
     struct JSONFnInvokerImpl<std::tuple<Types...>> {
-        json_finline static std::string ToJSON(const std::tuple<Types...>& classFrom) {
-            std::string json("[");
-            TupleHandler<std::tuple<Types...>,
-                         0,
-                         sizeof...(Types) == 1,
-                         Types...
-                        >::ToJSON(classFrom, json);
-            json += "]";
-            return json;
-        }
 
         json_finline static jsonIter FromJSON(jsonIter iter, jsonIter end,
                                                      std::tuple<Types...>& into) {
