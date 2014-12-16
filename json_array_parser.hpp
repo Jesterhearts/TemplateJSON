@@ -16,11 +16,11 @@ namespace JSON {
             typedef typename std::remove_extent<ClassOn>::type valueType;
 
             std::string json("[");
-            json += JSONArrayHandler<valueType, std::rank<valueType>::value>::ToJSON(classFrom[0]);
+            json += detail::ToJSON(classFrom[0]);
 
             for(size_t i = 1; i < std::extent<ClassOn>::value; ++i) {
                 json += ",";
-                json += JSONArrayHandler<valueType, std::rank<valueType>::value>::ToJSON(classFrom[i]);
+                json += detail::ToJSON(classFrom[i]);
             }
             json += "]";
             return json;
@@ -39,7 +39,7 @@ namespace JSON {
 
             typedef typename std::remove_extent<ClassOn>::type valueType;
             for(size_t i = 0; i < std::extent<ClassOn>::value; ++i) {
-                iter = JSONArrayHandler<valueType, std::rank<valueType>::value>::FromJSON(iter, end, into[i]);
+                iter = detail::FromJSON(iter, end, into[i]);
                 iter = AdvancePastWhitespace(iter, end);
 
                 if(iter == end) {
@@ -71,7 +71,7 @@ namespace JSON {
         }
 
         json_finline static jsonIter FromJSON(jsonIter iter, jsonIter end, ClassOn& into) {
-            return JSONFnInvoker<ClassOn>::FromJSON(iter, end, into);
+            return detail::FromJSON(iter, end, into);
         }
     };
 
@@ -79,6 +79,11 @@ namespace JSON {
         template<typename ClassType>
         json_finline std::string ToJSON(const ClassType& from, _array&& a) {
             return JSONArrayHandler<ClassType>::ToJSON(from);
+        }
+
+        template<typename ClassType>
+        json_finline jsonIter FromJSON(jsonIter iter, jsonIter end, ClassType& into, _array&& a) {
+            return JSONArrayHandler<ClassType>::FromJSON(iter, end, into);
         }
     }
 }

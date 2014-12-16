@@ -19,13 +19,13 @@ namespace JSON {
     template<typename classType, typename underlyingType>
     json_finline jsonIter MemberFromJSON(classType& classOn, jsonIter iter, jsonIter end,
                                          underlyingType classType::* member) {
-        return JSONFnInvoker<underlyingType>::FromJSON(iter, end, classOn.*member);
+        return detail::FromJSON(iter, end, classOn.*member);
     }
 
     template<typename classType, typename underlyingType>
     json_finline jsonIter MemberFromJSON(classType& classOn, jsonIter iter, jsonIter end,
                                          underlyingType* member) {
-        return JSONFnInvoker<underlyingType>::FromJSON(iter, end, *member);
+        return detail::FromJSON(iter, end, *member);
     }
 
     template<typename classType,

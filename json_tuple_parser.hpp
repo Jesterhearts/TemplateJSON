@@ -27,7 +27,7 @@ namespace JSON {
                                                      TupleType& into) {
             curType& value = std::get<curIndex>(into);
 
-            iter = JSONFnInvoker<curType>::FromJSON(iter, end, value);
+            iter = detail::FromJSON(iter, end, value);
             iter = AdvancePastWhitespace(iter, end);
             if(iter == end || *iter != L',') {
                 ThrowBadJSONError(iter, end, "Not a valid tuple value");
@@ -58,7 +58,7 @@ namespace JSON {
         json_finline static jsonIter FromJSON(jsonIter iter, jsonIter end,
                                                      TupleType& into) {
             curType& value = std::get<curIndex>(into);
-            iter = JSONFnInvoker<curType>::FromJSON(iter, end, value);
+            iter = detail::FromJSON(iter, end, value);
             iter = AdvancePastWhitespace(iter, end);
             if(iter == end || *iter != L']') {
                 ThrowBadJSONError(iter, end, "No tuple end token");
@@ -69,21 +69,29 @@ namespace JSON {
     };
 
     template<typename... Types>
-    struct JSONFnInvokerImpl<std::tuple<Types...>> {
+    json_finline std::string ToJSON(const std::tuple<Types...>& from) {
+        std::string json("[");
+        TupleHandler<std::tuple<Types...>,
+                     0,
+                     sizeof...(Types) == 1,
+                     Types...
+                    >::ToJSON(from, json);
+        json.append("]");
+        return json;
+    }
 
-        json_finline static jsonIter FromJSON(jsonIter iter, jsonIter end,
-                                                     std::tuple<Types...>& into) {
-            if(iter == end || *iter != L'[') {
-                ThrowBadJSONError(iter, end, "No tuple start token");
-            }
-            ++iter;
-
-            return TupleHandler<std::tuple<Types...>,
-                                0,
-                                sizeof...(Types) == 1,
-                                Types...
-                               >::FromJSON(iter, end, into);
+    template<typename... Types>
+    json_finline jsonIter FromJSON(jsonIter iter, jsonIter end, std::tuple<Types...>& into) {
+        if(iter == end || *iter != L'[') {
+            ThrowBadJSONError(iter, end, "No tuple start token");
         }
-    };
+        ++iter;
+
+        return TupleHandler<std::tuple<Types...>,
+                            0,
+                            sizeof...(Types) == 1,
+                            Types...
+                           >::FromJSON(iter, end, into);
+    }
 }
 #endif
