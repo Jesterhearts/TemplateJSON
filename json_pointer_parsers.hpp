@@ -12,15 +12,15 @@ namespace std {
 namespace JSON {
     namespace detail {
         template<typename ClassType>
-        json_finline std::string ToJSON(const ClassType& from, _pointer&& a) {
+        json_finline std::string ToJSON(const ClassType& from, _pointer&&) {
             if(from == nullptr) {
                 return nullToken;
             }
-            return ToJSON(*from, typename TypeInfo<decltype(*from)>::type());
+            return detail::ToJSON(*from);
         }
 
         template<typename ClassType>
-        json_finline jsonIter FromJSON(jsonIter iter, jsonIter end, ClassType& into, _pointer&& a) {
+        json_finline jsonIter FromJSON(jsonIter iter, jsonIter end, ClassType& into, _pointer&&) {
             iter = AdvancePastWhitespace(iter, end);
 
             if(iter != end &&

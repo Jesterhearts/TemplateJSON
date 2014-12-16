@@ -3,6 +3,26 @@
 #define __JSON_PARSING_HELPERS_HPP__
 
 namespace JSON {
+    const std::string nullToken("null");
+
+    namespace detail {
+        template<typename ClassType, typename tag>
+        std::string ToJSON(const ClassType&, tag&&);
+
+        template<typename ClassType>
+        std::string ToJSON(const ClassType& from) {
+            return ToJSON(from, typename TypeTag<ClassType>::tag());
+        }
+
+        template<typename ClassType, typename tag>
+        jsonIter FromJSON(jsonIter, jsonIter, ClassType&, tag&&);
+
+        template<typename ClassType>
+        jsonIter FromJSON(jsonIter iter, jsonIter end, ClassType& classInto) {
+            return FromJSON(iter, end, classInto, typename TypeTag<ClassType>::tag());
+        }
+    }
+
     json_no_return inline void ThrowBadJSONError(jsonIter iter, jsonIter end,
                                                  const std::string&& errmsg) {
         jsonIter endIter = (std::distance(iter, end) > 1000) ? iter + 1000 : end;

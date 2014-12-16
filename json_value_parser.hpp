@@ -8,30 +8,7 @@
 #include <string>
 #include <type_traits>
 
-#include "json_type_info.hpp"
-
-namespace JSON {
-    const std::string nullToken("null");
-
-    namespace detail {
-        template<typename ClassType, typename tag>
-        std::string ToJSON(const ClassType&, tag&&);
-
-        template<typename ClassType>
-        std::string ToJSON(const ClassType& from) {
-            return ToJSON(from, typename TypeInfo<ClassType>::type());
-        }
-
-        template<typename ClassType, typename tag>
-        jsonIter FromJSON(jsonIter, jsonIter, ClassType&, tag&&);
-
-        template<typename ClassType>
-        jsonIter FromJSON(jsonIter iter, jsonIter end, ClassType& classInto) {
-            return FromJSON(iter, end, classInto, typename TypeInfo<ClassType>::type());
-        }
-    }
-}
-
+#include "json_type_tags.hpp"
 #include "json_parsing_helpers.hpp"
 #include "json_iterable_parser.hpp"
 #include "json_array_parser.hpp"
@@ -39,40 +16,37 @@ namespace JSON {
 #include "json_pointer_parsers.hpp"
 
 namespace JSON {
-
     namespace detail {
-
-////////////////////////////////////////////////////////////////////////////////////////////////////
         template<typename ClassType>
-        json_finline std::string ToJSON(const ClassType& from, _const&& a) {
-            return ToJSON(from, typename TypeInfo<typename std::remove_const<ClassType>::type>::type());
+        json_finline std::string ToJSON(const ClassType& from, _const&&) {
+            return ToJSON(from, typename TypeTag<typename std::remove_const<ClassType>::type>::type());
         }
 
         template<typename ClassType>
         json_deserialize_const_warning
-        jsonIter FromJSON(jsonIter iter, jsonIter end, const ClassType& into, _const&& a) {
+        jsonIter FromJSON(jsonIter iter, jsonIter end, const ClassType& into, _const&&) {
             //TODO: allow advancing without generating data
             ClassType shadow;
             return detail::FromJSON(iter, end, shadow);
         }
 
         template<typename ClassType>
-        json_finline std::string ToJSON(const ClassType& from, _enum&& a) {
+        json_finline std::string ToJSON(const ClassType& from, _enum&&) {
             //TODO fixme
         }
 
         template<typename ClassType>
-        json_finline jsonIter FromJSON(jsonIter iter, jsonIter end, ClassType& into, _enum&& a) {
+        json_finline jsonIter FromJSON(jsonIter iter, jsonIter end, ClassType& into, _enum&&) {
             //TODO fixme
         }
 
         template<typename ClassType>
-        json_finline std::string ToJSON(const ClassType& from, _arithmetic&& a) {
+        json_finline std::string ToJSON(const ClassType& from, _arithmetic&&) {
             return boost::lexical_cast<std::string>(from);
         }
 
         template<typename ClassType>
-        json_finline jsonIter FromJSON(jsonIter iter, jsonIter end, ClassType& into, _arithmetic&& a) {
+        json_finline jsonIter FromJSON(jsonIter iter, jsonIter end, ClassType& into, _arithmetic&&) {
             iter = AdvancePastWhitespace(iter, end);
             auto endOfNumber = AdvancePastNumbers(iter, end);
 
@@ -87,7 +61,7 @@ namespace JSON {
         }
 
         template<>
-        json_finline std::string ToJSON(const char& from, _arithmetic&& a) {
+        json_finline std::string ToJSON(const char& from, _arithmetic&&) {
             std::string json("\"");
             json.append(1, from);
             json += "\"";
@@ -95,7 +69,7 @@ namespace JSON {
         }
 
         template<>
-        json_finline jsonIter FromJSON(jsonIter iter, jsonIter end, char& into, _arithmetic&& a) {
+        json_finline jsonIter FromJSON(jsonIter iter, jsonIter end, char& into, _arithmetic&&) {
             iter = AdvancePastWhitespace(iter, end);
             if(iter == end || *iter != L'\"') {
                 ThrowBadJSONError(iter, end, "Not a valid string begin token");
@@ -126,7 +100,7 @@ namespace JSON {
         }
 
         template<>
-        json_finline std::string ToJSON(const wchar_t& from, _arithmetic&& a) {
+        json_finline std::string ToJSON(const wchar_t& from, _arithmetic&&) {
             std::string json("\"");
 
             std::wstring wideChar(1, from);
@@ -137,7 +111,7 @@ namespace JSON {
             return json;
         }
 
-        json_finline jsonIter FromJSON(jsonIter iter, jsonIter end, wchar_t& into, _arithmetic&& a) {
+        json_finline jsonIter FromJSON(jsonIter iter, jsonIter end, wchar_t& into, _arithmetic&&) {
             iter = AdvancePastWhitespace(iter, end);
             if(iter == end || *iter != L'\"') {
                 ThrowBadJSONError(iter, end, "Not a valid string begin token");
@@ -267,18 +241,6 @@ namespace JSON {
 
         ++iter;
         return iter;
-    }
-
-    namespace detail {
-        template<typename ClassType>
-        json_finline std::string ToJSON(const ClassType& from, _class&& a) {
-            return JSON::ToJSON(from);
-        }
-
-        template<typename ClassType>
-        json_finline jsonIter FromJSON(jsonIter iter, jsonIter end, ClassType& classInto, _class&& a) {
-            return JSON::FromJSON(iter, end, classInto);
-        }
     }
 
     /* This extracts the next key from the map when deserializing.

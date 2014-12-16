@@ -47,17 +47,17 @@ namespace JSON {
              typename underlyingType, underlyingType member,
              template<typename UT, UT MT> class Member>
     json_finline std::string MemberToJSON(const classFor& classFrom,
-                                      Member<underlyingType, member>&& m) {
+                                      Member<underlyingType, member>&&) {
         return MemberToJSON(classFrom, member);
     }
 
     template<typename classFor,
              typename member, typename... members,
              template<typename... M> class ML>
-    json_finline std::string MembersToJSON(const classFor& classFrom, ML<member, members...>&& ml) {
+    json_finline std::string MembersToJSON(const classFor& classFrom, ML<member, members...>&&) {
         std::string json(1, '\"');
         json.append(member::key);
-        json.append("\":"), 2;
+        json.append("\":");
 
         json.append(MemberToJSON(classFrom, member()));
         if(sizeof...(members) > 0) {
@@ -70,12 +70,12 @@ namespace JSON {
 #ifndef _MSC_VER
     template<typename classFor,
         template<typename... M> class ML>
-    json_finline std::string MembersToJSON(const classFor& classFrom, ML<>&& ml) {
+    json_finline std::string MembersToJSON(const classFor& classFrom, ML<>&&) {
 #else
     template<typename classFor,
              typename... members,
              template<typename... M> class ML>
-    json_finline std::string MembersToJSON(const classFor& classFrom, ML<members...>&& ml) {
+    json_finline std::string MembersToJSON(const classFor& classFrom, ML<members...>&&) {
 #endif
         return "";
     }
@@ -138,7 +138,7 @@ namespace JSON {
 
     template<typename classFor, typename... types, template<typename... M> class ML>
     json_finline jsonIter MembersFromJSON(classFor& classInto, jsonIter iter, jsonIter end,
-                                          ML<types...>&& ml) {
+                                          ML<types...>&&) {
         return JSONReader<classFor, sizeof...(types)>::MembersFromJSON(classInto, iter, end);
     }
 
@@ -170,6 +170,18 @@ namespace JSON {
         FromJSON(iter, end, classInto);
 
         return classInto;
+    }
+
+    namespace detail {
+        template<typename ClassType>
+        json_finline std::string ToJSON(const ClassType& from, _class&&) {
+            return JSON::ToJSON(from);
+        }
+
+        template<typename ClassType>
+        json_finline jsonIter FromJSON(jsonIter iter, jsonIter end, ClassType& classInto, _class&&) {
+            return JSON::FromJSON(iter, end, classInto);
+        }
     }
 };
 

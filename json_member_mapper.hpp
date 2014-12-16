@@ -32,7 +32,7 @@ namespace JSON {
              typename underlyingType, underlyingType member,
              template<typename UT, UT MT> class MemberInfo>
     json_finline jsonIter MemberFromJSON(classType& classOn, jsonIter iter, jsonIter end,
-                                         MemberInfo<underlyingType, member>&& m) {
+                                         MemberInfo<underlyingType, member>&&) {
         return MemberFromJSON(classOn, iter, end, member);
     }
 
@@ -55,7 +55,7 @@ namespace JSON {
     template<typename classFor,
              typename member, typename... members,
              template<typename... M> class ML>
-    json_finline constexpr static const MapTypes::maptype<classFor> CreateMap(ML<member, members...>&& ml) {
+    json_finline constexpr static const MapTypes::maptype<classFor> CreateMap(ML<member, members...>&&) {
         return CreateMap<classFor>(
             MemberList<members...>(),
             MapTypes::value_type<classFor>{
@@ -69,7 +69,7 @@ namespace JSON {
              typename member, typename... members,
              template<typename... M> class ML,
              typename... value_types>
-    json_finline constexpr static const MapTypes::maptype<classFor> CreateMap(ML<member, members...>&& ml,
+    json_finline constexpr static const MapTypes::maptype<classFor> CreateMap(ML<member, members...>&&,
                                                                               value_types&&... pairs) {
         return CreateMap<classFor>(
             MemberList<members...>(),
@@ -85,14 +85,14 @@ namespace JSON {
     template<typename classFor,
              template<typename... M> class ML,
              typename... value_types>
-    json_finline constexpr static const MapTypes::maptype<classFor> CreateMap(ML<>&& ml,
+    json_finline constexpr static const MapTypes::maptype<classFor> CreateMap(ML<>&&,
                                                                               value_types&&... pairs) {
 #else
     template<typename classFor,
         typename... members,
         template<typename... M> class ML,
         typename... value_types>
-        json_finline constexpr static const MapTypes::maptype<classFor> CreateMap(ML<members...>&& ml,
+        json_finline constexpr static const MapTypes::maptype<classFor> CreateMap(ML<members...>&&,
         value_types&&... pairs) {
 #endif
         return { pairs... };

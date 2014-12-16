@@ -1,6 +1,6 @@
 #pragma once
-#ifndef __JSON_TYPE_INFO_HPP__
-#define __JSON_TYPE_INFO_HPP__
+#ifndef __JSON_TYPE_Tag_HPP__
+#define __JSON_TYPE_Tag_HPP__
 
 namespace JSON {
 namespace detail {
@@ -13,50 +13,50 @@ namespace detail {
 
     template<bool is_const, bool is_class, bool is_enum, bool is_arithmetic, bool is_pointer,
              bool is_array>
-    struct _TypeInfo;
+    struct _TypeTag;
 
     template<bool is_class, bool is_enum, bool is_arithmetic, bool is_pointer,
              bool is_array>
-    struct _TypeInfo<true, is_class, is_enum, is_arithmetic, is_pointer, is_array> {
-        typedef _const type;
+    struct _TypeTag<true, is_class, is_enum, is_arithmetic, is_pointer, is_array> {
+        typedef _const tag;
     };
 
     template<>
-    struct _TypeInfo<false, true, false, false, false, false> {
-        typedef _class type;
+    struct _TypeTag<false, true, false, false, false, false> {
+        typedef _class tag;
     };
 
     template<>
-    struct _TypeInfo<false, false, true, false, false, false> {
-        typedef _enum type;
+    struct _TypeTag<false, false, true, false, false, false> {
+        typedef _enum tag;
     };
 
     template<>
-    struct _TypeInfo<false, false, false, true, false, false> {
-        typedef _arithmetic type;
+    struct _TypeTag<false, false, false, true, false, false> {
+        typedef _arithmetic tag;
     };
 
     template<>
-    struct _TypeInfo<false, false, false, false, true, false> {
-        typedef _pointer type;
+    struct _TypeTag<false, false, false, false, true, false> {
+        typedef _pointer tag;
     };
 
     template<>
-    struct _TypeInfo<false, false, false, false, false, true> {
-        typedef _array type;
+    struct _TypeTag<false, false, false, false, false, true> {
+        typedef _array tag;
     };
 
     template<typename ClassType>
-    struct TypeInfo {
+    struct TypeTag {
         typedef typename std::remove_reference<ClassType>::type basetype;
-        typedef typename _TypeInfo<
+        typedef typename _TypeTag<
             std::is_const<basetype>::value,
             std::is_class<basetype>::value,
             std::is_enum<basetype>::value,
             std::is_arithmetic<basetype>::value,
             std::is_pointer<basetype>::value,
             std::is_array<basetype>::value
-        >::type type;
+        >::tag tag;
     };
 } /* detail */
 } /* JSON */
