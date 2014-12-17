@@ -8,7 +8,6 @@
 #include <string>
 #include <type_traits>
 
-#include "json_type_tags.hpp"
 #include "json_parsing_helpers.hpp"
 #include "json_iterable_parser.hpp"
 #include "json_array_parser.hpp"
@@ -16,130 +15,6 @@
 #include "json_pointer_parsers.hpp"
 
 namespace JSON {
-    namespace detail {
-        template<typename ClassType>
-        json_finline std::string ToJSON(const ClassType& from, _const&&) {
-            return ToJSON(from, typename TypeTag<typename std::remove_const<ClassType>::type>::type());
-        }
-
-        template<typename ClassType>
-        json_deserialize_const_warning
-        jsonIter FromJSON(jsonIter iter, jsonIter end, const ClassType& into, _const&&) {
-            //TODO: allow advancing without generating data
-            ClassType shadow;
-            return detail::FromJSON(iter, end, shadow);
-        }
-
-        template<typename ClassType>
-        json_finline std::string ToJSON(const ClassType& from, _enum&&) {
-            //TODO fixme
-        }
-
-        template<typename ClassType>
-        json_finline jsonIter FromJSON(jsonIter iter, jsonIter end, ClassType& into, _enum&&) {
-            //TODO fixme
-        }
-
-        template<typename ClassType>
-        json_finline std::string ToJSON(const ClassType& from, _arithmetic&&) {
-            return boost::lexical_cast<std::string>(from);
-        }
-
-        template<typename ClassType>
-        json_finline jsonIter FromJSON(jsonIter iter, jsonIter end, ClassType& into, _arithmetic&&) {
-            iter = AdvancePastWhitespace(iter, end);
-            auto endOfNumber = AdvancePastNumbers(iter, end);
-
-            try {
-                into = boost::lexical_cast<ClassType>(&*iter, std::distance(iter, endOfNumber));
-            }
-            catch(boost::bad_lexical_cast blc) {
-                ThrowBadJSONError(iter, end, std::string("Could not convert to type ") + typeid(into).name());
-            }
-
-            return endOfNumber;
-        }
-
-        template<>
-        json_finline std::string ToJSON(const char& from, _arithmetic&&) {
-            std::string json("\"");
-            json.append(1, from);
-            json += "\"";
-            return json;
-        }
-
-        template<>
-        json_finline jsonIter FromJSON(jsonIter iter, jsonIter end, char& into, _arithmetic&&) {
-            iter = AdvancePastWhitespace(iter, end);
-            if(iter == end || *iter != L'\"') {
-                ThrowBadJSONError(iter, end, "Not a valid string begin token");
-            }
-
-            ++iter;
-            if(iter == end) {
-                ThrowBadJSONError(iter, end, "No data for string");
-            }
-
-            if(*iter == L'\\') {
-                ++iter;
-            }
-
-            //Todo, does this handle unicode escape sequences?
-            auto endOfString = iter;
-            ++endOfString;
-            if(endOfString == end || *endOfString != L'\"') {
-                ThrowBadJSONError(iter, end,"No string end token");
-            }
-
-            //get the character
-            into = *iter;
-
-            //Advance past the end
-            ++endOfString;
-            return endOfString;
-        }
-
-        template<>
-        json_finline std::string ToJSON(const wchar_t& from, _arithmetic&&) {
-            std::string json("\"");
-
-            std::wstring wideChar(1, from);
-            std::string narrowChar(wideChar.begin(), wideChar.end());
-
-            json.append(narrowChar);
-            json.append("\"");
-            return json;
-        }
-
-        json_finline jsonIter FromJSON(jsonIter iter, jsonIter end, wchar_t& into, _arithmetic&&) {
-            iter = AdvancePastWhitespace(iter, end);
-            if(iter == end || *iter != L'\"') {
-                ThrowBadJSONError(iter, end, "Not a valid string begin token");
-            }
-
-            ++iter;
-            if(iter == end) {
-                ThrowBadJSONError(iter, end, "No data for string");
-            }
-
-            if(*iter == L'\\') {
-                ++iter;
-            }
-
-            //Todo, does this handle unicode escape sequences?
-            auto endOfString = iter;
-            ++endOfString;
-            if(endOfString == end || *endOfString != L'\"') {
-                ThrowBadJSONError(iter, end,"No string end token");
-            }
-
-            into = std::wstring(iter, endOfString)[0];
-
-            ++endOfString;
-            return endOfString;
-        }
-    }
-
     template<>
     json_finline std::string ToJSON(const std::string& from) {
         std::string json("\"");
@@ -241,6 +116,144 @@ namespace JSON {
 
         ++iter;
         return iter;
+    }
+
+    namespace detail {
+        template<typename ClassType,
+                 enable_if<ClassType, std::is_enum> = true>
+        json_finline std::string ToJSON(const ClassType& from) {
+            using underlying_type = typename std::underlying_type<ClassType>::type;
+            return detail::ToJSON(static_cast<const underlying_type&>(from));
+        }
+
+        template<typename ClassType,
+                 enable_if<ClassType, std::is_enum> = true>
+        json_finline jsonIter FromJSON(jsonIter iter, jsonIter end, ClassType& into) {
+            //TODO fixme
+        }
+
+        template<typename ClassType,
+                 enable_if<ClassType, std::is_arithmetic> = true>
+        json_finline std::string ToJSON(const ClassType& from) {
+            return boost::lexical_cast<std::string>(from);
+        }
+
+        template<typename ClassType,
+                 enable_if<ClassType, std::is_arithmetic> = true>
+        json_finline jsonIter FromJSON(jsonIter iter, jsonIter end, ClassType& into) {
+            iter = AdvancePastWhitespace(iter, end);
+            auto endOfNumber = AdvancePastNumbers(iter, end);
+
+            try {
+                into = boost::lexical_cast<ClassType>(&*iter, std::distance(iter, endOfNumber));
+            }
+            catch(boost::bad_lexical_cast blc) {
+                ThrowBadJSONError(iter, end, std::string("Could not convert to type ") + typeid(into).name());
+            }
+
+            return endOfNumber;
+        }
+
+        template<>
+        json_finline std::string ToJSON<char, true>(const char& from) {
+            std::string json("\"");
+            json.append(1, from);
+            json += "\"";
+            return json;
+        }
+
+        template<>
+        json_finline jsonIter FromJSON<char, true>(jsonIter iter, jsonIter end, char& into) {
+            iter = AdvancePastWhitespace(iter, end);
+            if(iter == end || *iter != L'\"') {
+                ThrowBadJSONError(iter, end, "Not a valid string begin token");
+            }
+
+            ++iter;
+            if(iter == end) {
+                ThrowBadJSONError(iter, end, "No data for string");
+            }
+
+            if(*iter == L'\\') {
+                ++iter;
+            }
+
+            //Todo, does this handle unicode escape sequences?
+            auto endOfString = iter;
+            ++endOfString;
+            if(endOfString == end || *endOfString != L'\"') {
+                ThrowBadJSONError(iter, end,"No string end token");
+            }
+
+            //get the character
+            into = *iter;
+
+            //Advance past the end
+            ++endOfString;
+            return endOfString;
+        }
+
+        template<>
+        json_finline std::string ToJSON<wchar_t, true>(const wchar_t& from) {
+            std::string json("\"");
+
+            std::wstring wideChar(1, from);
+            std::string narrowChar(wideChar.begin(), wideChar.end());
+
+            json.append(narrowChar);
+            json.append("\"");
+            return json;
+        }
+
+        template<>
+        json_finline jsonIter FromJSON<wchar_t, true>(jsonIter iter, jsonIter end, wchar_t& into) {
+            iter = AdvancePastWhitespace(iter, end);
+            if(iter == end || *iter != L'\"') {
+                ThrowBadJSONError(iter, end, "Not a valid string begin token");
+            }
+
+            ++iter;
+            if(iter == end) {
+                ThrowBadJSONError(iter, end, "No data for string");
+            }
+
+            if(*iter == L'\\') {
+                ++iter;
+            }
+
+            //Todo, does this handle unicode escape sequences?
+            auto endOfString = iter;
+            ++endOfString;
+            if(endOfString == end || *endOfString != L'\"') {
+                ThrowBadJSONError(iter, end,"No string end token");
+            }
+
+            into = std::wstring(iter, endOfString)[0];
+
+            ++endOfString;
+            return endOfString;
+        }
+
+        template<typename ClassType,
+                 enable_if_const<ClassType> = true>
+        json_deserialize_const_warning
+        jsonIter FromJSON(jsonIter iter, jsonIter end, ClassType& into) {
+            //TODO: allow advancing without generating data
+            typename std::remove_const<ClassType>::type shadow;
+            return detail::FromJSON(iter, end, shadow);
+        }
+
+        template<typename ClassType,
+                 enable_if<ClassType, std::is_class> = true>
+        std::string ToJSON(const ClassType& from) {
+            return JSON::ToJSON(from);
+        }
+
+        template<typename ClassType,
+                 enable_if<ClassType, std::is_class> = true>
+        jsonIter FromJSON(jsonIter iter, jsonIter end, ClassType& classInto) {
+            return JSON::FromJSON(iter, end, classInto);
+        }
     }
 
     /* This extracts the next key from the map when deserializing.

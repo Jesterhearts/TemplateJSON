@@ -3,30 +3,28 @@
 #define __JSON_ARRAY_PARSER_HPP__
 
 namespace JSON {
-/////////////////////////////////////////
-// Compile-time sized array handler
-    template<typename ClassOn,
-             size_t rank>
-    struct JSONArrayHandler {
-        json_finline static std::string ToJSON(const ClassOn& classFrom) {
-            if(std::extent<ClassOn>::value == 0) {
+namespace detail {
+    namespace arrays {
+        template<typename ClassType>
+        json_finline std::string ToJSON(const ClassType& classFrom) {
+            if(std::extent<ClassType>::value == 0) {
                 return "[]";
             }
 
-            typedef typename std::remove_extent<ClassOn>::type valueType;
-
             std::string json("[");
-            json += detail::ToJSON(classFrom[0]);
+            json.append(detail::ToJSON(classFrom[0]));
 
-            for(size_t i = 1; i < std::extent<ClassOn>::value; ++i) {
-                json += ",";
-                json += detail::ToJSON(classFrom[i]);
+            for(size_t i = 1; i < std::extent<ClassType>::value; ++i) {
+                json.append(",");
+                json.append(detail::ToJSON(classFrom[i]));
             }
-            json += "]";
+            json.append("]");
+
             return json;
         }
 
-        json_finline static jsonIter FromJSON(jsonIter iter, jsonIter end, ClassOn& into) {
+        template<typename ClassType>
+        json_finline jsonIter FromJSON(jsonIter iter, jsonIter end, ClassType& into) {
             if(end - iter < 2) {
                 ThrowBadJSONError(iter, end, "No array tokens");
             }
@@ -37,8 +35,7 @@ namespace JSON {
             }
             ++iter;
 
-            typedef typename std::remove_extent<ClassOn>::type valueType;
-            for(size_t i = 0; i < std::extent<ClassOn>::value; ++i) {
+            for(size_t i = 0; i < std::extent<ClassType>::value; ++i) {
                 iter = detail::FromJSON(iter, end, into[i]);
                 iter = AdvancePastWhitespace(iter, end);
 
@@ -46,7 +43,7 @@ namespace JSON {
                     ThrowBadJSONError(iter, end, "Not enough items in JSON array");
                 }
 
-                if(*iter != L',' && i < std::extent<ClassOn>::value - 1) {
+                if(*iter != L',' && i < std::extent<ClassType>::value - 1) {
                     ThrowBadJSONError(iter, end, "Missing comma in JSON array");
                 }
                 else if(*iter == L',') {
@@ -61,30 +58,19 @@ namespace JSON {
             ++iter;
             return iter;
         }
-    };
-
-    /* Not an array */
-    template<typename ClassOn>
-    struct JSONArrayHandler<ClassOn, 0> {
-        json_finline static std::string ToJSON(const ClassOn& classFrom) {
-            return detail::ToJSON(classFrom);
-        }
-
-        json_finline static jsonIter FromJSON(jsonIter iter, jsonIter end, ClassOn& into) {
-            return detail::FromJSON(iter, end, into);
-        }
-    };
-
-    namespace detail {
-        template<typename ClassType>
-        json_finline std::string ToJSON(const ClassType& from, _array&& a) {
-            return JSONArrayHandler<ClassType>::ToJSON(from);
-        }
-
-        template<typename ClassType>
-        json_finline jsonIter FromJSON(jsonIter iter, jsonIter end, ClassType& into, _array&& a) {
-            return JSONArrayHandler<ClassType>::FromJSON(iter, end, into);
-        }
     }
-}
+
+    template<typename ClassType,
+             enable_if<ClassType, std::is_array> = true>
+    json_finline std::string ToJSON(const ClassType& from) {
+        return arrays::ToJSON(from);
+    }
+
+    template<typename ClassType,
+             enable_if<ClassType, std::is_array> = true>
+    json_finline jsonIter FromJSON(jsonIter iter, jsonIter end, ClassType& into) {
+        return arrays::FromJSON(iter, end, into);
+    }
+} /* detail */
+} /* JSON */
 #endif

@@ -27,10 +27,7 @@
 
 
 namespace JSON {
-    template<typename T> struct JSONFnInvoker;
-    template<typename T> struct JSONFnInvokerImpl;
     template<typename T, size_t N = 1> struct JSONArrayHandler;
-    template<typename T, bool AM, bool IP, bool AR, bool C = false> struct JSONFnInvokerDecider;
 }
 
 #endif

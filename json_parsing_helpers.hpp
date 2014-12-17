@@ -6,21 +6,51 @@ namespace JSON {
     const std::string nullToken("null");
 
     namespace detail {
-        template<typename ClassType, typename tag>
-        std::string ToJSON(const ClassType&, tag&&);
+        template<typename ClassType>
+        using basic_type = typename std::remove_reference<ClassType>::type;
 
         template<typename ClassType>
-        std::string ToJSON(const ClassType& from) {
-            return ToJSON(from, typename TypeTag<ClassType>::tag());
-        }
+        using non_const = typename std::enable_if<!std::is_const<basic_type<ClassType>>::value, ClassType>::type;
 
-        template<typename ClassType, typename tag>
-        jsonIter FromJSON(jsonIter, jsonIter, ClassType&, tag&&);
+        template<typename ClassType, template<typename C> class decider>
+        using enable_if = typename std::enable_if<decider<non_const<ClassType>>::value, bool>::type;
 
         template<typename ClassType>
-        jsonIter FromJSON(jsonIter iter, jsonIter end, ClassType& classInto) {
-            return FromJSON(iter, end, classInto, typename TypeTag<ClassType>::tag());
-        }
+        using enable_if_const = typename std::enable_if<std::is_const<basic_type<ClassType>>::value, bool>::type;
+
+        template<typename ClassType, enable_if<ClassType, std::is_enum> = true>
+        std::string ToJSON(const ClassType& from);
+
+        template<typename ClassType, enable_if<ClassType, std::is_enum> = true>
+        jsonIter FromJSON(jsonIter iter, jsonIter end, ClassType& into);
+
+        template<typename ClassType, enable_if<ClassType, std::is_arithmetic> = true>
+        std::string ToJSON(const ClassType& from);
+
+        template<typename ClassType, enable_if<ClassType, std::is_arithmetic> = true>
+        jsonIter FromJSON(jsonIter iter, jsonIter end, ClassType& into);
+
+        template<typename ClassType, enable_if<ClassType, std::is_pointer> = true>
+        std::string ToJSON(const ClassType& from);
+
+        template<typename ClassType, enable_if<ClassType, std::is_pointer> = true>
+        jsonIter FromJSON(jsonIter iter, jsonIter end, ClassType& into);
+
+        template<typename ClassType, enable_if<ClassType, std::is_array> = true>
+        std::string ToJSON(const ClassType& from);
+
+        template<typename ClassType, enable_if<ClassType, std::is_array> = true>
+        jsonIter FromJSON(jsonIter iter, jsonIter end, ClassType& into);
+
+        template<typename ClassType, enable_if<ClassType, std::is_class> = true>
+        std::string ToJSON(const ClassType& from);
+
+        template<typename ClassType, enable_if<ClassType, std::is_class> = true>
+        jsonIter FromJSON(jsonIter iter, jsonIter end, ClassType& into);
+
+        template<typename ClassType, enable_if_const<ClassType> = true>
+        json_deserialize_const_warning
+        jsonIter FromJSON(jsonIter iter, jsonIter end, ClassType& into);
     }
 
     json_no_return inline void ThrowBadJSONError(jsonIter iter, jsonIter end,
