@@ -49,18 +49,6 @@ namespace JSON {
 
         return classInto;
     }
-
-    namespace detail {
-        template<typename ClassType>
-        json_finline std::string ToJSON(const ClassType& from, _class&&) {
-            return JSON::ToJSON(from);
-        }
-
-        template<typename ClassType>
-        json_finline jsonIter FromJSON(jsonIter iter, jsonIter end, ClassType& classInto, _class&&) {
-            return JSON::FromJSON(iter, end, classInto);
-        }
-    }
 };
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
