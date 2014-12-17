@@ -54,7 +54,7 @@ namespace JSON {
     }
 
     json_no_return inline void ThrowBadJSONError(jsonIter iter, jsonIter end,
-                                                 const std::string&& errmsg) {
+                                                 std::string&& errmsg) {
         jsonIter endIter = (std::distance(iter, end) > 1000) ? iter + 1000 : end;
         std::string badJson(iter, endIter);
         throw std::invalid_argument(errmsg + ": " + badJson);
@@ -153,6 +153,10 @@ namespace JSON {
         }
         ++iter;
         return iter;
+    }
+
+    json_finline jsonIter ParseNextKey(jsonIter iter, jsonIter end, std::string& nextKey) {
+        return detail::FromJSON(iter, end, nextKey);
     }
 }
 #endif

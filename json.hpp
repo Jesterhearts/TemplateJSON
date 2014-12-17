@@ -63,4 +63,26 @@ namespace JSON {
         template CLASS_NAME FromJSON<CLASS_NAME>(const std::string&);   \
     }
 
+#define JSON_ENABLE_ENUM(ENUM_NAME, ...)                            \
+    namespace JSON {                                                \
+        template<>                                                  \
+        struct EnumValidator<ENUM_NAME> {                           \
+            constexpr static EnumValueList<ENUM_NAME, __VA_ARGS__>  \
+            values() {                                              \
+                return EnumValueList<ENUM_NAME, __VA_ARGS__>();     \
+            }                                                       \
+        };                                                          \
+    }
+
+#define JSON_ENABLE_CONTIGUOUS_ENUM(ENUM_NAME, ...)                         \
+    namespace JSON {                                                        \
+        template<>                                                          \
+        struct EnumValidator<ENUM_NAME> {                                   \
+            constexpr static ContiguousEnumValueList<ENUM_NAME, __VA_ARGS__>\
+            values() {                                                      \
+                return ContiguousEnumValueList<ENUM_NAME, __VA_ARGS__>();   \
+            }                                                               \
+        };                                                                  \
+    }
+
 #endif

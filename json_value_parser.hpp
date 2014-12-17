@@ -9,6 +9,7 @@
 #include <type_traits>
 
 #include "json_parsing_helpers.hpp"
+#include "json_enum_parsers.hpp"
 #include "json_iterable_parser.hpp"
 #include "json_array_parser.hpp"
 #include "json_tuple_parser.hpp"
@@ -120,19 +121,6 @@ namespace JSON {
 
     namespace detail {
         template<typename ClassType,
-                 enable_if<ClassType, std::is_enum> = true>
-        json_finline std::string ToJSON(const ClassType& from) {
-            using underlying_type = typename std::underlying_type<ClassType>::type;
-            return detail::ToJSON(static_cast<const underlying_type&>(from));
-        }
-
-        template<typename ClassType,
-                 enable_if<ClassType, std::is_enum> = true>
-        json_finline jsonIter FromJSON(jsonIter iter, jsonIter end, ClassType& into) {
-            //TODO fixme
-        }
-
-        template<typename ClassType,
                  enable_if<ClassType, std::is_arithmetic> = true>
         json_finline std::string ToJSON(const ClassType& from) {
             return boost::lexical_cast<std::string>(from);
@@ -237,7 +225,7 @@ namespace JSON {
         template<typename ClassType,
                  enable_if_const<ClassType> = true>
         json_deserialize_const_warning
-        jsonIter FromJSON(jsonIter iter, jsonIter end, ClassType& into) {
+        json_finline jsonIter FromJSON(jsonIter iter, jsonIter end, ClassType& into) {
             //TODO: allow advancing without generating data
             typename std::remove_const<ClassType>::type shadow;
             return detail::FromJSON(iter, end, shadow);
@@ -245,23 +233,15 @@ namespace JSON {
 
         template<typename ClassType,
                  enable_if<ClassType, std::is_class> = true>
-        std::string ToJSON(const ClassType& from) {
+        json_finline std::string ToJSON(const ClassType& from) {
             return JSON::ToJSON(from);
         }
 
         template<typename ClassType,
                  enable_if<ClassType, std::is_class> = true>
-        jsonIter FromJSON(jsonIter iter, jsonIter end, ClassType& classInto) {
+        json_finline jsonIter FromJSON(jsonIter iter, jsonIter end, ClassType& classInto) {
             return JSON::FromJSON(iter, end, classInto);
         }
-    }
-
-    /* This extracts the next key from the map when deserializing.
-     *
-     * g++ refused to let me use forward decls for this, which is why it's allll the way down here
-     */
-    json_finline jsonIter ParseNextKey(jsonIter iter, jsonIter end, std::string& nextKey) {
-        return detail::FromJSON(iter, end, nextKey);
     }
 }
 #endif
