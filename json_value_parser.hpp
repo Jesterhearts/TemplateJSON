@@ -9,6 +9,7 @@
 #include <type_traits>
 
 #include "json_parsing_helpers.hpp"
+#include "json_number_parsers.hpp"
 #include "json_enum_parsers.hpp"
 #include "json_iterable_parser.hpp"
 #include "json_array_parser.hpp"
@@ -120,28 +121,6 @@ namespace JSON {
     }
 
     namespace detail {
-        template<typename ClassType,
-                 enable_if<ClassType, std::is_arithmetic> = true>
-        json_finline std::string ToJSON(const ClassType& from) {
-            return boost::lexical_cast<std::string>(from);
-        }
-
-        template<typename ClassType,
-                 enable_if<ClassType, std::is_arithmetic> = true>
-        json_finline jsonIter FromJSON(jsonIter iter, jsonIter end, ClassType& into) {
-            iter = AdvancePastWhitespace(iter, end);
-            auto endOfNumber = AdvancePastNumbers(iter, end);
-
-            try {
-                into = boost::lexical_cast<ClassType>(&*iter, std::distance(iter, endOfNumber));
-            }
-            catch(boost::bad_lexical_cast blc) {
-                ThrowBadJSONError(iter, end, std::string("Could not convert to type ") + typeid(into).name());
-            }
-
-            return endOfNumber;
-        }
-
         template<>
         json_finline std::string ToJSON<char, true>(const char& from) {
             std::string json("\"");

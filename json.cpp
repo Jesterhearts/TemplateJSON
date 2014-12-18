@@ -27,14 +27,14 @@ int main() {
         std::cout << e.what() << std::endl;
     }
 
-    Simple2 simple2;
-    json = JSON::ToJSON<Simple2>(simple2);
+    Ints ints;
+    json = JSON::ToJSON<Ints>(ints);
     std::cout << json << std::endl;
 
     try
     {
-        Simple2 simple2 = JSON::FromJSON<Simple2>(json);
-        json = JSON::ToJSON<Simple2>(simple2);
+        Ints ints = JSON::FromJSON<Ints>(json);
+        json = JSON::ToJSON<Ints>(ints);
         std::cout << "deserialized: " << json << std::endl << std::endl;
     }
     catch(const std::invalid_argument& e)

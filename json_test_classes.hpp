@@ -17,11 +17,50 @@ private:
     JSON_PRIVATE_ACCESS()
 };
 
-class Simple2 {
+class Ints {
 public:
-    Simple2() : s(10), s2(11) {};
-    int s;
-    int s2;
+    Ints() {};
+    short s;
+    unsigned short us;
+
+    int i;
+    unsigned u;
+
+    long l;
+    unsigned long ul;
+
+    long long ll;
+    unsigned long long ull;
+
+    char c;
+    unsigned char uc;
+
+    // char16_t c16;
+    // char32_t c32;
+
+    wchar_t wc;
+    unsigned wchar_t uwc;
+
+    int8_t i8;
+    uint8_t u8;
+
+    int16_t i16;
+    uint16_t u16;
+
+    int32_t i32;
+    uint32_t u32;
+
+    int64_t i64;
+    uint64_t u64;
+};
+
+class Floats {
+public:
+    Floats() {};
+
+    float f;
+    double d;
+    //long double not valid json, since json does ieee doubles
 };
 
 template<typename T>

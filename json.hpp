@@ -23,6 +23,7 @@ namespace JSON {
     template<typename classFor>
     std::string ToJSON(const classFor& classFrom) {
         std::string json("{");
+        json.reserve(1000);
 
         json.append(detail::MembersToJSON(classFrom, MembersHolder<classFor>::members()));
 
@@ -45,7 +46,7 @@ namespace JSON {
         auto iter = jsonData.begin();
         auto end = jsonData.end();
 
-        FromJSON(iter, end, classInto);
+        FromJSON(&*iter, &*end, classInto);
 
         return classInto;
     }

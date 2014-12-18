@@ -3,7 +3,10 @@
 
 JSON_ENABLE(Simple, (s));
 
-JSON_ENABLE(Simple2, (s), (s2));
+JSON_ENABLE(Ints, (s), (us), (i), (u), (l), (ul), (ll), (ull), (c), (uc), (wc), (uwc),
+            (i8), (u8), (i16), (u16), (i32), (u32), (i64), (u64));
+
+JSON_ENABLE(Floats, (f), (d))
 
 typedef Templated<int> TInt;
 JSON_ENABLE(TInt, (val));
