@@ -24,7 +24,10 @@ namespace JSON {
         template<typename ClassType, enable_if<ClassType, std::is_enum> = true>
         jsonIter FromJSON(jsonIter iter, jsonIter end, ClassType& into);
 
-        template<typename ClassType, enable_if<ClassType, std::is_arithmetic> = true>
+        template<typename ClassType, enable_if<ClassType, std::is_integral> = true>
+        void ToJSON(ClassType from, std::string& out);
+
+        template<typename ClassType, enable_if<ClassType, std::is_floating_point> = true>
         void ToJSON(ClassType from, std::string& out);
 
         template<typename ClassType, enable_if<ClassType, std::is_arithmetic> = true>

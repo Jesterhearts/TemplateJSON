@@ -6,22 +6,30 @@
 
 namespace JSON {
 namespace detail {
-    template<typename Type, size_t MaxLexicalLength>
+    template<size_t bytes> constexpr uint8_t MaxIntegerStringLength();
+    template<> //127, 255
+    constexpr uint8_t MaxIntegerStringLength<1>() { return 3; };
+    template<> //32767, 65535
+    constexpr uint8_t MaxIntegerStringLength<2>() { return 5; };
+    template<> //2147483647, 4294967295
+    constexpr uint8_t MaxIntegerStringLength<4>() { return 10; };
+    template<> //9223372036854775807, 18446744073709551615
+    constexpr uint8_t MaxIntegerStringLength<8>() { return 20; };
+
+    template<typename Type, uint8_t base>
     json_finline void itoa(Type value, std::string& out) {
-        const auto BufferSize = MaxLexicalLength + std::is_signed<Type>::value;
+        static_assert(base > 1 && base <= 10, "Unsupported base");
+
+        const auto BufferSize = MaxIntegerStringLength<sizeof(Type)>() + std::is_signed<Type>::value;
+
         char str[BufferSize];
         char* to = str + BufferSize - 1;
         const bool negative = value < 0;
 
-        uint8_t count = 0;
-        static_assert(MaxLexicalLength < std::numeric_limits<uint8_t>::max(),
-                      "Lexical length exceeds count range");
-
         while(value) {
-            *to = '0' + value % 10;
-            value /= 10;
+            *to = '0' + value % base;
+            value /= base;
             --to;
-            ++count;
         }
 
         if(std::is_signed<Type>::value && negative) {
@@ -29,84 +37,27 @@ namespace detail {
             --to;
         }
 
-        out.append(to + 1, count);
+        ++to;
+        out.append(to, BufferSize - std::abs(to - str));
     }
 
     template<typename ClassType,
-             enable_if<ClassType, std::is_arithmetic> = true>
+             enable_if<ClassType, std::is_floating_point> = true>
     json_finline void ToJSON(ClassType from, std::string& out) {
         std::string result = boost::lexical_cast<std::string>(from);
         out.append(result);
+    }
+
+    template<typename ClassType,
+             enable_if<ClassType, std::is_integral> = true>
+    json_finline void ToJSON(ClassType from, std::string& out) {
+        itoa<ClassType, 10>(from, out);
     }
 
     template<>
     json_finline void ToJSON<bool, true>(bool from, std::string& out) {
         out.append(from ? "true" : "false", from ? 4 : 5);
     }
-
-    template<>
-    json_finline void ToJSON<uint8_t, true>(uint8_t from, std::string& out) {
-        //255
-        itoa<uint8_t, 3>(from, out);
-    }
-
-    template<>
-    json_finline void ToJSON<uint16_t, true>(uint16_t from, std::string& out) {
-        //65535
-        itoa<uint16_t, 5>(from, out);
-    }
-
-    template<>
-    json_finline void ToJSON<uint32_t, true>(uint32_t from, std::string& out) {
-        //4294967295
-        itoa<uint32_t, 10>(from, out);
-    }
-
-    template<>
-    json_finline void ToJSON<uint64_t, true>(uint64_t from, std::string& out) {
-        //18446744073709551615
-        itoa<uint64_t, 20>(from, out);
-    }
-
-#if UINTPTR_MAX == 0xffffffff
-    template<>
-    json_finline void ToJSON<unsigned long, true>(unsigned long from, std::string& out) {
-        //18446744073709551615
-        itoa<unsigned long, 20>(from, out);
-    }
-#endif
-
-    template<>
-    json_finline void ToJSON<int8_t, true>(int8_t from, std::string& out) {
-        //127
-        itoa<int8_t, 3>(from, out);
-    }
-
-    template<>
-    json_finline void ToJSON<int16_t, true>(int16_t from, std::string& out) {
-        //32767
-        itoa<int16_t, 5>(from, out);
-    }
-
-    template<>
-    json_finline void ToJSON<int32_t, true>(int32_t from, std::string& out) {
-        //2147483647
-        itoa<int32_t, 10>(from, out);
-    }
-
-    template<>
-    json_finline void ToJSON<int64_t, true>(int64_t from, std::string& out) {
-        //9223372036854775807
-        itoa<int64_t, 19>(from, out);
-    }
-
-#if UINTPTR_MAX == 0xffffffff
-    template<>
-    json_finline void ToJSON<long, true>(long from, std::string& out) {
-        //18446744073709551615
-        itoa<long, 20>(from, out);
-    }
-#endif
 
     template<typename ClassType,
              enable_if<ClassType, std::is_arithmetic> = true>
