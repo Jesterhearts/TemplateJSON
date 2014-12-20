@@ -2,10 +2,14 @@
 #ifndef __JSON_NUMBER_PARSERS_HPP__
 #define __JSON_NUMBER_PARSERS_HPP__
 
-#include <limits>
+#include <boost/lexical_cast.hpp>
+
+#include <cerrno>
+#include <cmath>
+#include <cstdio>
 #include <cstdlib>
 #include <cstring>
-#include <cerrno>
+#include <limits>
 
 namespace JSON {
 namespace detail {
@@ -22,12 +26,20 @@ namespace detail {
     template<typename Type, uint8_t base>
     json_finline void itoa(Type value, std::string& out) {
         static_assert(base > 1 && base <= 10, "Unsupported base");
-
+        static_assert(std::is_integral<Type>::value, "Must be an integral type");
         const auto BufferSize = MaxIntegerStringLength<sizeof(Type)>() + std::is_signed<Type>::value;
+
+        if(!value) {
+            out.append(1, '0');
+            return;
+        }
 
         char str[BufferSize];
         char* to = str + BufferSize - 1;
-        const bool negative = value < 0;
+        const bool negative = std::is_signed<Type>::value && value < 0;
+        if(negative) {
+            value *= -1;
+        }
 
         while(value) {
             *to = '0' + value % base;
@@ -35,7 +47,7 @@ namespace detail {
             --to;
         }
 
-        if(std::is_signed<Type>::value && negative) {
+        if(negative) {
             *to = '-';
             --to;
         }
@@ -43,11 +55,10 @@ namespace detail {
         ++to;
         out.append(to, BufferSize - std::abs(to - str));
     }
-
     template<typename ClassType,
              enable_if<ClassType, std::is_floating_point> = true>
     json_finline void ToJSON(ClassType from, std::string& out) {
-        out << from;
+        out.append(boost::lexical_cast<std::string>(from));
     }
 
     template<typename ClassType,
@@ -64,23 +75,13 @@ namespace detail {
     template<typename ClassType,
              enable_if<ClassType, std::is_integral> = true>
     json_finline jsonIter FromJSON(jsonIter iter, jsonIter end, ClassType& into) {
-        char* endOfNumber;
+        iter = AdvancePastWhitespace(iter, end);
+        auto endOfNumber = AdvancePastNumbers(iter, end);
+        std::istringstream is(iter);
 
-        if(std::is_signed<ClassType>::value) {
-            int64_t result = strtoll(iter, &endOfNumber, 10);
-            if(result > std::numeric_limits<ClassType>::max() || result < std::numeric_limits<ClassType>::min()) {
-                ThrowBadJSONError(iter, end, "Could not convert to number");
-            }
-        }
-        else {
-            uint64_t result = strtoull(iter, &endOfNumber, 10);
-            if(result > std::numeric_limits<ClassType>::max()) {
-                ThrowBadJSONError(iter, end, "Could not convert to number");
-            }
-        }
-
-        if(iter == endOfNumber || errno == ERANGE) {
-            ThrowBadJSONError(iter, end, "Could not convert to number");
+        if(!(is >> into))
+        {
+            ThrowBadJSONError(iter, end, "Could not convert string to value ");
         }
 
         return endOfNumber;
@@ -106,12 +107,14 @@ namespace detail {
     template<typename ClassType,
              enable_if<ClassType, std::is_floating_point> = true>
     json_finline jsonIter FromJSON(jsonIter iter, jsonIter end, ClassType& into) {
-        char* endOfNumber;
-        double result = strtod(iter, &endOfNumber);
+        iter = AdvancePastWhitespace(iter, end);
+        auto endOfNumber = AdvancePastNumbers(iter, end);
 
-        if(iter == endOfNumber || errno == ERANGE || result > std::numeric_limits<ClassType>::max()
-            || result < std::numeric_limits<ClassType>::min()) {
-            ThrowBadJSONError(iter, end, "Could not convert to number");
+        try {
+            into = boost::lexical_cast<ClassType>(&*iter, std::distance(iter, endOfNumber));
+        }
+        catch(const boost::bad_lexical_cast& blc) {
+            ThrowBadJSONError(iter, end, blc.what());
         }
 
         return endOfNumber;

@@ -22,6 +22,9 @@ namespace JSON {
 
     template<typename classType>
     struct MembersHolder;
+
+    template<typename memberType, memberType member>
+    struct MemberInfo;
 }
 
 #endif

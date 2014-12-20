@@ -14,6 +14,9 @@
     template<typename ClassFor>                             \
     friend struct JSON::MembersHolder;                      \
                                                             \
+    template<typename memberType, memberType member>        \
+    friend struct JSON::MemberInfo;                         \
+                                                            \
     template<typename ClassFor>                             \
     friend JSON::jsonIter JSON::FromJSON(JSON::jsonIter, JSON::jsonIter, ClassFor&);
 
