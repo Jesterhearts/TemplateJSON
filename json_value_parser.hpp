@@ -2,8 +2,6 @@
 #ifndef __JSON_VALUE_PARSER_HPP__
 #define __JSON_VALUE_PARSER_HPP__
 
-#include <boost/lexical_cast.hpp>
-
 #include <sstream>
 #include <string>
 #include <type_traits>

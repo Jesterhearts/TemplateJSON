@@ -2,7 +2,10 @@
 #ifndef __JSON_NUMBER_PARSERS_HPP__
 #define __JSON_NUMBER_PARSERS_HPP__
 
+#include <limits>
 #include <cstdlib>
+#include <cstring>
+#include <cerrno>
 
 namespace JSON {
 namespace detail {
@@ -44,8 +47,7 @@ namespace detail {
     template<typename ClassType,
              enable_if<ClassType, std::is_floating_point> = true>
     json_finline void ToJSON(ClassType from, std::string& out) {
-        std::string result = boost::lexical_cast<std::string>(from);
-        out.append(result);
+        out << from;
     }
 
     template<typename ClassType,
@@ -60,16 +62,56 @@ namespace detail {
     }
 
     template<typename ClassType,
-             enable_if<ClassType, std::is_arithmetic> = true>
+             enable_if<ClassType, std::is_integral> = true>
     json_finline jsonIter FromJSON(jsonIter iter, jsonIter end, ClassType& into) {
-        iter = AdvancePastWhitespace(iter, end);
-        auto endOfNumber = AdvancePastNumbers(iter, end);
+        char* endOfNumber;
 
-        try {
-            into = boost::lexical_cast<ClassType>(&*iter, std::distance(iter, endOfNumber));
+        if(std::is_signed<ClassType>::value) {
+            int64_t result = strtoll(iter, &endOfNumber, 10);
+            if(result > std::numeric_limits<ClassType>::max() || result < std::numeric_limits<ClassType>::min()) {
+                ThrowBadJSONError(iter, end, "Could not convert to number");
+            }
         }
-        catch(boost::bad_lexical_cast blc) {
-            ThrowBadJSONError(iter, end, std::string("Could not convert to type ") + typeid(into).name());
+        else {
+            uint64_t result = strtoull(iter, &endOfNumber, 10);
+            if(result > std::numeric_limits<ClassType>::max()) {
+                ThrowBadJSONError(iter, end, "Could not convert to number");
+            }
+        }
+
+        if(iter == endOfNumber || errno == ERANGE) {
+            ThrowBadJSONError(iter, end, "Could not convert to number");
+        }
+
+        return endOfNumber;
+    }
+
+    template<>
+    json_finline jsonIter FromJSON<bool, true>(jsonIter iter, jsonIter end, bool& into) {
+        iter = AdvancePastWhitespace(iter, end);
+
+        if(strcmp("true", iter) == 0) {
+            into = true;
+            return iter + 4;
+        }
+
+        if(strcmp("false", iter) == 0) {
+            into = false;
+            return iter + 5;
+        }
+
+        ThrowBadJSONError(iter, end, "Could not convert to number");
+    }
+
+    template<typename ClassType,
+             enable_if<ClassType, std::is_floating_point> = true>
+    json_finline jsonIter FromJSON(jsonIter iter, jsonIter end, ClassType& into) {
+        char* endOfNumber;
+        double result = strtod(iter, &endOfNumber);
+
+        if(iter == endOfNumber || errno == ERANGE || result > std::numeric_limits<ClassType>::max()
+            || result < std::numeric_limits<ClassType>::min()) {
+            ThrowBadJSONError(iter, end, "Could not convert to number");
         }
 
         return endOfNumber;

@@ -2,6 +2,8 @@
 #ifndef __JSON_PARSING_HELPERS_HPP__
 #define __JSON_PARSING_HELPERS_HPP__
 
+#include <stdexcept>
+
 namespace JSON {
     const std::string nullToken("null");
 
@@ -27,10 +29,13 @@ namespace JSON {
         template<typename ClassType, enable_if<ClassType, std::is_integral> = true>
         void ToJSON(ClassType from, std::string& out);
 
+        template<typename ClassType, enable_if<ClassType, std::is_integral> = true>
+        jsonIter FromJSON(jsonIter iter, jsonIter end, ClassType& into);
+
         template<typename ClassType, enable_if<ClassType, std::is_floating_point> = true>
         void ToJSON(ClassType from, std::string& out);
 
-        template<typename ClassType, enable_if<ClassType, std::is_arithmetic> = true>
+        template<typename ClassType, enable_if<ClassType, std::is_floating_point> = true>
         jsonIter FromJSON(jsonIter iter, jsonIter end, ClassType& into);
 
         template<typename ClassType, enable_if<ClassType, std::is_pointer> = true>
