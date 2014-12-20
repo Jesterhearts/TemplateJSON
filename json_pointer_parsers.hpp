@@ -13,11 +13,13 @@ namespace JSON {
     namespace detail {
         template<typename ClassType,
                  enable_if<ClassType, std::is_pointer> = true>
-        json_finline std::string ToJSON(const ClassType& from) {
-            if(from == nullptr) {
-                return nullToken;
+        json_finline void ToJSON(ClassType from, std::string& out) {
+            if(!from) {
+                out.append("null", 4);
             }
-            return detail::ToJSON(*from);
+            else {
+                detail::ToJSON(*from, out);
+            }
         }
 
         template<typename ClassType,
@@ -44,12 +46,13 @@ namespace JSON {
         namespace pointers {
             template<typename T, typename... D,
                      template<typename T, typename... D> class SmartPointerType>
-            json_finline std::string ToJSON(const SmartPointerType<T, D...>& from) {
+            json_finline void ToJSON(const SmartPointerType<T, D...>& from, std::string& out) {
                 if(!from) {
-                    return nullToken;
+                    out.append("null", 4);
                 }
-
-                return detail::ToJSON(*from.get());
+                else {
+                    detail::ToJSON(*from.get(), out);
+                }
             }
 
 
@@ -66,8 +69,8 @@ namespace JSON {
     }
 
     template<typename T>
-    json_finline std::string ToJSON(const std::shared_ptr<T>& from) {
-        return detail::pointers::ToJSON(from);
+    json_finline void ToJSON(const std::shared_ptr<T>& from, std::string& out) {
+        detail::pointers::ToJSON(from, out);
     }
 
     template<typename T>
@@ -76,8 +79,8 @@ namespace JSON {
     }
 
     template<typename T>
-    json_finline std::string ToJSON(const std::weak_ptr<T>& from) {
-        return detail::pointers::ToJSON(from);
+    json_finline void ToJSON(const std::weak_ptr<T>& from, std::string& out) {
+        detail::pointers::ToJSON(from, out);
     }
 
     template<typename T>
@@ -86,8 +89,8 @@ namespace JSON {
     }
 
     template<typename T>
-    json_finline std::string ToJSON(const std::auto_ptr<T>& from) {
-        return detail::pointers::ToJSON(from);
+    json_finline void ToJSON(const std::auto_ptr<T>& from, std::string& out) {
+        detail::pointers::ToJSON(from, out);
     }
 
     template<typename T>
@@ -96,8 +99,8 @@ namespace JSON {
     }
 
     template<typename T, typename D>
-    json_finline std::string ToJSON(const std::unique_ptr<T, D>& from) {
-        return detail::pointers::ToJSON(from);
+    json_finline void ToJSON(const std::unique_ptr<T, D>& from, std::string& out) {
+        detail::pointers::ToJSON(from, out);
     }
 
     template<typename T, typename D>

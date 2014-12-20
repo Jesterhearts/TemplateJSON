@@ -33,7 +33,7 @@ namespace JSON {
                 return static_cast<EnumType>(value);
             }
             else {
-                return ValidateEnum(iter, end, value, EnumValueList<members...>());
+                return ValidateEnum(iter, end, value, EnumValueList<EnumType, members...>());
             }
         }
 
@@ -51,9 +51,9 @@ namespace JSON {
 
         template<typename ClassType,
                  enable_if<ClassType, std::is_enum> = true>
-        json_finline std::string ToJSON(const ClassType& from) {
+        json_finline void ToJSON(ClassType from, std::string& out) {
             using underlying_type = typename std::underlying_type<ClassType>::type;
-            return detail::ToJSON(static_cast<const underlying_type&>(from));
+            detail::ToJSON(static_cast<underlying_type>(from), out);
         }
 
         template<typename ClassType,

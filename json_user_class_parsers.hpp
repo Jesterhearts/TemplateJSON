@@ -19,50 +19,51 @@ namespace detail {
     );
 
     template<typename classFor, typename underlyingType>
-    json_finline std::string MemberToJSON(const classFor& classFrom, underlyingType classFor::* member) {
-        return detail::ToJSON(classFrom.*member);
+    json_finline void MemberToJSON(const classFor& classFrom, underlyingType classFor::* member,
+                                   std::string& out) {
+        detail::ToJSON(classFrom.*member, out);
     }
 
     template<typename classFor, typename underlyingType>
-    json_finline std::string MemberToJSON(const classFor& classFrom, underlyingType* member) {
-        return detail::ToJSON(*member);
+    json_finline void MemberToJSON(const classFor& classFrom, underlyingType* member,
+                                   std::string& out) {
+        detail::ToJSON(*member, out);
     }
 
     template<typename classFor,
              typename underlyingType, underlyingType member,
              template<typename UT, UT MT> class Member>
-    json_finline std::string MemberToJSON(const classFor& classFrom,
-                                      Member<underlyingType, member>&&) {
-        return MemberToJSON(classFrom, member);
+    json_finline void MemberToJSON(const classFor& classFrom, Member<underlyingType, member>&&,
+                                   std::string& out) {
+        MemberToJSON(classFrom, member, out);
     }
 
 #ifndef _MSC_VER
     template<typename classFor,
              template<typename... M> class ML>
-    json_finline std::string MembersToJSON(const classFor& classFrom, ML<>&&) {
+    json_finline void MembersToJSON(const classFor& classFrom, std::string& out, ML<>&&) {
 #else
     template<typename classFor,
              typename... members,
              template<typename... M> class ML>
-    json_finline std::string MembersToJSON(const classFor& classFrom, ML<members...>&&) {
+    json_finline void MembersToJSON(const classFor& classFrom, std::string& out, ML<members...>&&) {
 #endif
-        return "";
     }
 
     template<typename classFor,
              typename member, typename... members,
              template<typename... M> class ML>
-    json_finline std::string MembersToJSON(const classFor& classFrom, ML<member, members...>&&) {
-        std::string json(1, '\"');
-        json.append(member::key);
-        json.append("\":");
+    json_finline void MembersToJSON(const classFor& classFrom, std::string& out,
+                                    ML<member, members...>&&) {
+        out.append(1, '\"');
+        out.append(member::key);
+        out.append("\":", 2);
 
-        json.append(MemberToJSON(classFrom, member()));
+        MemberToJSON(classFrom, member(), out);
         if(sizeof...(members) > 0) {
-            json.append(1, ',');
+            out.append(1, ',');
         }
-        json.append(MembersToJSON(classFrom, ML<members...>()));
-        return json;
+        MembersToJSON(classFrom, out, ML<members...>());
     }
 
     template<typename classFor, size_t membersRemaining>

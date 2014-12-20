@@ -19,31 +19,31 @@ namespace JSON {
         using enable_if_const = typename std::enable_if<std::is_const<basic_type<ClassType>>::value, bool>::type;
 
         template<typename ClassType, enable_if<ClassType, std::is_enum> = true>
-        std::string ToJSON(const ClassType& from);
+        void ToJSON(ClassType from, std::string& out);
 
         template<typename ClassType, enable_if<ClassType, std::is_enum> = true>
         jsonIter FromJSON(jsonIter iter, jsonIter end, ClassType& into);
 
         template<typename ClassType, enable_if<ClassType, std::is_arithmetic> = true>
-        std::string ToJSON(const ClassType& from);
+        void ToJSON(ClassType from, std::string& out);
 
         template<typename ClassType, enable_if<ClassType, std::is_arithmetic> = true>
         jsonIter FromJSON(jsonIter iter, jsonIter end, ClassType& into);
 
         template<typename ClassType, enable_if<ClassType, std::is_pointer> = true>
-        std::string ToJSON(const ClassType& from);
+        void ToJSON(ClassType from, std::string& out);
 
         template<typename ClassType, enable_if<ClassType, std::is_pointer> = true>
         jsonIter FromJSON(jsonIter iter, jsonIter end, ClassType& into);
 
         template<typename ClassType, enable_if<ClassType, std::is_array> = true>
-        std::string ToJSON(const ClassType& from);
+        void ToJSON(ClassType& from, std::string& out);
 
         template<typename ClassType, enable_if<ClassType, std::is_array> = true>
         jsonIter FromJSON(jsonIter iter, jsonIter end, ClassType& into);
 
         template<typename ClassType, enable_if<ClassType, std::is_class> = true>
-        std::string ToJSON(const ClassType& from);
+        void ToJSON(const ClassType& from, std::string& out);
 
         template<typename ClassType, enable_if<ClassType, std::is_class> = true>
         jsonIter FromJSON(jsonIter iter, jsonIter end, ClassType& into);

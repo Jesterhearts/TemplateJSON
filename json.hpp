@@ -13,6 +13,10 @@
 #include <boost/preprocessor/variadic/to_seq.hpp>
 #include <boost/preprocessor/variadic/elem.hpp>
 
+#ifdef JSON_MULTITHREADED
+#include <atomic>
+#endif
+
 #include "json_common_defs.hpp"
 #include "json_value_parser.hpp"
 #include "json_user_class_parsers.hpp"
@@ -21,13 +25,37 @@
 
 namespace JSON {
     template<typename classFor>
+    void ToJSON(const classFor& classFrom, std::string& out) {
+        out.append(1, '{');
+        detail::MembersToJSON(classFrom, out, MembersHolder<classFor>::members());
+
+        out.append(1, '}');
+    }
+
+    template<typename classFor>
     std::string ToJSON(const classFor& classFrom) {
-        std::string json("{");
-        json.reserve(1000);
+        #ifdef JSON_CACHE_LENGTHS
+            #ifdef JSON_MULTITHREADED
+        static std::atomic<uint16_t> lastSize(1000);
+            #else
+        static uint16_t lastSize(1000);
+            #endif
+        #endif
 
-        json.append(detail::MembersToJSON(classFrom, MembersHolder<classFor>::members()));
+        std::string json;
 
-        json.append("}");
+        #ifdef JSON_CACHE_LENGTHS
+        json.reserve(lastSize);
+        #endif
+
+        ToJSON(classFrom, json);
+
+        #ifdef JSON_CACHE_LENGTHS
+        if(json.size() > lastSize) {
+            lastSize = std::min<size_t>(std::numeric_limits<uint16_t>::max(), json.size());
+        }
+        #endif
+
         return json;
     }
 

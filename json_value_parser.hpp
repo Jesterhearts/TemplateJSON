@@ -18,11 +18,10 @@
 
 namespace JSON {
     template<>
-    json_finline std::string ToJSON(const std::string& from) {
-        std::string json("\"");
-        json.append(from);
-        json.append("\"");
-        return json;
+    json_finline void ToJSON(const std::string& from, std::string& out) {
+        out.append(1, '\"');
+        out.append(from);
+        out.append(1, '\"');
     }
 
     template<>
@@ -44,13 +43,13 @@ namespace JSON {
     }
 
     template<>
-    json_finline std::string ToJSON(const std::wstring& from) {
-        std::string json("\"");
-        std::string narrowString(from.begin(), from.end());
+    json_finline void ToJSON(const std::wstring& from, std::string& out) {
+        out.append(1, '\"');
 
-        json.append(narrowString);
-        json.append("\"");
-        return json;
+        std::string narrowString(from.begin(), from.end());
+        out.append(narrowString);
+
+        out.append(1, '\"');
     }
 
 
@@ -73,14 +72,12 @@ namespace JSON {
     }
 
     template<typename T1, typename T2>
-    json_finline std::string ToJSON(const std::pair<T1, T2>& from) {
-        std::string json("[");
-        json.append(detail::ToJSON(from.first));
-        json.append(",");
-        json.append(detail::ToJSON(from.second));
-        json.append("]");
-
-        return json;
+    json_finline void ToJSON(const std::pair<T1, T2>& from, std::string& out) {
+        out.append(1, '[');
+        detail::ToJSON(from.first, out);
+        out.append(1, ',');
+        detail::ToJSON(from.second, out);
+        out.append(1, ']');
     }
 
     template<typename T1, typename T2>
@@ -122,11 +119,10 @@ namespace JSON {
 
     namespace detail {
         template<>
-        json_finline std::string ToJSON<char, true>(const char& from) {
-            std::string json("\"");
-            json.append(1, from);
-            json += "\"";
-            return json;
+        json_finline void ToJSON<char, true>(char from, std::string& out) {
+            out.append(1, '\"');
+            out.append(1, from);
+            out.append(1, '\"');
         }
 
         template<>
@@ -161,15 +157,14 @@ namespace JSON {
         }
 
         template<>
-        json_finline std::string ToJSON<wchar_t, true>(const wchar_t& from) {
-            std::string json("\"");
+        json_finline void ToJSON<wchar_t, true>(wchar_t from, std::string& out) {
+            out.append(1, '\"');
 
             std::wstring wideChar(1, from);
             std::string narrowChar(wideChar.begin(), wideChar.end());
 
-            json.append(narrowChar);
-            json.append("\"");
-            return json;
+            out.append(narrowChar);
+            out.append(1, '\"');
         }
 
         template<>
@@ -212,8 +207,8 @@ namespace JSON {
 
         template<typename ClassType,
                  enable_if<ClassType, std::is_class> = true>
-        json_finline std::string ToJSON(const ClassType& from) {
-            return JSON::ToJSON(from);
+        json_finline void ToJSON(const ClassType& from, std::string& out) {
+            JSON::ToJSON(from, out);
         }
 
         template<typename ClassType,

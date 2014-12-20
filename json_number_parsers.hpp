@@ -7,7 +7,7 @@
 namespace JSON {
 namespace detail {
     template<typename Type, size_t MaxLexicalLength>
-    json_finline std::string itoa(Type value) {
+    json_finline void itoa(Type value, std::string& out) {
         const auto BufferSize = MaxLexicalLength + std::is_signed<Type>::value;
         char str[BufferSize];
         char* to = str + BufferSize - 1;
@@ -29,79 +29,84 @@ namespace detail {
             --to;
         }
 
-        return std::string(to + 1, count);
+        out.append(to + 1, count);
     }
 
     template<typename ClassType,
              enable_if<ClassType, std::is_arithmetic> = true>
-    json_finline std::string ToJSON(const ClassType& from) {
-        return boost::lexical_cast<std::string>(from);
+    json_finline void ToJSON(ClassType from, std::string& out) {
+        std::string result = boost::lexical_cast<std::string>(from);
+        out.append(result);
     }
 
     template<>
-    json_finline std::string ToJSON<bool, true>(const bool& from) {
-        return from ? "true" : "false";
+    json_finline void ToJSON<bool, true>(bool from, std::string& out) {
+        out.append(from ? "true" : "false", from ? 4 : 5);
     }
 
     template<>
-    json_finline std::string ToJSON<uint8_t, true>(const uint8_t& from) {
+    json_finline void ToJSON<uint8_t, true>(uint8_t from, std::string& out) {
         //255
-        return itoa<uint8_t, 3>(from);
+        itoa<uint8_t, 3>(from, out);
     }
 
     template<>
-    json_finline std::string ToJSON<uint16_t, true>(const uint16_t& from) {
+    json_finline void ToJSON<uint16_t, true>(uint16_t from, std::string& out) {
         //65535
-        return itoa<uint16_t, 5>(from);
+        itoa<uint16_t, 5>(from, out);
     }
 
     template<>
-    json_finline std::string ToJSON<uint32_t, true>(const uint32_t& from) {
+    json_finline void ToJSON<uint32_t, true>(uint32_t from, std::string& out) {
         //4294967295
-        return itoa<uint32_t, 10>(from);
+        itoa<uint32_t, 10>(from, out);
     }
 
     template<>
-    json_finline std::string ToJSON<uint64_t, true>(const uint64_t& from) {
+    json_finline void ToJSON<uint64_t, true>(uint64_t from, std::string& out) {
         //18446744073709551615
-        return itoa<uint64_t, 20>(from);
+        itoa<uint64_t, 20>(from, out);
     }
 
+#if UINTPTR_MAX == 0xffffffff
     template<>
-    json_finline std::string ToJSON<unsigned long, true>(const unsigned long& from) {
+    json_finline void ToJSON<unsigned long, true>(unsigned long from, std::string& out) {
         //18446744073709551615
-        return itoa<unsigned long, 20>(from);
+        itoa<unsigned long, 20>(from, out);
     }
+#endif
 
     template<>
-    json_finline std::string ToJSON<int8_t, true>(const int8_t& from) {
+    json_finline void ToJSON<int8_t, true>(int8_t from, std::string& out) {
         //127
-        return itoa<int8_t, 3>(from);
+        itoa<int8_t, 3>(from, out);
     }
 
     template<>
-    json_finline std::string ToJSON<int16_t, true>(const int16_t& from) {
+    json_finline void ToJSON<int16_t, true>(int16_t from, std::string& out) {
         //32767
-        return itoa<int16_t, 5>(from);
+        itoa<int16_t, 5>(from, out);
     }
 
     template<>
-    json_finline std::string ToJSON<int32_t, true>(const int32_t& from) {
+    json_finline void ToJSON<int32_t, true>(int32_t from, std::string& out) {
         //2147483647
-        return itoa<int32_t, 10>(from);
+        itoa<int32_t, 10>(from, out);
     }
 
     template<>
-    json_finline std::string ToJSON<int64_t, true>(const int64_t& from) {
+    json_finline void ToJSON<int64_t, true>(int64_t from, std::string& out) {
         //9223372036854775807
-        return itoa<int64_t, 19>(from);
+        itoa<int64_t, 19>(from, out);
     }
 
+#if UINTPTR_MAX == 0xffffffff
     template<>
-    json_finline std::string ToJSON<long, true>(const long& from) {
+    json_finline void ToJSON<long, true>(long from, std::string& out) {
         //18446744073709551615
-        return itoa<long, 20>(from);
+        itoa<long, 20>(from, out);
     }
+#endif
 
     template<typename ClassType,
              enable_if<ClassType, std::is_arithmetic> = true>

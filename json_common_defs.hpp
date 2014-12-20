@@ -5,7 +5,7 @@
 #include "json_functions.hpp"
 
 #ifndef _MSC_VER
-#define json_finline /*[[gnu::always_inline]]*/ inline
+#define json_finline [[gnu::always_inline]] inline
 #define json_no_return [[noreturn]]
 #else
 #define json_finline __forceinline

@@ -12,19 +12,17 @@ namespace JSON {
              typename curType,
              typename... Types>
     struct TupleHandler {
-        json_finline static void ToJSON(const TupleType& classFrom,
-                                        std::string& jsonString) {
-            jsonString += detail::ToJSON(std::get<curIndex>(classFrom));
-            jsonString += ",";
+        json_finline static void ToJSON(const TupleType& classFrom, std::string& out) {
+            detail::ToJSON(std::get<curIndex>(classFrom), out);
+            out.append(1, ',');
             TupleHandler<TupleType,
                          curIndex + 1,
                          sizeof...(Types) == 1,
                          Types...
-                        >::ToJSON(classFrom, jsonString);
+                        >::ToJSON(classFrom, out);
         }
 
-        json_finline static jsonIter FromJSON(jsonIter iter, jsonIter end,
-                                                     TupleType& into) {
+        json_finline static jsonIter FromJSON(jsonIter iter, jsonIter end, TupleType& into) {
             curType& value = std::get<curIndex>(into);
 
             iter = detail::FromJSON(iter, end, value);
@@ -50,13 +48,11 @@ namespace JSON {
                          true,
                          curType,
                          Types...> {
-        json_finline static void ToJSON(const TupleType& classFrom,
-                                               std::string& jsonString) {
-            jsonString += detail::ToJSON(std::get<curIndex>(classFrom));
+        json_finline static void ToJSON(const TupleType& classFrom, std::string& out) {
+            detail::ToJSON(std::get<curIndex>(classFrom), out);
         }
 
-        json_finline static jsonIter FromJSON(jsonIter iter, jsonIter end,
-                                                     TupleType& into) {
+        json_finline static jsonIter FromJSON(jsonIter iter, jsonIter end, TupleType& into) {
             curType& value = std::get<curIndex>(into);
             iter = detail::FromJSON(iter, end, value);
             iter = AdvancePastWhitespace(iter, end);
@@ -69,15 +65,14 @@ namespace JSON {
     };
 
     template<typename... Types>
-    json_finline std::string ToJSON(const std::tuple<Types...>& from) {
-        std::string json("[");
+    json_finline void ToJSON(const std::tuple<Types...>& from, std::string& out) {
+        out.append(1, '[');
         TupleHandler<std::tuple<Types...>,
                      0,
                      sizeof...(Types) == 1,
                      Types...
-                    >::ToJSON(from, json);
-        json.append("]");
-        return json;
+                    >::ToJSON(from, out);
+        out.append(1, ']');
     }
 
     template<typename... Types>

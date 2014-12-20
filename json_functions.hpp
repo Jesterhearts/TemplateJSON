@@ -9,6 +9,9 @@ namespace JSON {
    using jsonIter = const char*;
 
     template<typename ClassFor>
+    void ToJSON(const ClassFor& classFrom, std::string& out);
+
+    template<typename ClassFor>
     std::string ToJSON(const ClassFor& classFrom);
 
     template<typename ClassFor>
