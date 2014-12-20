@@ -41,61 +41,34 @@ namespace JSON {
         return MemberFromJSON(classOn, iter, end, memberType());
     }
 
-    namespace MapTypes {
-        template<typename T>
-        using maptype = std::unordered_map<std::reference_wrapper<const std::string>,
-                                           jsonIter (*const)(T&, jsonIter, jsonIter),
-                                           std::hash<std::string>,
-                                           std::equal_to<std::string>>;
-
-        template<typename T>
-        using value_type = typename maptype<T>::value_type;
-    }
-
     template<typename classFor,
              typename member, typename... members,
              template<typename... M> class ML>
-    json_finline constexpr static const MapTypes::maptype<classFor> CreateMap(ML<member, members...>&&) {
-        return CreateMap<classFor>(
-            MemberList<members...>(),
-            MapTypes::value_type<classFor>{
-                std::reference_wrapper<const std::string>(member::key),
-                &MemberFromJSON<classFor, member>
-            }
-        );
-    }
-
-    template<typename classFor,
-             typename member, typename... members,
-             template<typename... M> class ML,
-             typename... value_types>
-    json_finline constexpr static const MapTypes::maptype<classFor> CreateMap(ML<member, members...>&&,
-                                                                              value_types&&... pairs) {
-        return CreateMap<classFor>(
-            MemberList<members...>(),
-            MapTypes::value_type<classFor>{
-                std::reference_wrapper<const std::string>(member::key),
-                &MemberFromJSON<classFor, member>
-            },
-            pairs...
-        );
+    json_finline jsonIter MemberFromJSON(classFor& on, const std::string& key, jsonIter iter,
+                                         jsonIter end, ML<member, members...>&&) {
+        if(key == member::key) {
+            return MemberFromJSON<classFor, member>(on, iter, end);
+        }
+        else {
+            return MemberFromJSON(on, key, iter, end, ML<members...>());
+        }
     }
 
 #ifndef _MSC_VER
     template<typename classFor,
              template<typename... M> class ML,
              typename... value_types>
-    json_finline constexpr static const MapTypes::maptype<classFor> CreateMap(ML<>&&,
-                                                                              value_types&&... pairs) {
+    json_finline jsonIter MemberFromJSON(classFor& on, const std::string& key, jsonIter iter,
+                                         jsonIter end, ML<>&&) {
 #else
     template<typename classFor,
         typename... members,
         template<typename... M> class ML,
         typename... value_types>
-        json_finline constexpr static const MapTypes::maptype<classFor> CreateMap(ML<members...>&&,
-        value_types&&... pairs) {
+    json_finline jsonIter MemberFromJSON(classFor& on, const std::string& key, jsonIter iter,
+                                         jsonIter end, ML<members...>&&) {
 #endif
-        return { pairs... };
+        ThrowBadJSONError(iter, end, "No key in object");
     }
 
 #define JSON_LIST_MEMBERS(CLASS_NAME, ...)          \

@@ -63,7 +63,7 @@ namespace JSON {
     jsonIter FromJSON(jsonIter iter, jsonIter end, classFor& classInto) {
         iter = ValidateObjectStart(iter, end);
 
-        iter = detail::MembersFromJSON<classFor>(classInto, iter, end, MembersHolder<classFor>::members());
+        iter = detail::MembersFromJSON(classInto, iter, end, MembersHolder<classFor>::members());
 
         return ValidateObjectEnd(iter, end);
     }
@@ -85,8 +85,6 @@ namespace JSON {
     namespace JSON {                                                \
         JSON_CREATE_KEYS(CLASS_NAME, __VA_ARGS__)                   \
         JSON_CREATE_MEMBERS(CLASS_NAME, __VA_ARGS__)                \
-                                                                    \
-        template struct detail::MemberMap<CLASS_NAME>;              \
                                                                     \
         template std::string ToJSON<CLASS_NAME>(const CLASS_NAME&);     \
         template CLASS_NAME FromJSON<CLASS_NAME>(const std::string&);   \

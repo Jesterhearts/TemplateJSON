@@ -5,19 +5,6 @@
 #include "json_member_mapper.hpp"
 namespace JSON {
 namespace detail {
-    template<typename classFor>
-    struct MemberMap {
-        static const MapTypes::maptype<classFor> map;
-
-        MemberMap() = delete;
-        ~MemberMap() = delete;
-    };
-
-    template<typename classFor>
-    const MapTypes::maptype<classFor> MemberMap<classFor>::map = CreateMap<classFor>(
-        MembersHolder<classFor>::members()
-    );
-
     template<typename classFor, typename underlyingType>
     json_finline void MemberToJSON(const classFor& classFrom, underlyingType classFor::* member,
                                    std::string& out) {
@@ -75,13 +62,7 @@ namespace detail {
 
             iter = AdvancePastWhitespace(iter, end);
 
-            auto insertAt = MemberMap<classFor>::map.find(nextKey);
-            if(insertAt == MemberMap<classFor>::map.end()) {
-                ThrowBadJSONError(iter, end, "No key in object");
-            }
-
-            iter = insertAt->second(classInto, iter, end);
-
+            iter = MemberFromJSON(classInto, nextKey, iter, end, MembersHolder<classFor>::members());
             iter = AdvancePastWhitespace(iter, end);
             if(iter != end && *iter == ',')  {
                 ++iter;
@@ -103,13 +84,7 @@ namespace detail {
 
             iter = AdvancePastWhitespace(iter, end);
 
-            auto insertAt = MemberMap<classFor>::map.find(nextKey);
-            if(insertAt == MemberMap<classFor>::map.end()) {
-                ThrowBadJSONError(iter, end, "No key in object");
-            }
-
-            iter = insertAt->second(classInto, iter, end);
-
+            iter = MemberFromJSON(classInto, nextKey, iter, end, MembersHolder<classFor>::members());
             iter = AdvancePastWhitespace(iter, end);
             if(iter != end && *iter == ',') {
                 ++iter;

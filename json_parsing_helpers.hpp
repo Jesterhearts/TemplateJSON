@@ -61,18 +61,7 @@ namespace JSON {
     }
 
     inline jsonIter AdvancePastWhitespace(jsonIter iter, jsonIter end) {
-        while(iter != end) {
-            switch(*iter) {
-            case L' ':
-            case L'\t':
-            case L'\n':
-            case L'\r':
-                break;
-
-            default:
-                return iter;
-            }
-
+        while(iter != end && std::isspace(*iter)) {
             ++iter;
         }
 
@@ -80,30 +69,39 @@ namespace JSON {
     }
 
     inline jsonIter AdvancePastNumbers(jsonIter iter, jsonIter end) {
-        if(iter != end &&
-           *iter == L'-') {
+        if(iter == end) {
+            return iter;
+        }
+
+        if(*iter == L'-') {
             ++iter;
         }
 
-        while(iter != end) {
-            switch(*iter) {
-            case L'.':
-            case L'0':
-            case L'1':
-            case L'2':
-            case L'3':
-            case L'4':
-            case L'5':
-            case L'6':
-            case L'7':
-            case L'8':
-            case L'9':
-                break;
+        while(iter != end && std::isdigit(*iter)) {
+            ++iter;
+        }
 
-            default:
-                return iter;
-            }
+        if(iter == end) {
+            return iter;
+        }
 
+        if(*iter == '.') {
+            ++iter;
+        }
+
+        while(iter != end && std::isdigit(*iter)) {
+            ++iter;
+        }
+
+        if(iter == end) {
+            return iter;
+        }
+
+        if(*iter == 'e') {
+            ++iter;
+        }
+
+        while(iter != end && std::isdigit(*iter)) {
             ++iter;
         }
 
