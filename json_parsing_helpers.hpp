@@ -68,7 +68,7 @@ namespace JSON {
         throw std::invalid_argument(errmsg + ": " + badJson);
     }
 
-    inline jsonIter AdvancePastWhitespace(jsonIter iter, jsonIter end) {
+    json_finline jsonIter AdvancePastWhitespace(jsonIter iter, jsonIter end) {
         while(iter != end && std::isspace(*iter)) {
             ++iter;
         }
@@ -76,7 +76,7 @@ namespace JSON {
         return iter;
     }
 
-    inline jsonIter AdvancePastNumbers(jsonIter iter, jsonIter end) {
+    json_finline jsonIter AdvancePastNumbers(jsonIter iter, jsonIter end) {
         if(iter == end) {
             return iter;
         }
@@ -119,7 +119,7 @@ namespace JSON {
         return iter;
     }
 
-    inline jsonIter AdvanceToEndOfString(jsonIter iter, jsonIter end) {
+    json_finline jsonIter AdvanceToEndOfString(jsonIter iter, jsonIter end) {
         bool escaping = true;
 
         while(iter != end) {
@@ -136,7 +136,7 @@ namespace JSON {
         return iter;
     }
 
-    inline jsonIter ValidateObjectStart(jsonIter iter, jsonIter end) {
+    json_finline jsonIter ValidateObjectStart(jsonIter iter, jsonIter end) {
         iter = AdvancePastWhitespace(iter, end);
         if(iter == end || *iter != '{') {
             ThrowBadJSONError(iter, end, "No object start token");
@@ -146,7 +146,7 @@ namespace JSON {
         return iter;
     }
 
-    inline jsonIter ValidateObjectEnd(jsonIter iter, jsonIter end) {
+    json_finline jsonIter ValidateObjectEnd(jsonIter iter, jsonIter end) {
         iter = AdvancePastWhitespace(iter, end);
         if(iter == end || *iter != '}') {
             ThrowBadJSONError(iter, end, "No object end token");
@@ -155,7 +155,7 @@ namespace JSON {
         return iter;
     }
 
-    inline jsonIter ValidateKeyValueMapping(jsonIter iter, jsonIter end) {
+    json_finline jsonIter ValidateKeyValueMapping(jsonIter iter, jsonIter end) {
         iter = AdvancePastWhitespace(iter, end);
         if(iter == end || *iter != ':') {
             ThrowBadJSONError(iter, end, "Not a valid key-value mapping");

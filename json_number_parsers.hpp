@@ -5,11 +5,6 @@
 #include <boost/lexical_cast.hpp>
 
 #include <algorithm>
-#include <cerrno>
-#include <cmath>
-#include <cstdio>
-#include <cstdlib>
-#include <cstring>
 #include <limits>
 
 namespace JSON {
@@ -41,8 +36,11 @@ namespace detail {
         const bool negative = std::is_signed<Type>::value && value < 0;
         const bool min_signed = std::is_signed<Type>::value && value == std::numeric_limits<Type>::min();
 
-        if(negative && min_signed) {
+        if(min_signed) {
             value += 1;
+        }
+
+        if(negative) {
             value *= -1;
         }
 
