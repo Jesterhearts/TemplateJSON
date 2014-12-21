@@ -24,7 +24,7 @@ namespace detail {
     template<> //9223372036854775807, 18446744073709551615
     constexpr uint8_t MaxIntegerStringLength<8>() { return 20; };
 
-    template<typename Type, uint8_t base>
+    template<typename Type, Type base>
     json_finline void itoa(Type value, std::string& out) {
         static_assert(base > 1 && base <= 10, "Unsupported base");
         static_assert(std::is_integral<Type>::value, "Must be an integral type");
@@ -87,16 +87,19 @@ namespace detail {
         static_assert(std::is_integral<Type>::value, "Must be an integral value");
 
         iter = AdvancePastWhitespace(iter, end);
+        if(iter == end) {
+            return iter;
+        }
 
         const size_t remain = std::distance(iter, end);
         const uint8_t maxLen = MaxIntegerStringLength<sizeof(Type)>() + std::is_signed<Type>::value;
-        const jsonIter lastPossible = iter + maxLen;
+        const jsonIter lastPossible = iter + std::min(remain, static_cast<size_t>(maxLen));
 
         if(!std::is_signed<Type>::value && *iter == '-') {
             ThrowBadJSONError(iter, end, "Not a valid integral number");
         }
 
-        const int sign = (std::is_signed<Type>::value && *iter == '-') ? -1 : 1;
+        const Type sign = (std::is_signed<Type>::value && *iter == '-') ? -1 : 1;
         if(*iter == '-' || *iter == '+') {
             ++iter;
         }
