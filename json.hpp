@@ -60,21 +60,20 @@ namespace JSON {
     }
 
     template<typename classFor>
-    jsonIter FromJSON(jsonIter iter, jsonIter end, classFor& classInto) {
-        iter = ValidateObjectStart(iter, end);
+    jsonIter FromJSON(jsonIter iter, classFor& classInto) {
+        iter = ValidateObjectStart(iter);
 
-        iter = detail::MembersFromJSON(classInto, iter, end, MembersHolder<classFor>::members());
+        iter = detail::MembersFromJSON(classInto, iter, MembersHolder<classFor>::members());
 
-        return ValidateObjectEnd(iter, end);
+        return ValidateObjectEnd(iter);
     }
 
     template<typename classFor>
     classFor FromJSON(const std::string& jsonData) {
         classFor classInto;
-        auto iter = jsonData.begin();
-        auto end = jsonData.end();
+        auto iter = jsonData.c_str();
 
-        FromJSON(&*iter, &*end, classInto);
+        FromJSON(iter, classInto);
 
         return classInto;
     }

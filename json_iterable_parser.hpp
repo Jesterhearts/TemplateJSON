@@ -58,33 +58,30 @@ namespace JSON {
             }
 
             template<typename... T, template<typename... T> class Container>
-            json_finline jsonIter FromJSON(jsonIter iter, jsonIter end, Container<T...>& into) {
-                if(end - iter < 2) {
-                    ThrowBadJSONError(iter, end, "No array tokens");
-                }
+            json_finline jsonIter FromJSON(jsonIter iter, Container<T...>& into) {
 
-                iter = AdvancePastWhitespace(iter, end);
-                if(*iter != L'[') {
-                    ThrowBadJSONError(iter, end, "No array start token");
+                iter = AdvancePastWhitespace(iter);
+                if(*iter != '[') {
+                    ThrowBadJSONError(iter, "No array start token");
                 }
                 ++iter;
 
                 using value_type = typename Container<T...>::value_type;
                 using inserter = IterableInserter<Container<T...>, value_type>;
-                while(iter != end && *iter != L']') {
+                while(iter && *iter != ']') {
                     value_type input;
-                    iter = detail::FromJSON(iter, end, input);
+                    iter = detail::FromJSON(iter, input);
 
                     inserter::Insert(into, std::move(input));
-                    iter = AdvancePastWhitespace(iter, end);
+                    iter = AdvancePastWhitespace(iter);
 
-                    if(iter != end && *iter == L',') {
+                    if(*iter == ',') {
                         ++iter;
                     }
                 }
 
-                if(iter == end) {
-                    ThrowBadJSONError(iter, end, "No end to JSON array");
+                if(*iter != ']') {
+                    ThrowBadJSONError(iter, "No end to JSON array");
                 }
 
                 ++iter;
@@ -99,8 +96,8 @@ namespace JSON {
     }
 
     template<typename T, std::size_t A>
-    json_finline jsonIter FromJSON(jsonIter iter, jsonIter end, std::array<T, A>& into) {
-        return detail::iterables::FromJSON(iter, end, into);
+    json_finline jsonIter FromJSON(jsonIter iter, std::array<T, A>& into) {
+        return detail::iterables::FromJSON(iter, into);
     }
 
     template<typename T, typename A>
@@ -109,8 +106,8 @@ namespace JSON {
     }
 
     template<typename T, typename A>
-    json_finline jsonIter FromJSON(jsonIter iter, jsonIter end, std::deque<T, A>& into) {
-        return detail::iterables::FromJSON(iter, end, into);
+    json_finline jsonIter FromJSON(jsonIter iter, std::deque<T, A>& into) {
+        return detail::iterables::FromJSON(iter, into);
     }
 
     template<typename T, typename A>
@@ -119,8 +116,8 @@ namespace JSON {
     }
 
     template<typename T, typename A>
-    json_finline jsonIter FromJSON(jsonIter iter, jsonIter end, std::forward_list<T, A>& into) {
-        return detail::iterables::FromJSON(iter, end, into);
+    json_finline jsonIter FromJSON(jsonIter iter, std::forward_list<T, A>& into) {
+        return detail::iterables::FromJSON(iter, into);
     }
 
     template<typename T, typename A>
@@ -129,8 +126,8 @@ namespace JSON {
     }
 
     template<typename T, typename A>
-    json_finline jsonIter FromJSON(jsonIter iter, jsonIter end, std::list<T, A>& into) {
-        return detail::iterables::FromJSON(iter, end, into);
+    json_finline jsonIter FromJSON(jsonIter iter, std::list<T, A>& into) {
+        return detail::iterables::FromJSON(iter, into);
     }
 
     template<typename T, typename A>
@@ -139,8 +136,8 @@ namespace JSON {
     }
 
     template<typename T, typename A>
-    json_finline jsonIter FromJSON(jsonIter iter, jsonIter end, std::vector<T, A>& into) {
-        return detail::iterables::FromJSON(iter, end, into);
+    json_finline jsonIter FromJSON(jsonIter iter, std::vector<T, A>& into) {
+        return detail::iterables::FromJSON(iter, into);
     }
 
     template<typename K, typename C, typename A>
@@ -149,8 +146,8 @@ namespace JSON {
     }
 
     template<typename K, typename C, typename A>
-    json_finline jsonIter FromJSON(jsonIter iter, jsonIter end, std::set<K, C, A>& into) {
-        return detail::iterables::FromJSON(iter, end, into);
+    json_finline jsonIter FromJSON(jsonIter iter, std::set<K, C, A>& into) {
+        return detail::iterables::FromJSON(iter, into);
     }
 
     template<typename K, typename C, typename A>
@@ -159,8 +156,8 @@ namespace JSON {
     }
 
     template<typename K, typename C, typename A>
-    json_finline jsonIter FromJSON(jsonIter iter, jsonIter end, std::multiset<K, C, A>& into) {
-        return detail::iterables::FromJSON(iter, end, into);
+    json_finline jsonIter FromJSON(jsonIter iter, std::multiset<K, C, A>& into) {
+        return detail::iterables::FromJSON(iter, into);
     }
 
     template<typename K, typename H, typename KE, typename A>
@@ -169,8 +166,8 @@ namespace JSON {
     }
 
     template<typename K, typename H, typename KE, typename A>
-    json_finline jsonIter FromJSON(jsonIter iter, jsonIter end, std::unordered_set<K, H, KE, A>& into) {
-        return detail::iterables::FromJSON(iter, end, into);
+    json_finline jsonIter FromJSON(jsonIter iter, std::unordered_set<K, H, KE, A>& into) {
+        return detail::iterables::FromJSON(iter, into);
     }
 
     template<typename K, typename T, typename C, typename A>
@@ -179,8 +176,8 @@ namespace JSON {
     }
 
     template<typename K, typename T, typename C, typename A>
-    json_finline jsonIter FromJSON(jsonIter iter, jsonIter end, std::map<K, T, C, A>& into) {
-        return detail::iterables::FromJSON(iter, end, into);
+    json_finline jsonIter FromJSON(jsonIter iter, std::map<K, T, C, A>& into) {
+        return detail::iterables::FromJSON(iter, into);
     }
 }
 #endif

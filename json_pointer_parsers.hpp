@@ -24,22 +24,17 @@ namespace JSON {
 
         template<typename ClassType,
                  enable_if<ClassType, std::is_pointer> = true>
-        json_finline jsonIter FromJSON(jsonIter iter, jsonIter end, ClassType& into) {
-            iter = AdvancePastWhitespace(iter, end);
+        json_finline jsonIter FromJSON(jsonIter iter, ClassType& into) {
+            iter = AdvancePastWhitespace(iter);
 
-            if(iter != end &&
-                std::distance(iter, end) > nullToken.length()) {
-                //TODO fixme
-                std::string info(iter, iter + nullToken.length());
-                if(nullToken == info) {
-                    into = nullptr;
-                    return iter + nullToken.length();
-                }
+            if(memcmp("null", iter, 4) == 0) {
+                into = nullptr;
+                return iter + 4;
             }
 
             typedef typename std::remove_pointer<ClassType>::type InternalClass;
             into = new InternalClass;
-            iter = detail::FromJSON(iter, end, *into);
+            iter = detail::FromJSON(iter, *into);
             return iter;
         }
 
@@ -58,10 +53,9 @@ namespace JSON {
 
             template<typename T, typename... D,
                      template<typename T, typename... D> class SmartPointerType>
-            json_finline jsonIter FromJSON(jsonIter iter, jsonIter end,
-                                           SmartPointerType<T, D...>& into) {
+            json_finline jsonIter FromJSON(jsonIter iter, SmartPointerType<T, D...>& into) {
                 T* temp;
-                iter = detail::FromJSON(iter, end, temp);
+                iter = detail::FromJSON(iter, temp);
                 into.reset(temp);
                 return iter;
             }
@@ -74,8 +68,8 @@ namespace JSON {
     }
 
     template<typename T>
-    json_finline jsonIter FromJSON(jsonIter iter, jsonIter end, std::shared_ptr<T>& into) {
-        return detail::pointers::FromJSON(iter, end, into);
+    json_finline jsonIter FromJSON(jsonIter iter, std::shared_ptr<T>& into) {
+        return detail::pointers::FromJSON(iter, into);
     }
 
     template<typename T>
@@ -84,8 +78,8 @@ namespace JSON {
     }
 
     template<typename T>
-    json_finline jsonIter FromJSON(jsonIter iter, jsonIter end, std::weak_ptr<T>& into) {
-        return detail::pointers::FromJSON(iter, end, into);
+    json_finline jsonIter FromJSON(jsonIter iter, std::weak_ptr<T>& into) {
+        return detail::pointers::FromJSON(iter, into);
     }
 
     template<typename T>
@@ -94,8 +88,8 @@ namespace JSON {
     }
 
     template<typename T>
-    json_finline jsonIter FromJSON(jsonIter iter, jsonIter end, std::auto_ptr<T>& into) {
-        return detail::pointers::FromJSON(iter, end, into);
+    json_finline jsonIter FromJSON(jsonIter iter, std::auto_ptr<T>& into) {
+        return detail::pointers::FromJSON(iter, into);
     }
 
     template<typename T, typename D>
@@ -104,8 +98,8 @@ namespace JSON {
     }
 
     template<typename T, typename D>
-    json_finline jsonIter FromJSON(jsonIter iter, jsonIter end, std::unique_ptr<T, D>& into) {
-        return detail::pointers::FromJSON(iter, end, into);
+    json_finline jsonIter FromJSON(jsonIter iter, std::unique_ptr<T, D>& into) {
+        return detail::pointers::FromJSON(iter, into);
     }
 }
 

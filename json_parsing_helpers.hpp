@@ -3,11 +3,10 @@
 #define __JSON_PARSING_HELPERS_HPP__
 
 #include <stdexcept>
+#include <cstring>
 
 namespace JSON {
-    const std::string nullToken("null");
-
-    namespace detail {
+        namespace detail {
         template<typename ClassType>
         using basic_type = typename std::remove_reference<ClassType>::type;
 
@@ -24,85 +23,72 @@ namespace JSON {
         void ToJSON(ClassType from, std::string& out);
 
         template<typename ClassType, enable_if<ClassType, std::is_enum> = true>
-        jsonIter FromJSON(jsonIter iter, jsonIter end, ClassType& into);
+        jsonIter FromJSON(jsonIter iter, ClassType& into);
 
         template<typename ClassType, enable_if<ClassType, std::is_integral> = true>
         void ToJSON(ClassType from, std::string& out);
 
         template<typename ClassType, enable_if<ClassType, std::is_integral> = true>
-        jsonIter FromJSON(jsonIter iter, jsonIter end, ClassType& into);
+        jsonIter FromJSON(jsonIter iter, ClassType& into);
 
         template<typename ClassType, enable_if<ClassType, std::is_floating_point> = true>
         void ToJSON(ClassType from, std::string& out);
 
         template<typename ClassType, enable_if<ClassType, std::is_floating_point> = true>
-        jsonIter FromJSON(jsonIter iter, jsonIter end, ClassType& into);
+        jsonIter FromJSON(jsonIter iter, ClassType& into);
 
         template<typename ClassType, enable_if<ClassType, std::is_pointer> = true>
         void ToJSON(ClassType from, std::string& out);
 
         template<typename ClassType, enable_if<ClassType, std::is_pointer> = true>
-        jsonIter FromJSON(jsonIter iter, jsonIter end, ClassType& into);
+        jsonIter FromJSON(jsonIter iter, ClassType& into);
 
         template<typename ClassType, enable_if<ClassType, std::is_array> = true>
         void ToJSON(ClassType& from, std::string& out);
 
         template<typename ClassType, enable_if<ClassType, std::is_array> = true>
-        jsonIter FromJSON(jsonIter iter, jsonIter end, ClassType& into);
+        jsonIter FromJSON(jsonIter iter, ClassType& into);
 
         template<typename ClassType, enable_if<ClassType, std::is_class> = true>
         void ToJSON(const ClassType& from, std::string& out);
 
         template<typename ClassType, enable_if<ClassType, std::is_class> = true>
-        jsonIter FromJSON(jsonIter iter, jsonIter end, ClassType& into);
+        jsonIter FromJSON(jsonIter iter, ClassType& into);
 
         template<typename ClassType, enable_if_const<ClassType> = true>
         json_deserialize_const_warning
-        jsonIter FromJSON(jsonIter iter, jsonIter end, ClassType& into);
+        jsonIter FromJSON(jsonIter iter, ClassType& into);
     }
 
-    json_no_return inline void ThrowBadJSONError(jsonIter iter, jsonIter end,
-                                                 std::string&& errmsg) {
-        jsonIter endIter = (std::distance(iter, end) > 1000) ? iter + 1000 : end;
+    json_no_return inline void ThrowBadJSONError(jsonIter iter, std::string&& errmsg) {
+        jsonIter endIter = iter + std::min<size_t>(std::strlen(iter), 1000);
         std::string badJson(iter, endIter);
         throw std::invalid_argument(errmsg + ": " + badJson);
     }
 
-    json_finline jsonIter AdvancePastWhitespace(jsonIter iter, jsonIter end) {
-        while(iter != end && std::isspace(*iter)) {
+    json_finline jsonIter AdvancePastWhitespace(jsonIter iter) {
+        while(std::isspace(*iter)) {
             ++iter;
         }
 
         return iter;
     }
 
-    json_finline jsonIter AdvancePastNumbers(jsonIter iter, jsonIter end) {
-        if(iter == end) {
-            return iter;
-        }
-
-        if(*iter == L'-') {
+    json_finline jsonIter AdvancePastNumbers(jsonIter iter) {
+        if(*iter == '-') {
             ++iter;
         }
 
-        while(iter != end && std::isdigit(*iter)) {
+        while(std::isdigit(*iter)) {
             ++iter;
-        }
-
-        if(iter == end) {
-            return iter;
         }
 
         if(*iter == '.') {
             ++iter;
         }
 
-        while(iter != end && std::isdigit(*iter)) {
+        while(std::isdigit(*iter)) {
             ++iter;
-        }
-
-        if(iter == end) {
-            return iter;
         }
 
         if(*iter == 'e' || *iter == 'E') {
@@ -112,21 +98,21 @@ namespace JSON {
             }
         }
 
-        while(iter != end && std::isdigit(*iter)) {
+        while(std::isdigit(*iter)) {
             ++iter;
         }
 
         return iter;
     }
 
-    json_finline jsonIter AdvanceToEndOfString(jsonIter iter, jsonIter end) {
+    json_finline jsonIter AdvanceToEndOfString(jsonIter iter) {
         bool escaping = true;
 
-        while(iter != end) {
-            if(*iter == L'\\' || escaping) {
+        while(iter) {
+            if(*iter == '\\' || escaping) {
                 escaping = !escaping;
             }
-            else if(!escaping && *iter == L'\"') {
+            else if(!escaping && *iter == '\"') {
                 return iter;
             }
 
@@ -136,36 +122,36 @@ namespace JSON {
         return iter;
     }
 
-    json_finline jsonIter ValidateObjectStart(jsonIter iter, jsonIter end) {
-        iter = AdvancePastWhitespace(iter, end);
-        if(iter == end || *iter != '{') {
-            ThrowBadJSONError(iter, end, "No object start token");
+    json_finline jsonIter ValidateObjectStart(jsonIter iter) {
+        iter = AdvancePastWhitespace(iter);
+        if(*iter != '{') {
+            ThrowBadJSONError(iter, "No object start token");
         }
         ++iter;
 
         return iter;
     }
 
-    json_finline jsonIter ValidateObjectEnd(jsonIter iter, jsonIter end) {
-        iter = AdvancePastWhitespace(iter, end);
-        if(iter == end || *iter != '}') {
-            ThrowBadJSONError(iter, end, "No object end token");
+    json_finline jsonIter ValidateObjectEnd(jsonIter iter) {
+        iter = AdvancePastWhitespace(iter);
+        if(*iter != '}') {
+            ThrowBadJSONError(iter, "No object end token");
         }
         ++iter;
         return iter;
     }
 
-    json_finline jsonIter ValidateKeyValueMapping(jsonIter iter, jsonIter end) {
-        iter = AdvancePastWhitespace(iter, end);
-        if(iter == end || *iter != ':') {
-            ThrowBadJSONError(iter, end, "Not a valid key-value mapping");
+    json_finline jsonIter ValidateKeyValueMapping(jsonIter iter) {
+        iter = AdvancePastWhitespace(iter);
+        if(*iter != ':') {
+            ThrowBadJSONError(iter, "Not a valid key-value mapping");
         }
         ++iter;
         return iter;
     }
 
-    json_finline jsonIter ParseNextKey(jsonIter iter, jsonIter end, std::string& nextKey) {
-        return detail::FromJSON(iter, end, nextKey);
+    json_finline jsonIter ParseNextKey(jsonIter iter, std::string& nextKey) {
+        return detail::FromJSON(iter, nextKey);
     }
 }
 #endif

@@ -18,6 +18,6 @@
     friend struct JSON::MemberInfo;                         \
                                                             \
     template<typename ClassFor>                             \
-    friend JSON::jsonIter JSON::FromJSON(JSON::jsonIter, JSON::jsonIter, ClassFor&);
+    friend JSON::jsonIter JSON::FromJSON(JSON::jsonIter, ClassFor&);
 
 #endif

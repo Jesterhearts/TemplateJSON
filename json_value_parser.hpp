@@ -23,16 +23,16 @@ namespace JSON {
     }
 
     template<>
-    json_finline jsonIter FromJSON(jsonIter iter, jsonIter end, std::string& classInto) {
-        iter = AdvancePastWhitespace(iter, end);
-        if(iter == end || *iter != L'\"') {
-            ThrowBadJSONError(iter, end, "Not a valid string begin token");
+    json_finline jsonIter FromJSON(jsonIter iter, std::string& classInto) {
+        iter = AdvancePastWhitespace(iter);
+        if(*iter != L'\"') {
+            ThrowBadJSONError(iter, "Not a valid string begin token");
         }
 
         ++iter;
-        auto endOfString = AdvanceToEndOfString(iter, end);
-        if(endOfString == end) {
-            ThrowBadJSONError(iter, end, "Not a valid string end token");
+        auto endOfString = AdvanceToEndOfString(iter);
+        if(*endOfString != '\"') {
+            ThrowBadJSONError(iter, "Not a valid string end token");
         }
 
         classInto = std::string(iter, endOfString);
@@ -52,16 +52,16 @@ namespace JSON {
 
 
     template<>
-    json_finline jsonIter FromJSON(jsonIter iter, jsonIter end, std::wstring& classInto) {
-        iter = AdvancePastWhitespace(iter, end);
-        if(iter == end || *iter != L'\"') {
-            ThrowBadJSONError(iter, end, "Not a valid string begin token");
+    json_finline jsonIter FromJSON(jsonIter iter, std::wstring& classInto) {
+        iter = AdvancePastWhitespace(iter);
+        if(*iter != '\"') {
+            ThrowBadJSONError(iter, "Not a valid string begin token");
         }
 
         ++iter;
-        auto endOfString = AdvanceToEndOfString(iter, end);
-        if(endOfString == end) {
-            ThrowBadJSONError(iter, end, "Not a valid string end token");
+        auto endOfString = AdvanceToEndOfString(iter);
+        if(*endOfString != '\"') {
+            ThrowBadJSONError(iter, "Not a valid string end token");
         }
 
         classInto = std::wstring(iter, endOfString);
@@ -79,14 +79,11 @@ namespace JSON {
     }
 
     template<typename T1, typename T2>
-    json_finline jsonIter FromJSON(jsonIter iter, jsonIter end, std::pair<T1, T2>& into) {
-        if(end - iter < 2) {
-            ThrowBadJSONError(iter, end, "No array tokens");
-        }
+    json_finline jsonIter FromJSON(jsonIter iter, std::pair<T1, T2>& into) {
+        iter = AdvancePastWhitespace(iter);
 
-        iter = AdvancePastWhitespace(iter, end);
-        if(*iter != L'[') {
-            ThrowBadJSONError(iter, end, "No array start token");
+        if(*iter != '[') {
+            ThrowBadJSONError(iter, "No array start token");
         }
         ++iter;
 
@@ -96,19 +93,19 @@ namespace JSON {
         FirstType& first = const_cast<FirstType&>(into.first);
         SecondType& second = const_cast<SecondType&>(into.second);
 
-        iter = detail::FromJSON(iter, end, first);
+        iter = detail::FromJSON(iter, first);
 
-        iter = AdvancePastWhitespace(iter, end);
-        if(iter == end || *iter != L',') {
-            ThrowBadJSONError(iter, end, "Pair does not have two values");
+        iter = AdvancePastWhitespace(iter);
+        if(*iter != ',') {
+            ThrowBadJSONError(iter, "Pair does not have two values");
         }
         ++iter;
 
-        iter = detail::FromJSON(iter, end, second);
+        iter = detail::FromJSON(iter, second);
 
-        iter = AdvancePastWhitespace(iter, end);
-        if(iter == end || *iter != L']') {
-            ThrowBadJSONError(iter, end, "No end to JSON pair");
+        iter = AdvancePastWhitespace(iter);
+        if(*iter != ']') {
+            ThrowBadJSONError(iter, "No end to JSON pair");
         }
 
         ++iter;
@@ -124,32 +121,26 @@ namespace JSON {
         }
 
         template<>
-        json_finline jsonIter FromJSON<char, true>(jsonIter iter, jsonIter end, char& into) {
-            iter = AdvancePastWhitespace(iter, end);
-            if(iter == end || *iter != L'\"') {
-                ThrowBadJSONError(iter, end, "Not a valid string begin token");
-            }
+        json_finline jsonIter FromJSON<char, true>(jsonIter iter, char& into) {
+            iter = AdvancePastWhitespace(iter);
 
+            if(*iter != '\"') {
+                ThrowBadJSONError(iter, "Not a valid string begin token");
+            }
             ++iter;
-            if(iter == end) {
-                ThrowBadJSONError(iter, end, "No data for string");
+
+            if(!*iter) {
+                ThrowBadJSONError(iter,"No string data");
             }
 
-            if(*iter == L'\\') {
-                ++iter;
+            //Todo, handle unicode escape sequences
+            auto endOfString = iter + 1;
+            if(*endOfString != L'\"') {
+                ThrowBadJSONError(iter,"No string end token");
             }
 
-            //Todo, does this handle unicode escape sequences?
-            auto endOfString = iter;
-            ++endOfString;
-            if(endOfString == end || *endOfString != L'\"') {
-                ThrowBadJSONError(iter, end,"No string end token");
-            }
-
-            //get the character
             into = *iter;
 
-            //Advance past the end
             ++endOfString;
             return endOfString;
         }
@@ -166,26 +157,22 @@ namespace JSON {
         }
 
         template<>
-        json_finline jsonIter FromJSON<wchar_t, true>(jsonIter iter, jsonIter end, wchar_t& into) {
-            iter = AdvancePastWhitespace(iter, end);
-            if(iter == end || *iter != L'\"') {
-                ThrowBadJSONError(iter, end, "Not a valid string begin token");
+        json_finline jsonIter FromJSON<wchar_t, true>(jsonIter iter, wchar_t& into) {
+            iter = AdvancePastWhitespace(iter);
+            if(*iter != '\"') {
+                ThrowBadJSONError(iter, "Not a valid string begin token");
             }
 
             ++iter;
-            if(iter == end) {
-                ThrowBadJSONError(iter, end, "No data for string");
+
+            if(!*iter) {
+                ThrowBadJSONError(iter,"No string data");
             }
 
-            if(*iter == L'\\') {
-                ++iter;
-            }
-
-            //Todo, does this handle unicode escape sequences?
-            auto endOfString = iter;
-            ++endOfString;
-            if(endOfString == end || *endOfString != L'\"') {
-                ThrowBadJSONError(iter, end,"No string end token");
+            //Todo, handle unicode escape sequences
+            auto endOfString = iter + 1;
+            if(*endOfString != L'\"') {
+                ThrowBadJSONError(iter,"No string end token");
             }
 
             into = std::wstring(iter, endOfString)[0];
@@ -197,10 +184,10 @@ namespace JSON {
         template<typename ClassType,
                  enable_if_const<ClassType> = true>
         json_deserialize_const_warning
-        json_finline jsonIter FromJSON(jsonIter iter, jsonIter end, ClassType& into) {
+        json_finline jsonIter FromJSON(jsonIter iter, ClassType& into) {
             //TODO: allow advancing without generating data
             typename std::remove_const<ClassType>::type shadow;
-            return detail::FromJSON(iter, end, shadow);
+            return detail::FromJSON(iter, shadow);
         }
 
         template<typename ClassType,
@@ -211,8 +198,8 @@ namespace JSON {
 
         template<typename ClassType,
                  enable_if<ClassType, std::is_class> = true>
-        json_finline jsonIter FromJSON(jsonIter iter, jsonIter end, ClassType& classInto) {
-            return JSON::FromJSON(iter, end, classInto);
+        json_finline jsonIter FromJSON(jsonIter iter, ClassType& classInto) {
+            return JSON::FromJSON(iter, classInto);
         }
     }
 }

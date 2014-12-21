@@ -17,40 +17,40 @@ namespace JSON {
     jsonIter MemberFromJSON(classType& classOn, jsonIter iter, jsonIter end);
 
     template<typename classType, typename underlyingType>
-    json_finline jsonIter MemberFromJSON(classType& classOn, jsonIter iter, jsonIter end,
+    json_finline jsonIter MemberFromJSON(classType& classOn, jsonIter iter,
                                          underlyingType classType::* member) {
-        return detail::FromJSON(iter, end, classOn.*member);
+        return detail::FromJSON(iter, classOn.*member);
     }
 
     template<typename classType, typename underlyingType>
-    json_finline jsonIter MemberFromJSON(classType& classOn, jsonIter iter, jsonIter end,
+    json_finline jsonIter MemberFromJSON(classType& classOn, jsonIter iter,
                                          underlyingType* member) {
-        return detail::FromJSON(iter, end, *member);
+        return detail::FromJSON(iter, *member);
     }
 
     template<typename classType,
              typename underlyingType, underlyingType member,
              template<typename UT, UT MT> class MemberInfo>
-    json_finline jsonIter MemberFromJSON(classType& classOn, jsonIter iter, jsonIter end,
+    json_finline jsonIter MemberFromJSON(classType& classOn, jsonIter iter,
                                          MemberInfo<underlyingType, member>&&) {
-        return MemberFromJSON(classOn, iter, end, member);
+        return MemberFromJSON(classOn, iter, member);
     }
 
     template<typename classType, typename memberType>
-    jsonIter MemberFromJSON(classType& classOn, jsonIter iter, jsonIter end) {
-        return MemberFromJSON(classOn, iter, end, memberType());
+    jsonIter MemberFromJSON(classType& classOn, jsonIter iter) {
+        return MemberFromJSON(classOn, iter, memberType());
     }
 
     template<typename classFor,
              typename member, typename... members,
              template<typename... M> class ML>
     json_finline jsonIter MemberFromJSON(classFor& on, const std::string& key, jsonIter iter,
-                                         jsonIter end, ML<member, members...>&&) {
+                                         ML<member, members...>&&) {
         if(key == member::key) {
-            return MemberFromJSON<classFor, member>(on, iter, end);
+            return MemberFromJSON<classFor, member>(on, iter);
         }
         else {
-            return MemberFromJSON(on, key, iter, end, ML<members...>());
+            return MemberFromJSON(on, key, iter, ML<members...>());
         }
     }
 
@@ -59,16 +59,16 @@ namespace JSON {
              template<typename... M> class ML,
              typename... value_types>
     json_finline jsonIter MemberFromJSON(classFor& on, const std::string& key, jsonIter iter,
-                                         jsonIter end, ML<>&&) {
+                                         ML<>&&) {
 #else
     template<typename classFor,
         typename... members,
         template<typename... M> class ML,
         typename... value_types>
     json_finline jsonIter MemberFromJSON(classFor& on, const std::string& key, jsonIter iter,
-                                         jsonIter end, ML<members...>&&) {
+                                         ML<members...>&&) {
 #endif
-        ThrowBadJSONError(iter, end, "No key in object");
+        ThrowBadJSONError(iter, "No key in object");
     }
 
 #define JSON_LIST_MEMBERS(CLASS_NAME, ...)          \

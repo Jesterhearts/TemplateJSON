@@ -55,42 +55,42 @@ namespace detail {
 
     template<typename classFor, size_t membersRemaining>
     struct JSONReader {
-        json_finline static jsonIter MembersFromJSON(classFor& classInto, jsonIter iter, jsonIter end) {
+        json_finline static jsonIter MembersFromJSON(classFor& classInto, jsonIter iter) {
             std::string nextKey;
-            iter = ParseNextKey(iter, end, nextKey);
-            iter = ValidateKeyValueMapping(iter, end);
+            iter = ParseNextKey(iter, nextKey);
+            iter = ValidateKeyValueMapping(iter);
 
-            iter = AdvancePastWhitespace(iter, end);
+            iter = AdvancePastWhitespace(iter);
 
-            iter = MemberFromJSON(classInto, nextKey, iter, end, MembersHolder<classFor>::members());
-            iter = AdvancePastWhitespace(iter, end);
-            if(iter != end && *iter == ',')  {
+            iter = MemberFromJSON(classInto, nextKey, iter, MembersHolder<classFor>::members());
+            iter = AdvancePastWhitespace(iter);
+            if(*iter == ',')  {
                 ++iter;
             }
             else {
-                ThrowBadJSONError(iter, end, "Missing key separator");
+                ThrowBadJSONError(iter, "Missing key separator");
             }
 
-            return JSONReader<classFor, membersRemaining - 1>::MembersFromJSON(classInto, iter, end);
+            return JSONReader<classFor, membersRemaining - 1>::MembersFromJSON(classInto, iter);
         }
     };
 
     template<typename classFor>
     struct JSONReader<classFor, 1> {
-        json_finline static jsonIter MembersFromJSON(classFor& classInto, jsonIter iter, jsonIter end) {
+        json_finline static jsonIter MembersFromJSON(classFor& classInto, jsonIter iter) {
             std::string nextKey;
-            iter = ParseNextKey(iter, end, nextKey);
-            iter = ValidateKeyValueMapping(iter, end);
+            iter = ParseNextKey(iter, nextKey);
+            iter = ValidateKeyValueMapping(iter);
 
-            iter = AdvancePastWhitespace(iter, end);
+            iter = AdvancePastWhitespace(iter);
 
-            iter = MemberFromJSON(classInto, nextKey, iter, end, MembersHolder<classFor>::members());
-            iter = AdvancePastWhitespace(iter, end);
-            if(iter != end && *iter == ',') {
+            iter = MemberFromJSON(classInto, nextKey, iter, MembersHolder<classFor>::members());
+            iter = AdvancePastWhitespace(iter);
+            if(*iter == ',') {
                 ++iter;
             }
             else if(*iter != '}') {
-                ThrowBadJSONError(iter, end, "Missing key separator");
+                ThrowBadJSONError(iter, "Missing key separator");
             }
 
             return iter;
@@ -98,9 +98,8 @@ namespace detail {
     };
 
     template<typename classFor, typename... types, template<typename... M> class ML>
-    json_finline jsonIter MembersFromJSON(classFor& classInto, jsonIter iter, jsonIter end,
-                                          ML<types...>&&) {
-        return JSONReader<classFor, sizeof...(types)>::MembersFromJSON(classInto, iter, end);
+    json_finline jsonIter MembersFromJSON(classFor& classInto, jsonIter iter, ML<types...>&&) {
+        return JSONReader<classFor, sizeof...(types)>::MembersFromJSON(classInto, iter);
     }
 } /* detail */
 } /* JSON */

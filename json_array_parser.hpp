@@ -25,35 +25,28 @@ namespace detail {
 
     template<typename ClassType,
              enable_if<ClassType, std::is_array> = true>
-    json_finline jsonIter FromJSON(jsonIter iter, jsonIter end, ClassType& into) {
-        if(end - iter < 2) {
-            ThrowBadJSONError(iter, end, "No array tokens");
-        }
+    json_finline jsonIter FromJSON(jsonIter iter, ClassType& into) {
+        iter = AdvancePastWhitespace(iter);
 
-        iter = AdvancePastWhitespace(iter, end);
-        if(*iter != L'[') {
-            ThrowBadJSONError(iter, end, "No array start token");
+        if(*iter != '[') {
+            ThrowBadJSONError(iter, "No array start token");
         }
         ++iter;
 
         for(size_t i = 0; i < std::extent<ClassType>::value; ++i) {
-            iter = detail::FromJSON(iter, end, into[i]);
-            iter = AdvancePastWhitespace(iter, end);
+            iter = detail::FromJSON(iter, into[i]);
+            iter = AdvancePastWhitespace(iter);
 
-            if(iter == end) {
-                ThrowBadJSONError(iter, end, "Not enough items in JSON array");
+            if(*iter != ',' && i < std::extent<ClassType>::value - 1) {
+                ThrowBadJSONError(iter, "Missing comma in JSON array");
             }
-
-            if(*iter != L',' && i < std::extent<ClassType>::value - 1) {
-                ThrowBadJSONError(iter, end, "Missing comma in JSON array");
-            }
-            else if(*iter == L',') {
+            else if(*iter == ',') {
                 ++iter;
             }
         }
 
-        if(iter == end || *iter != L']') {
-            ThrowBadJSONError(iter, end, "No end or too many items in JSON array");
+        if(*iter != ']') {
+            ThrowBadJSONError(iter, "No end or too many items in JSON array");
         }
 
         ++iter;

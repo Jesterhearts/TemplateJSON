@@ -19,30 +19,29 @@ namespace JSON {
     namespace detail {
         template<typename EnumType>
         json_no_return
-        json_finline EnumType ValidateEnum(jsonIter iter, jsonIter end,
-                                           typename std::underlying_type<EnumType>::type value,
+        json_finline EnumType ValidateEnum(jsonIter iter, typename std::underlying_type<EnumType>::type value,
                                            EnumValueList<EnumType>&&) {
-            ThrowBadJSONError(iter, end, "Value not in enum");
+            ThrowBadJSONError(iter, "Value not in enum");
         }
 
         template<typename EnumType, EnumType member, EnumType... members>
-        json_finline EnumType ValidateEnum(jsonIter iter, jsonIter end,
+        json_finline EnumType ValidateEnum(jsonIter iter,
                                            typename std::underlying_type<EnumType>::type value,
                                            EnumValueList<EnumType, member, members...>&&) {
             if (value == member) {
                 return static_cast<EnumType>(value);
             }
             else {
-                return ValidateEnum(iter, end, value, EnumValueList<EnumType, members...>());
+                return ValidateEnum(iter, value, EnumValueList<EnumType, members...>());
             }
         }
 
         template<typename EnumType, EnumType base, EnumType max>
-        json_finline EnumType ValidateEnum(jsonIter iter, jsonIter end,
+        json_finline EnumType ValidateEnum(jsonIter iter,
                                            typename std::underlying_type<EnumType>::type value,
                                            ContiguousEnumValueList<EnumType, base, max>&&) {
             if(value < base || value > max) {
-                ThrowBadJSONError(iter, end, "Value not in enum");
+                ThrowBadJSONError(iter, "Value not in enum");
             }
             else {
                 return static_cast<EnumType>(value);
@@ -58,11 +57,11 @@ namespace JSON {
 
         template<typename ClassType,
                  enable_if<ClassType, std::is_enum> = true>
-        json_finline jsonIter FromJSON(jsonIter iter, jsonIter end, ClassType& into) {
+        json_finline jsonIter FromJSON(jsonIter iter, ClassType& into) {
             using underlying_type = typename std::underlying_type<ClassType>::type;
             underlying_type value;
-            iter = detail::FromJSON(iter, end, value);
-            into = ValidateEnum(iter, end, value, EnumValidator<ClassType>::values());
+            iter = detail::FromJSON(iter, value);
+            into = ValidateEnum(iter, value, EnumValidator<ClassType>::values());
             return iter;
         }
     }
