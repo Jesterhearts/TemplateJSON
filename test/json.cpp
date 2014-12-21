@@ -1,6 +1,7 @@
 #include "json_functions.hpp"
 #include "json_test_classes.hpp"
 #include "json_test_integrals.hpp"
+#include "json_test_floats.hpp"
 
 #include <iostream>
 #include <sstream>
@@ -12,6 +13,7 @@ const char Test::mychar2;
 
 int main() {
     TestIntegrals();
+    TestFloats();
 
     std::string json;
 

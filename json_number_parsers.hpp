@@ -101,12 +101,12 @@ namespace detail {
     json_finline jsonIter FromJSON<bool, true>(jsonIter iter, jsonIter end, bool& into) {
         iter = AdvancePastWhitespace(iter, end);
 
-        if(strcmp("true", iter) == 0) {
+        if(memcmp("true", iter, 4) == 0) {
             into = true;
             return iter + 4;
         }
 
-        if(strcmp("false", iter) == 0) {
+        if(memcmp("false", iter, 5) == 0) {
             into = false;
             return iter + 5;
         }
@@ -119,11 +119,11 @@ namespace detail {
     json_finline jsonIter FromJSON(jsonIter iter, jsonIter end, ClassType& into) {
         iter = AdvancePastWhitespace(iter, end);
         auto endOfNumber = AdvancePastNumbers(iter, end);
-        std::istringstream is(iter);
 
-        if(!(is >> into))
-        {
-            ThrowBadJSONError(iter, end, "Could not convert string to value ");
+        try {
+            into = boost::lexical_cast<ClassType>(iter, std::distance(iter, endOfNumber));
+        } catch(boost::bad_lexical_cast& e) {
+            ThrowBadJSONError(iter, endOfNumber, e.what());
         }
 
         return endOfNumber;

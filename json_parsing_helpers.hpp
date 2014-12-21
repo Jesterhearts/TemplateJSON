@@ -105,8 +105,11 @@ namespace JSON {
             return iter;
         }
 
-        if(*iter == 'e') {
+        if(*iter == 'e' || *iter == 'E') {
             ++iter;
+            if(*iter == '-' || *iter == '+') {
+                ++iter;
+            }
         }
 
         while(iter != end && std::isdigit(*iter)) {

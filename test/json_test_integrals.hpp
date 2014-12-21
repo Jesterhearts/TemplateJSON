@@ -7,6 +7,13 @@
 
 void TestIntegrals();
 
+struct bools {
+    bools() : t(true), f(false) {}
+
+    bool t;
+    bool f;
+};
+
 struct shorts {
     shorts()
         :   min_s(std::numeric_limits<short>::min()),
