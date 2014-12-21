@@ -17,25 +17,6 @@ private:
     JSON_PRIVATE_ACCESS()
 };
 
-class Floats {
-public:
-    Floats() {};
-
-    float f;
-    double d;
-    //long double not valid json, since json does ieee doubles
-
-    char c;
-    unsigned char uc;
-
-    // char16_t c16;
-    // char32_t c32;
-
-    wchar_t wc;
-    unsigned wchar_t uwc;
-
-};
-
 template<typename T>
 class Templated {
 public:
@@ -113,10 +94,5 @@ private:
     HasSmrtPtrs(const HasSmrtPtrs&) = delete;
 };
 
-class HasStrings {
-public:
-    std::string mystring;
-    std::wstring mywstring;
-};
 
 #endif

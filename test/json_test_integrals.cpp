@@ -5,6 +5,7 @@
 JSON_ENABLE(bools, (t), (f))
 JSON_ENABLE(shorts, (min_s), (max_s), (min_us), (max_us));
 JSON_ENABLE(ints, (min_i), (max_i), (min_ui), (max_ui));
+JSON_ENABLE(uchars, (min_uc), (max_uc), (min_uwc), (max_uwc));
 JSON_ENABLE(longs, (min_l), (max_l), (min_ul), (max_ul));
 JSON_ENABLE(longlongs, (min_ll), (max_ll), (min_ull), (max_ull));
 JSON_ENABLE(int8_ts, (min_i8), (max_i8), (min_ui8), (max_ui8));
@@ -22,6 +23,10 @@ void TestShorts() {
 
 void TestInts() {
     TEST_BODY(ints);
+}
+
+void TestUChars() {
+    TEST_BODY(uchars);
 }
 
 void TestLongs() {
@@ -52,6 +57,7 @@ void TestIntegrals() {
     TestBools();
     TestShorts();
     TestInts();
+    TestUChars();
     TestLongs();
     TestLongLongs();
     TestI8s();

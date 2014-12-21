@@ -25,5 +25,3 @@ JSON_ENABLE(HasPTR, (myptr));
 JSON_ENABLE(HasArray, (myintarr), (mynestedarr));
 
 JSON_ENABLE(HasSmrtPtrs, (mysmartint), (myshrdint));
-
-JSON_ENABLE(HasStrings, (mystring), (mywstring));

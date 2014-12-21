@@ -2,6 +2,7 @@
 #include "json_test_classes.hpp"
 #include "json_test_integrals.hpp"
 #include "json_test_floats.hpp"
+#include "json_test_strings.hpp"
 
 #include <iostream>
 #include <sstream>
@@ -14,6 +15,7 @@ const char Test::mychar2;
 int main() {
     TestIntegrals();
     TestFloats();
+    TestStrings();
 
     std::string json;
 
@@ -195,22 +197,6 @@ int main() {
     {
         HasSmrtPtrs hsp2 = JSON::FromJSON<HasSmrtPtrs>(json);
         json = JSON::ToJSON<HasSmrtPtrs>(hsp2);
-        std::cout << "deserialized: " << json << std::endl << std::endl;
-    }
-    catch(const std::invalid_argument& e)
-    {
-        std::cout << e.what() << std::endl;
-    }
-
-    HasStrings hs;
-    hs.mystring = "string";
-    hs.mywstring = L"wstring";
-    json = JSON::ToJSON<HasStrings>(hs);
-    std::cout << json << std::endl;
-    try
-    {
-        HasStrings hs2 = JSON::FromJSON<HasStrings>(json);
-        json = JSON::ToJSON<HasStrings>(hs2);
         std::cout << "deserialized: " << json << std::endl << std::endl;
     }
     catch(const std::invalid_argument& e)

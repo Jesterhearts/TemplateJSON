@@ -42,6 +42,21 @@ struct ints {
     unsigned int max_ui;
 };
 
+struct uchars {
+    uchars()
+        :   min_uc(std::numeric_limits<unsigned char>::min()),
+            max_uc(std::numeric_limits<unsigned char>::max()),
+            min_uwc(std::numeric_limits<unsigned wchar_t>::min()),
+            max_uwc(std::numeric_limits<unsigned wchar_t>::max())
+    {}
+
+    unsigned char min_uc;
+    unsigned char max_uc;
+
+    unsigned wchar_t min_uwc;
+    unsigned wchar_t max_uwc;
+};
+
 struct longs {
     longs()
         :   min_l(std::numeric_limits<long>::min()),
