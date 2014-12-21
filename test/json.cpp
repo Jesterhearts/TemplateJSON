@@ -1,5 +1,6 @@
 #include "json_functions.hpp"
 #include "json_test_classes.hpp"
+#include "json_test_integrals.hpp"
 
 #include <iostream>
 #include <sstream>
@@ -10,6 +11,8 @@ const char Test::mychar2;
 #endif
 
 int main() {
+    TestIntegrals();
+
     std::string json;
 
     Simple simple;
@@ -20,21 +23,6 @@ int main() {
     {
         Simple simple = JSON::FromJSON<Simple>(json);
         json = JSON::ToJSON<Simple>(simple);
-        std::cout << "deserialized: " << json << std::endl << std::endl;
-    }
-    catch(const std::invalid_argument& e)
-    {
-        std::cout << e.what() << std::endl;
-    }
-
-    Ints ints;
-    json = JSON::ToJSON<Ints>(ints);
-    std::cout << json << std::endl;
-
-    try
-    {
-        Ints ints = JSON::FromJSON<Ints>(json);
-        json = JSON::ToJSON<Ints>(ints);
         std::cout << "deserialized: " << json << std::endl << std::endl;
     }
     catch(const std::invalid_argument& e)

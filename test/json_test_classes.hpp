@@ -17,20 +17,13 @@ private:
     JSON_PRIVATE_ACCESS()
 };
 
-class Ints {
+class Floats {
 public:
-    Ints() {};
-    short s;
-    unsigned short us;
+    Floats() {};
 
-    int i;
-    unsigned u;
-
-    long l;
-    unsigned long ul;
-
-    long long ll;
-    unsigned long long ull;
+    float f;
+    double d;
+    //long double not valid json, since json does ieee doubles
 
     char c;
     unsigned char uc;
@@ -41,26 +34,6 @@ public:
     wchar_t wc;
     unsigned wchar_t uwc;
 
-    int8_t i8;
-    uint8_t u8;
-
-    int16_t i16;
-    uint16_t u16;
-
-    int32_t i32;
-    uint32_t u32;
-
-    int64_t i64;
-    uint64_t u64;
-};
-
-class Floats {
-public:
-    Floats() {};
-
-    float f;
-    double d;
-    //long double not valid json, since json does ieee doubles
 };
 
 template<typename T>

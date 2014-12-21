@@ -4,6 +4,7 @@
 
 #include <boost/lexical_cast.hpp>
 
+#include <algorithm>
 #include <cerrno>
 #include <cmath>
 #include <cstdio>
@@ -36,13 +37,17 @@ namespace detail {
 
         char str[BufferSize];
         char* to = str + BufferSize - 1;
+
         const bool negative = std::is_signed<Type>::value && value < 0;
-        if(negative) {
+        const bool min_signed = std::is_signed<Type>::value && value == std::numeric_limits<Type>::min();
+
+        if(negative && min_signed) {
+            value += 1;
             value *= -1;
         }
 
         while(value) {
-            *to = '0' + value % base;
+            *to = '0' + (value % base);
             value /= base;
             --to;
         }
@@ -50,11 +55,16 @@ namespace detail {
         if(negative) {
             *to = '-';
             --to;
+
+            if(min_signed) {
+                str[BufferSize - 1] += 1;
+            }
         }
 
         ++to;
         out.append(to, BufferSize - std::abs(to - str));
     }
+
     template<typename ClassType,
              enable_if<ClassType, std::is_floating_point> = true>
     json_finline void ToJSON(ClassType from, std::string& out) {
@@ -109,12 +119,11 @@ namespace detail {
     json_finline jsonIter FromJSON(jsonIter iter, jsonIter end, ClassType& into) {
         iter = AdvancePastWhitespace(iter, end);
         auto endOfNumber = AdvancePastNumbers(iter, end);
+        std::istringstream is(iter);
 
-        try {
-            into = boost::lexical_cast<ClassType>(&*iter, std::distance(iter, endOfNumber));
-        }
-        catch(const boost::bad_lexical_cast& blc) {
-            ThrowBadJSONError(iter, end, blc.what());
+        if(!(is >> into))
+        {
+            ThrowBadJSONError(iter, end, "Could not convert string to value ");
         }
 
         return endOfNumber;
