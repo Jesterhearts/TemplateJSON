@@ -65,3 +65,10 @@ void TestIntegrals() {
     TestI32s();
     TestI64s();
 }
+
+#ifndef JSON_TEST_ALL
+int main() {
+    TestIntegrals();
+    return 0;
+}
+#endif

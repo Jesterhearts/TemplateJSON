@@ -82,19 +82,61 @@ namespace detail {
         out.append(from ? "true" : "false", from ? 4 : 5);
     }
 
+    template<typename Type>
+    json_finline jsonIter atoi(jsonIter iter, jsonIter end, Type& into) {
+        static_assert(std::is_integral<Type>::value, "Must be an integral value");
+
+        iter = AdvancePastWhitespace(iter, end);
+
+        const size_t remain = std::distance(iter, end);
+        const uint8_t maxLen = MaxIntegerStringLength<sizeof(Type)>() + std::is_signed<Type>::value;
+        const jsonIter lastPossible = iter + maxLen;
+
+        if(!std::is_signed<Type>::value && *iter == '-') {
+            ThrowBadJSONError(iter, end, "Not a valid integral number");
+        }
+
+        const int sign = (std::is_signed<Type>::value && *iter == '-') ? -1 : 1;
+        if(*iter == '-' || *iter == '+') {
+            ++iter;
+        }
+
+        bool offByOne = false;
+
+        for(into = 0; iter != lastPossible && std::isdigit(*iter); ++iter) {
+            if(into > std::numeric_limits<Type>::max() / 10) {
+                ThrowBadJSONError(iter, end, "Value will overflow");
+            }
+            into *= 10;
+
+            Type temp = (*iter) - '0';
+            if(sign != -1 && temp > std::numeric_limits<Type>::max() - into) {
+                ThrowBadJSONError(iter, end, "Value will overflow");
+            }
+
+            if(sign == -1 && temp > std::numeric_limits<Type>::max() - into) {
+                if(temp > std::numeric_limits<Type>::max() - into + 1) {
+                    ThrowBadJSONError(iter, end, "Value will overflow");
+                }
+                offByOne = true;
+                temp -= 1;
+            }
+
+            into += temp;
+        }
+
+        into *= sign;
+        if(offByOne) {
+            into -= 1;
+        }
+
+        return iter;
+    }
+
     template<typename ClassType,
              enable_if<ClassType, std::is_integral> = true>
     json_finline jsonIter FromJSON(jsonIter iter, jsonIter end, ClassType& into) {
-        iter = AdvancePastWhitespace(iter, end);
-        auto endOfNumber = AdvancePastNumbers(iter, end);
-        std::istringstream is(iter);
-
-        if(!(is >> into))
-        {
-            ThrowBadJSONError(iter, end, "Could not convert string to value ");
-        }
-
-        return endOfNumber;
+        return atoi(iter, end, into);
     }
 
     template<>

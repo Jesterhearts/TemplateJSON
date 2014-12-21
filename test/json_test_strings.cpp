@@ -17,3 +17,9 @@ void TestStrings() {
     TestStringClass() ;
     TestChars();
 }
+
+#ifndef JSON_TEST_ALL
+int main() {
+    TestStrings();
+}
+#endif

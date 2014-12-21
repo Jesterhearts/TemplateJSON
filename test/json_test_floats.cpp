@@ -17,3 +17,10 @@ void TestFloats() {
     TestSinglePrecision();
     TestDoublePrecision();
 }
+
+#ifndef JSON_TEST_ALL
+int main() {
+    TestFloats();
+    return 0;
+}
+#endif
