@@ -11,10 +11,15 @@ namespace JSON {
     )
 
 #define JSON_REFERENCE_KEY(s, CLASS_NAME, VARDATA)      \
-    template<> const std::string MemberInfo<            \
+    template<> const char* MemberInfo<                  \
         decltype(&CLASS_NAME:: JSON_VARNAME VARDATA),   \
         &CLASS_NAME:: JSON_VARNAME VARDATA>::key =      \
-    BOOST_PP_EXPAND(JSON_KEY_REFERENCE VARDATA);
+    BOOST_PP_EXPAND(JSON_KEY_REFERENCE VARDATA);        \
+                                                        \
+    template<> const size_t MemberInfo<                 \
+        decltype(&CLASS_NAME:: JSON_VARNAME VARDATA),   \
+        &CLASS_NAME:: JSON_VARNAME VARDATA>::len =      \
+    sizeof(BOOST_PP_EXPAND(JSON_KEY_REFERENCE VARDATA)) - 1;
 
 #ifndef _MSC_VER
 #define JSON_KEY_REFERENCE(...)                                         \

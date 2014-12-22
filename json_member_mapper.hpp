@@ -7,7 +7,8 @@
 namespace JSON {
     template<typename memberType, memberType member>
     struct MemberInfo {
-        static const std::string key;
+        static const char* key;
+        static const size_t len;
     };
 
     template<typename... members>
@@ -46,7 +47,7 @@ namespace JSON {
              template<typename... M> class ML>
     json_finline jsonIter MemberFromJSON(classFor& on, const std::string& key, jsonIter iter,
                                          ML<member, members...>&&) {
-        if(key == member::key) {
+        if(key.length() == member::len && std::memcmp(key.c_str(), member::key, member::len) == 0) {
             return MemberFromJSON<classFor, member>(on, iter);
         }
         else {
@@ -68,7 +69,7 @@ namespace JSON {
     json_finline jsonIter MemberFromJSON(classFor& on, const std::string& key, jsonIter iter,
                                          ML<members...>&&) {
 #endif
-        ThrowBadJSONError(iter, "No key in object");
+        ThrowBadJSONError(key.c_str(), "No key in object");
     }
 
 #define JSON_LIST_MEMBERS(CLASS_NAME, ...)          \
