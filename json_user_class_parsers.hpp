@@ -73,6 +73,9 @@ namespace detail {
 
             return JSONReader<classFor, membersRemaining - 1>::MembersFromJSON(classInto, iter);
         }
+
+        JSONReader() = delete;
+        ~JSONReader() = delete;
     };
 
     template<typename classFor>
@@ -95,6 +98,9 @@ namespace detail {
 
             return iter;
         }
+
+        JSONReader() = delete;
+        ~JSONReader() = delete;
     };
 
     template<typename classFor, typename... types, template<typename... M> class ML>

@@ -30,6 +30,9 @@ namespace JSON {
                 json_finline static void Insert(Type& type, VType&& input) {
                     type.emplace(input);
                 }
+
+                IterableInserter() = delete;
+                ~IterableInserter() = delete;
             };
 
             template<typename VType, typename A>
@@ -37,6 +40,9 @@ namespace JSON {
                 json_finline static void Insert(std::vector<VType, A>& type, VType&& input) {
                     type.emplace_back(input);
                 }
+
+                IterableInserter() = delete;
+                ~IterableInserter() = delete;
             };
 
             template<typename... T, template<typename... T> class Container>
