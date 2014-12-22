@@ -2,7 +2,7 @@
 #include "test_common.hpp"
 #include "json.hpp"
 
-JSON_ENABLE(strings, (string), (wstring));
+JSON_ENABLE(strings, (string), (wstring), (unicode), (wunicode));
 JSON_ENABLE(chars, (c), (wc));
 
 void TestStringClass() {

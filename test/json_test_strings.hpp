@@ -9,11 +9,15 @@ void TestStrings();
 struct strings {
     strings()
         :   string("A basic string"),
-            wstring(L"A basic wstring")
+            wstring(L"A basic wstring"),
+            unicode("嗢"),
+            wunicode(L"嗢")
     {}
 
     std::string string;
     std::wstring wstring;
+    std::string unicode;
+    std::wstring wunicode;
 
     //TODO test escaping
 };

@@ -23,8 +23,14 @@ void RunTest() {
     try
     {
         TestType t2 = JSON::FromJSON<TestType>(json);
-        json = JSON::ToJSON<TestType>(t2);
-        std::cout << "\tdeserialized: " << json << std::endl << std::endl;
+        std::string json2 = JSON::ToJSON<TestType>(t2);
+        if(json == json2) {
+            std::cout << "\tSuccess!" << std::endl;
+        } else {
+            std::cout << "\tFailure" << std::endl;
+        }
+
+        std::cout << "\tdeserialized: " << json2 << std::endl << std::endl;
     }
     catch(const std::invalid_argument& e)
     {

@@ -24,77 +24,77 @@ namespace std {
 
 namespace JSON {
     namespace detail {
-        namespace iterables {
-            template<typename Type, typename VType>
-            struct IterableInserter {
-                json_finline static void Insert(Type& type, VType&& input) {
-                    type.emplace(input);
-                }
+    namespace iterables {
+        template<typename Type, typename VType>
+        struct IterableInserter {
+            json_finline static void Insert(Type& type, VType&& input) {
+                type.emplace(input);
+            }
 
-                IterableInserter() = delete;
-                ~IterableInserter() = delete;
-            };
+            IterableInserter() = delete;
+            ~IterableInserter() = delete;
+        };
 
-            template<typename VType, typename A>
-            struct IterableInserter<std::vector<VType, A>, VType> {
-                json_finline static void Insert(std::vector<VType, A>& type, VType&& input) {
-                    type.emplace_back(input);
-                }
+        template<typename VType, typename A>
+        struct IterableInserter<std::vector<VType, A>, VType> {
+            json_finline static void Insert(std::vector<VType, A>& type, VType&& input) {
+                type.emplace_back(input);
+            }
 
-                IterableInserter() = delete;
-                ~IterableInserter() = delete;
-            };
+            IterableInserter() = delete;
+            ~IterableInserter() = delete;
+        };
 
-            template<typename... T, template<typename... T> class Container>
-            json_finline void ToJSON(const Container<T...>& from, std::string& out) {
-                out.append(1, '[');
+        template<typename... T, template<typename... T> class Container>
+        json_finline void ToJSON(const Container<T...>& from, std::string& out) {
+            out.append(1, '[');
 
-                if(!from.empty()) {
-                    auto iter = std::begin(from);
-                    auto endItr = std::prev(std::end(from));
+            if(!from.empty()) {
+                auto iter = std::begin(from);
+                auto endItr = std::prev(std::end(from));
 
-                    for(; iter != endItr; ++iter) {
-                        detail::ToJSON(*iter, out);
-                        out.append(1, ',');
-                    }
+                for(; iter != endItr; ++iter) {
                     detail::ToJSON(*iter, out);
+                    out.append(1, ',');
                 }
-
-                out.append(1, ']');
+                detail::ToJSON(*iter, out);
             }
 
-            template<typename... T, template<typename... T> class Container>
-            json_finline jsonIter FromJSON(jsonIter iter, Container<T...>& into) {
-
-                iter = AdvancePastWhitespace(iter);
-                if(*iter != '[') {
-                    ThrowBadJSONError(iter, "No array start token");
-                }
-                ++iter;
-
-                using value_type = typename Container<T...>::value_type;
-                using inserter = IterableInserter<Container<T...>, value_type>;
-                while(iter && *iter != ']') {
-                    value_type input;
-                    iter = detail::FromJSON(iter, input);
-
-                    inserter::Insert(into, std::move(input));
-                    iter = AdvancePastWhitespace(iter);
-
-                    if(*iter == ',') {
-                        ++iter;
-                    }
-                }
-
-                if(*iter != ']') {
-                    ThrowBadJSONError(iter, "No end to JSON array");
-                }
-
-                ++iter;
-                return iter;
-            }
+            out.append(1, ']');
         }
-    }
+
+        template<typename... T, template<typename... T> class Container>
+        json_finline jsonIter FromJSON(jsonIter iter, Container<T...>& into) {
+
+            iter = AdvancePastWhitespace(iter);
+            if(*iter != '[') {
+                ThrowBadJSONError(iter, "No array start token");
+            }
+            ++iter;
+
+            using value_type = typename Container<T...>::value_type;
+            using inserter = IterableInserter<Container<T...>, value_type>;
+            while(iter && *iter != ']') {
+                value_type input;
+                iter = detail::FromJSON(iter, input);
+
+                inserter::Insert(into, std::move(input));
+                iter = AdvancePastWhitespace(iter);
+
+                if(*iter == ',') {
+                    ++iter;
+                }
+            }
+
+            if(*iter != ']') {
+                ThrowBadJSONError(iter, "No end to JSON array");
+            }
+
+            ++iter;
+            return iter;
+        }
+    } /* iterables */
+    } /* detail */
 
     template<typename T, std::size_t A>
     json_finline void ToJSON(const std::array<T, A>& from, std::string& out) {
