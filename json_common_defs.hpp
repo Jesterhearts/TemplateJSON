@@ -25,9 +25,4 @@
     #define json_deserialize_const_warning
 #endif
 
-
-namespace JSON {
-    template<typename T, size_t N = 1> struct JSONArrayHandler;
-}
-
 #endif

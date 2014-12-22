@@ -35,7 +35,10 @@ namespace JSON {
             ThrowBadJSONError(iter, "Not a valid string end token");
         }
 
-        classInto = std::string(iter, endOfString);
+        size_t len = std::distance(iter, endOfString);
+        classInto.clear();
+        classInto.append(iter, len);
+
         ++endOfString;
         return endOfString;
     }
