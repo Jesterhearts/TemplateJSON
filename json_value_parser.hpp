@@ -25,7 +25,7 @@ namespace JSON {
     template<>
     json_finline jsonIter FromJSON(jsonIter iter, std::string& classInto) {
         iter = AdvancePastWhitespace(iter);
-        if(*iter != L'\"') {
+        if(*iter != '\"') {
             ThrowBadJSONError(iter, "Not a valid string begin token");
         }
 
@@ -138,7 +138,7 @@ namespace JSON {
 
             //Todo, handle unicode escape sequences
             auto endOfString = iter + 1;
-            if(*endOfString != L'\"') {
+            if(*endOfString != '\"') {
                 ThrowBadJSONError(iter,"No string end token");
             }
 
@@ -174,7 +174,7 @@ namespace JSON {
 
             //Todo, handle unicode escape sequences
             auto endOfString = iter + 1;
-            if(*endOfString != L'\"') {
+            if(*endOfString != '\"') {
                 ThrowBadJSONError(iter,"No string end token");
             }
 
