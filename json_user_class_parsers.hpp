@@ -43,7 +43,7 @@ namespace detail {
     json_finline void MembersToJSON(const classFor& classFrom, std::string& out,
                                     ML<member, members...>&&) {
         out.append(1, '\"');
-        out.append(member::key);
+        out.append(member::key, member::len);
         out.append("\":", 2);
 
         MemberToJSON(classFrom, member(), out);
@@ -56,13 +56,14 @@ namespace detail {
     template<typename classFor, size_t membersRemaining>
     struct JSONReader {
         json_finline static jsonIter MembersFromJSON(classFor& classInto, jsonIter iter) {
-            std::string nextKey;
-            iter = ParseNextKey(iter, nextKey);
-            iter = ValidateKeyValueMapping(iter);
+            jsonIter startOfKey = FindStartOfKey(iter);
+            size_t keylen = std::distance(startOfKey, FindEndOfKey(startOfKey));
 
-            iter = AdvancePastWhitespace(iter);
+            /* keylen does not include closing ", so iter needs to move past that */
+            iter = ValidateKeyValueMapping(startOfKey + keylen + 1);
 
-            iter = MemberFromJSON(classInto, nextKey, iter, MembersHolder<classFor>::members());
+            iter = MemberFromJSON(classInto, startOfKey, keylen, iter, MembersHolder<classFor>::members());
+
             iter = AdvancePastWhitespace(iter);
             if(*iter == ',')  {
                 ++iter;
@@ -81,13 +82,14 @@ namespace detail {
     template<typename classFor>
     struct JSONReader<classFor, 1> {
         json_finline static jsonIter MembersFromJSON(classFor& classInto, jsonIter iter) {
-            std::string nextKey;
-            iter = ParseNextKey(iter, nextKey);
-            iter = ValidateKeyValueMapping(iter);
+            jsonIter startOfKey = FindStartOfKey(iter);
+            size_t keylen = std::distance(startOfKey, FindEndOfKey(startOfKey));
 
-            iter = AdvancePastWhitespace(iter);
+            /* keylen does not include closing ", so iter needs to move past that */
+            iter = ValidateKeyValueMapping(startOfKey + keylen + 1);
 
-            iter = MemberFromJSON(classInto, nextKey, iter, MembersHolder<classFor>::members());
+            iter = MemberFromJSON(classInto, startOfKey, keylen, iter, MembersHolder<classFor>::members());
+
             iter = AdvancePastWhitespace(iter);
             if(*iter == ',') {
                 ++iter;

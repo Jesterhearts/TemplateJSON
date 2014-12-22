@@ -150,8 +150,23 @@ namespace JSON {
         return iter;
     }
 
-    json_finline jsonIter ParseNextKey(jsonIter iter, std::string& nextKey) {
-        return detail::FromJSON(iter, nextKey);
+    /* Advance past start quote of key string */
+    json_finline jsonIter FindStartOfKey(jsonIter iter) {
+        iter = AdvancePastWhitespace(iter);
+        if(*iter != '\"') {
+            ThrowBadJSONError(iter, "Missing key");
+        }
+        return iter + 1;
+    }
+
+    /* Advance to end quote of key string */
+    json_finline jsonIter FindEndOfKey(jsonIter iter) {
+        iter = AdvanceToEndOfString(iter);
+        if(*iter != '\"') {
+            ThrowBadJSONError(iter, "No close \" for key");
+        }
+
+        return iter;
     }
 }
 #endif

@@ -2,8 +2,6 @@
 #ifndef __JSON_MEMBER_MAPPER_HPP__
 #define __JSON_MEMBER_MAPPER_HPP__
 
-#include <unordered_map>
-
 namespace JSON {
     template<typename memberType, memberType member>
     struct MemberInfo {
@@ -13,9 +11,6 @@ namespace JSON {
 
     template<typename... members>
     struct MemberList {};
-
-    template<typename classType>
-    jsonIter MemberFromJSON(classType& classOn, jsonIter iter, jsonIter end);
 
     template<typename classType, typename underlyingType>
     json_finline jsonIter MemberFromJSON(classType& classOn, jsonIter iter,
@@ -45,13 +40,13 @@ namespace JSON {
     template<typename classFor,
              typename member, typename... members,
              template<typename... M> class ML>
-    json_finline jsonIter MemberFromJSON(classFor& on, const std::string& key, jsonIter iter,
+    json_finline jsonIter MemberFromJSON(classFor& on, jsonIter startOfKey, size_t keylen, jsonIter iter,
                                          ML<member, members...>&&) {
-        if(key.length() == member::len && std::memcmp(key.c_str(), member::key, member::len) == 0) {
+        if(keylen == member::len && std::memcmp(startOfKey, member::key, member::len) == 0) {
             return MemberFromJSON<classFor, member>(on, iter);
         }
         else {
-            return MemberFromJSON(on, key, iter, ML<members...>());
+            return MemberFromJSON(on, startOfKey, keylen, iter, ML<members...>());
         }
     }
 
@@ -59,17 +54,17 @@ namespace JSON {
     template<typename classFor,
              template<typename... M> class ML,
              typename... value_types>
-    json_finline jsonIter MemberFromJSON(classFor& on, const std::string& key, jsonIter iter,
+    json_finline jsonIter MemberFromJSON(classFor& on, jsonIter startOfKey, size_t keylen, jsonIter iter,
                                          ML<>&&) {
 #else
     template<typename classFor,
         typename... members,
         template<typename... M> class ML,
         typename... value_types>
-    json_finline jsonIter MemberFromJSON(classFor& on, const std::string& key, jsonIter iter,
+    json_finline jsonIter MemberFromJSON(classFor& on, jsonIter startOfKey, size_t keylen, jsonIter iter,
                                          ML<members...>&&) {
 #endif
-        ThrowBadJSONError(key.c_str(), "No key in object");
+        ThrowBadJSONError(startOfKey, "No key in object");
     }
 
 #define JSON_LIST_MEMBERS(CLASS_NAME, ...)          \
