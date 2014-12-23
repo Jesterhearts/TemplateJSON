@@ -14,7 +14,7 @@ namespace JSON {
     struct TupleHandler {
         json_finline static void ToJSON(const TupleType& classFrom, std::string& out) {
             detail::ToJSON(std::get<curIndex>(classFrom), out);
-            out.append(1, ',');
+            out.push_back(',');
             TupleHandler<TupleType,
                          curIndex + 1,
                          sizeof...(Types) == 1,
@@ -65,18 +65,18 @@ namespace JSON {
     };
 
     template<typename... Types>
-    json_finline void ToJSON(const std::tuple<Types...>& from, std::string& out) {
-        out.append(1, '[');
+    void ToJSON(const std::tuple<Types...>& from, std::string& out) {
+        out.push_back('[');
         TupleHandler<std::tuple<Types...>,
                      0,
                      sizeof...(Types) == 1,
                      Types...
                     >::ToJSON(from, out);
-        out.append(1, ']');
+        out.push_back(']');
     }
 
     template<typename... Types>
-    json_finline jsonIter FromJSON(jsonIter iter, std::tuple<Types...>& into) {
+    jsonIter FromJSON(jsonIter iter, std::tuple<Types...>& into) {
         if(*iter != '[') {
             ThrowBadJSONError(iter, "No tuple start token");
         }

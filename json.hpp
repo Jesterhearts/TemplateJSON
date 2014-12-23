@@ -26,10 +26,10 @@
 namespace JSON {
     template<typename classFor>
     void ToJSON(const classFor& classFrom, std::string& out) {
-        out.append(1, '{');
+        out.push_back('{');
         detail::MembersToJSON(classFrom, out, MembersHolder<classFor>::members());
 
-        out.append(1, '}');
+        out.push_back('}');
     }
 
     template<typename classFor>

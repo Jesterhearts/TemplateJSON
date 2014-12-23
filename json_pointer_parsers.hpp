@@ -98,7 +98,7 @@ namespace JSON {
     }
 
     template<typename T, typename D>
-    json_finline jsonIter FromJSON(jsonIter iter, std::unique_ptr<T, D>& into) {
+    jsonIter FromJSON(jsonIter iter, std::unique_ptr<T, D>& into) {
         return detail::pointers::FromJSON(iter, into);
     }
 }

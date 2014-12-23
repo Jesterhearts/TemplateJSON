@@ -156,7 +156,7 @@ namespace JSON {
         if(*iter != '\"') {
             ThrowBadJSONError(iter, "Missing key");
         }
-        return iter + 1;
+        return iter;
     }
 
     /* Advance to end quote of key string */
@@ -166,7 +166,7 @@ namespace JSON {
             ThrowBadJSONError(iter, "No close \" for key");
         }
 
-        return iter;
+        return iter + 1;
     }
 }
 #endif

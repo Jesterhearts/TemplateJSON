@@ -26,7 +26,7 @@ namespace detail {
         const auto BufferSize = MaxIntegerStringLength<sizeof(Type)>() + std::is_signed<Type>::value;
 
         if(!value) {
-            out.append(1, '0');
+            out.push_back('0');
             return;
         }
 

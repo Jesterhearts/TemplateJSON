@@ -4,10 +4,7 @@
 
 namespace JSON {
     template<typename memberType, memberType member>
-    struct MemberInfo {
-        static const char* key;
-        static const size_t len;
-    };
+    struct MemberInfo {};
 
     template<typename... members>
     struct MemberList {};
@@ -33,7 +30,7 @@ namespace JSON {
     }
 
     template<typename classType, typename memberType>
-    jsonIter MemberFromJSON(classType& classOn, jsonIter iter) {
+    json_finline jsonIter MemberFromJSON(classType& classOn, jsonIter iter) {
         return MemberFromJSON(classOn, iter, memberType());
     }
 
@@ -42,7 +39,8 @@ namespace JSON {
              template<typename... M> class ML>
     json_finline jsonIter MemberFromJSON(classFor& on, jsonIter startOfKey, size_t keylen, jsonIter iter,
                                          ML<member, members...>&&) {
-        if(keylen == member::len && std::memcmp(startOfKey, member::key, member::len) == 0) {
+        constexpr const size_t len = sizeof(member::key) - 1;
+        if(keylen == len && std::memcmp(startOfKey, member::key, len) == 0) {
             return MemberFromJSON<classFor, member>(on, iter);
         }
         else {

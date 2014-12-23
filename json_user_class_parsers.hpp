@@ -28,27 +28,25 @@ namespace detail {
 #ifndef _MSC_VER
     template<typename classFor,
              template<typename... M> class ML>
-    json_finline void MembersToJSON(const classFor& classFrom, std::string& out, ML<>&&) {
+    json_finline void MembersToJSON(const classFor& classFrom, std::string& out, ML<>&&) {}
 #else
     template<typename classFor,
              typename... members,
              template<typename... M> class ML>
-    json_finline void MembersToJSON(const classFor& classFrom, std::string& out, ML<members...>&&) {
+    json_finline void MembersToJSON(const classFor& classFrom, std::string& out, ML<members...>&&) {}
 #endif
-    }
 
     template<typename classFor,
              typename member, typename... members,
              template<typename... M> class ML>
     json_finline void MembersToJSON(const classFor& classFrom, std::string& out,
                                     ML<member, members...>&&) {
-        out.append(1, '\"');
-        out.append(member::key, member::len);
-        out.append("\":", 2);
+        out.append(member::key, sizeof(member::key) - 1);
+        out.push_back(':');
 
         MemberToJSON(classFrom, member(), out);
         if(sizeof...(members) > 0) {
-            out.append(1, ',');
+            out.push_back(',');
         }
         MembersToJSON(classFrom, out, ML<members...>());
     }
@@ -57,10 +55,9 @@ namespace detail {
     struct JSONReader {
         json_finline static jsonIter MembersFromJSON(classFor& classInto, jsonIter iter) {
             jsonIter startOfKey = FindStartOfKey(iter);
-            size_t keylen = std::distance(startOfKey, FindEndOfKey(startOfKey));
+            size_t keylen = std::distance(startOfKey, FindEndOfKey(startOfKey + 1));
 
-            /* keylen does not include closing ", so iter needs to move past that */
-            iter = ValidateKeyValueMapping(startOfKey + keylen + 1);
+            iter = ValidateKeyValueMapping(startOfKey + keylen);
 
             iter = MemberFromJSON(classInto, startOfKey, keylen, iter, MembersHolder<classFor>::members());
 
@@ -83,10 +80,9 @@ namespace detail {
     struct JSONReader<classFor, 1> {
         json_finline static jsonIter MembersFromJSON(classFor& classInto, jsonIter iter) {
             jsonIter startOfKey = FindStartOfKey(iter);
-            size_t keylen = std::distance(startOfKey, FindEndOfKey(startOfKey));
+            size_t keylen = std::distance(startOfKey, FindEndOfKey(startOfKey + 1));
 
-            /* keylen does not include closing ", so iter needs to move past that */
-            iter = ValidateKeyValueMapping(startOfKey + keylen + 1);
+            iter = ValidateKeyValueMapping(startOfKey + keylen);
 
             iter = MemberFromJSON(classInto, startOfKey, keylen, iter, MembersHolder<classFor>::members());
 

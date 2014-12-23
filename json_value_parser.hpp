@@ -16,14 +16,14 @@
 
 namespace JSON {
     template<>
-    json_finline void ToJSON(const std::string& from, std::string& out) {
-        out.append(1, '\"');
+    void ToJSON(const std::string& from, std::string& out) {
+        out.push_back('\"');
         out.append(from);
-        out.append(1, '\"');
+        out.push_back('\"');
     }
 
     template<>
-    json_finline jsonIter FromJSON(jsonIter iter, std::string& classInto) {
+    jsonIter FromJSON(jsonIter iter, std::string& classInto) {
         iter = AdvancePastWhitespace(iter);
         if(*iter != '\"') {
             ThrowBadJSONError(iter, "Not a valid string begin token");
@@ -44,18 +44,18 @@ namespace JSON {
     }
 
     template<>
-    json_finline void ToJSON(const std::wstring& from, std::string& out) {
-        out.append(1, '\"');
+    void ToJSON(const std::wstring& from, std::string& out) {
+        out.push_back('\"');
 
         std::string narrowString(from.begin(), from.end());
         out.append(narrowString);
 
-        out.append(1, '\"');
+        out.push_back('\"');
     }
 
 
     template<>
-    json_finline jsonIter FromJSON(jsonIter iter, std::wstring& classInto) {
+    jsonIter FromJSON(jsonIter iter, std::wstring& classInto) {
         iter = AdvancePastWhitespace(iter);
         if(*iter != '\"') {
             ThrowBadJSONError(iter, "Not a valid string begin token");
@@ -73,16 +73,16 @@ namespace JSON {
     }
 
     template<typename T1, typename T2>
-    json_finline void ToJSON(const std::pair<T1, T2>& from, std::string& out) {
-        out.append(1, '[');
+    void ToJSON(const std::pair<T1, T2>& from, std::string& out) {
+        out.push_back('[');
         detail::ToJSON(from.first, out);
-        out.append(1, ',');
+        out.push_back(',');
         detail::ToJSON(from.second, out);
-        out.append(1, ']');
+        out.push_back(']');
     }
 
     template<typename T1, typename T2>
-    json_finline jsonIter FromJSON(jsonIter iter, std::pair<T1, T2>& into) {
+    jsonIter FromJSON(jsonIter iter, std::pair<T1, T2>& into) {
         iter = AdvancePastWhitespace(iter);
 
         if(*iter != '[') {
@@ -118,9 +118,9 @@ namespace JSON {
     namespace detail {
         template<>
         json_finline void ToJSON<char, true>(char from, std::string& out) {
-            out.append(1, '\"');
-            out.append(1, from);
-            out.append(1, '\"');
+            out.push_back('\"');
+            out.push_back(from);
+            out.push_back('\"');
         }
 
         template<>
@@ -150,13 +150,13 @@ namespace JSON {
 
         template<>
         json_finline void ToJSON<wchar_t, true>(wchar_t from, std::string& out) {
-            out.append(1, '\"');
+            out.push_back('\"');
 
             std::wstring wideChar(1, from);
             std::string narrowChar(wideChar.begin(), wideChar.end());
 
             out.append(narrowChar);
-            out.append(1, '\"');
+            out.push_back('\"');
         }
 
         template<>

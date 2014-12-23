@@ -10,30 +10,35 @@ namespace JSON {
         BOOST_PP_VARIADIC_TO_SEQ(__VA_ARGS__)           \
     )
 
-#define JSON_REFERENCE_KEY(s, CLASS_NAME, VARDATA)      \
-    template<> const char* MemberInfo<                  \
+#define JSON_REFERENCE_KEY(s, CLASS_NAME, VARDATA)              \
+    template<>                                                  \
+    struct MemberInfo<                                          \
+        JSON_MEMBER_INFO_ARGS(CLASS_NAME, VARDATA)> {           \
+        static constexpr const char key[] = "\""                \
+            BOOST_PP_EXPAND(JSON_KEY_NAME VARDATA) "\"";        \
+    };                                                          \
+                                                                \
+    constexpr const char MemberInfo<                            \
+        JSON_MEMBER_INFO_ARGS(CLASS_NAME, VARDATA)              \
+    >::key[];
+
+#define JSON_MEMBER_INFO_ARGS(CLASS_NAME, VARDATA) \
         decltype(&CLASS_NAME:: JSON_VARNAME VARDATA),   \
-        &CLASS_NAME:: JSON_VARNAME VARDATA>::key =      \
-    BOOST_PP_EXPAND(JSON_KEY_REFERENCE VARDATA);        \
-                                                        \
-    template<> const size_t MemberInfo<                 \
-        decltype(&CLASS_NAME:: JSON_VARNAME VARDATA),   \
-        &CLASS_NAME:: JSON_VARNAME VARDATA>::len =      \
-    sizeof(BOOST_PP_EXPAND(JSON_KEY_REFERENCE VARDATA)) - 1;
+        &CLASS_NAME:: JSON_VARNAME VARDATA
 
 #ifndef _MSC_VER
-#define JSON_KEY_REFERENCE(...)                                         \
-    BOOST_PP_OVERLOAD(JSON_KEY_REFERENCE, __VA_ARGS__)(__VA_ARGS__)
+#define JSON_KEY_NAME(...)                                         \
+    BOOST_PP_OVERLOAD(JSON_KEY_NAME, __VA_ARGS__)(__VA_ARGS__)
 #else
-#define JSON_KEY_REFERENCE(...)                                                                   \
-    BOOST_PP_CAT(BOOST_PP_OVERLOAD(JSON_KEY_REFERENCE, __VA_ARGS__)(__VA_ARGS__),BOOST_PP_EMPTY())
+#define JSON_KEY_NAME(...)                                                                   \
+    BOOST_PP_CAT(BOOST_PP_OVERLOAD(JSON_KEY_NAME, __VA_ARGS__)(__VA_ARGS__),BOOST_PP_EMPTY())
 #endif
 
-#define JSON_KEY_REFERENCE2(VARNAME, JSONKEY)   \
+#define JSON_KEY_NAME2(VARNAME, JSONKEY)   \
     JSONKEY
 
-#define JSON_KEY_REFERENCE1(VARNAME)                            \
-    JSON_KEY_REFERENCE2(VARNAME, BOOST_PP_STRINGIZE(VARNAME))
+#define JSON_KEY_NAME1(VARNAME)                            \
+    JSON_KEY_NAME2(VARNAME, BOOST_PP_STRINGIZE(VARNAME))
 
 }
 #endif

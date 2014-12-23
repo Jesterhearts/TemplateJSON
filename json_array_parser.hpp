@@ -15,10 +15,10 @@ namespace detail {
         json.append(detail::ToJSON(from[0]));
 
         for(size_t i = 1; i < std::extent<ClassType>::value; ++i) {
-            json.append(",");
+            json.push_back(',');
             json.append(detail::ToJSON(from[i]));
         }
-        json.append("]");
+        json.push_back(']');
 
         return json;
     }
