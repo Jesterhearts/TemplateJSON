@@ -25,7 +25,7 @@
 
 namespace JSON {
     template<typename classFor>
-    void ToJSON(const classFor& classFrom, std::string& out) {
+    void ToJSON(const classFor& classFrom, detail::stringbuf& out) {
         out.push_back('{');
         detail::MembersToJSON(classFrom, out, MembersHolder<classFor>::members());
 
@@ -34,29 +34,11 @@ namespace JSON {
 
     template<typename classFor>
     std::string ToJSON(const classFor& classFrom) {
-        #ifdef JSON_CACHE_LENGTHS
-            #ifdef JSON_MULTITHREADED
-        static std::atomic<uint16_t> lastSize(1000);
-            #else
-        static uint16_t lastSize(1000);
-            #endif
-        #endif
+        detail::stringbuf json;
 
-        std::string json;
+        JSON::ToJSON(classFrom, json);
 
-        #ifdef JSON_CACHE_LENGTHS
-        json.reserve(lastSize);
-        #endif
-
-        ToJSON(classFrom, json);
-
-        #ifdef JSON_CACHE_LENGTHS
-        if(json.size() > lastSize) {
-            lastSize = std::min<size_t>(std::numeric_limits<uint16_t>::max(), json.size());
-        }
-        #endif
-
-        return json;
+        return json.str();
     }
 
     template<typename classFor>

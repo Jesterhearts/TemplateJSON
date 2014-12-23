@@ -12,7 +12,7 @@ namespace JSON {
              typename curType,
              typename... Types>
     struct TupleHandler {
-        json_finline static void ToJSON(const TupleType& classFrom, std::string& out) {
+        json_finline static void ToJSON(const TupleType& classFrom, detail::stringbuf& out) {
             detail::ToJSON(std::get<curIndex>(classFrom), out);
             out.push_back(',');
             TupleHandler<TupleType,
@@ -48,7 +48,7 @@ namespace JSON {
                          true,
                          curType,
                          Types...> {
-        json_finline static void ToJSON(const TupleType& classFrom, std::string& out) {
+        json_finline static void ToJSON(const TupleType& classFrom, detail::stringbuf& out) {
             detail::ToJSON(std::get<curIndex>(classFrom), out);
         }
 
@@ -65,7 +65,7 @@ namespace JSON {
     };
 
     template<typename... Types>
-    void ToJSON(const std::tuple<Types...>& from, std::string& out) {
+    void ToJSON(const std::tuple<Types...>& from, detail::stringbuf& out) {
         out.push_back('[');
         TupleHandler<std::tuple<Types...>,
                      0,

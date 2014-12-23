@@ -46,7 +46,7 @@ namespace JSON {
         };
 
         template<typename... T, template<typename... T> class Container>
-        json_finline void ToJSON(const Container<T...>& from, std::string& out) {
+        json_finline void ToJSON(const Container<T...>& from, detail::stringbuf& out) {
             out.push_back('[');
 
             if(!from.empty()) {
@@ -97,7 +97,7 @@ namespace JSON {
     } /* detail */
 
     template<typename T, std::size_t A>
-    void ToJSON(const std::array<T, A>& from, std::string& out) {
+    void ToJSON(const std::array<T, A>& from, detail::stringbuf& out) {
         detail::iterables::ToJSON(from, out);
     }
 
@@ -107,7 +107,7 @@ namespace JSON {
     }
 
     template<typename T, typename A>
-    void ToJSON(const std::deque<T, A>& from, std::string& out) {
+    void ToJSON(const std::deque<T, A>& from, detail::stringbuf& out) {
         detail::iterables::ToJSON(from, out);
     }
 
@@ -117,7 +117,7 @@ namespace JSON {
     }
 
     template<typename T, typename A>
-    void ToJSON(const std::forward_list<T, A>& from, std::string& out) {
+    void ToJSON(const std::forward_list<T, A>& from, detail::stringbuf& out) {
         detail::iterables::ToJSON(from, out);
     }
 
@@ -127,7 +127,7 @@ namespace JSON {
     }
 
     template<typename T, typename A>
-    void ToJSON(const std::list<T, A>& from, std::string& out) {
+    void ToJSON(const std::list<T, A>& from, detail::stringbuf& out) {
         detail::iterables::ToJSON(from, out);
     }
 
@@ -137,7 +137,7 @@ namespace JSON {
     }
 
     template<typename T, typename A>
-    void ToJSON(const std::vector<T, A>& from, std::string& out) {
+    void ToJSON(const std::vector<T, A>& from, detail::stringbuf& out) {
         detail::iterables::ToJSON(from, out);
     }
 
@@ -147,7 +147,7 @@ namespace JSON {
     }
 
     template<typename K, typename C, typename A>
-    void ToJSON(const std::set<K, C, A>& from, std::string& out) {
+    void ToJSON(const std::set<K, C, A>& from, detail::stringbuf& out) {
         detail::iterables::ToJSON(from, out);
     }
 
@@ -157,7 +157,7 @@ namespace JSON {
     }
 
     template<typename K, typename C, typename A>
-    void ToJSON(const std::multiset<K, C, A>& from, std::string& out) {
+    void ToJSON(const std::multiset<K, C, A>& from, detail::stringbuf& out) {
         detail::iterables::ToJSON(from, out);
     }
 
@@ -167,7 +167,7 @@ namespace JSON {
     }
 
     template<typename K, typename H, typename KE, typename A>
-    void ToJSON(const std::unordered_set<K, H, KE, A>& from, std::string& out) {
+    void ToJSON(const std::unordered_set<K, H, KE, A>& from, detail::stringbuf& out) {
         detail::iterables::ToJSON(from, out);
     }
 
@@ -177,7 +177,7 @@ namespace JSON {
     }
 
     template<typename K, typename T, typename C, typename A>
-    void ToJSON(const std::map<K, T, C, A>& from, std::string& out) {
+    void ToJSON(const std::map<K, T, C, A>& from, detail::stringbuf& out) {
         detail::iterables::ToJSON(from, out);
     }
 

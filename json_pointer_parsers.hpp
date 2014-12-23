@@ -13,7 +13,7 @@ namespace JSON {
     namespace detail {
         template<typename ClassType,
                  enable_if<ClassType, std::is_pointer> = true>
-        json_finline void ToJSON(ClassType from, std::string& out) {
+        json_finline void ToJSON(ClassType from, detail::stringbuf& out) {
             if(!from) {
                 out.append("null", 4);
             }
@@ -41,7 +41,7 @@ namespace JSON {
         namespace pointers {
             template<typename T, typename... D,
                      template<typename T, typename... D> class SmartPointerType>
-            json_finline void ToJSON(const SmartPointerType<T, D...>& from, std::string& out) {
+            json_finline void ToJSON(const SmartPointerType<T, D...>& from, detail::stringbuf& out) {
                 if(!from) {
                     out.append("null", 4);
                 }
@@ -63,7 +63,7 @@ namespace JSON {
     }
 
     template<typename T>
-    json_finline void ToJSON(const std::shared_ptr<T>& from, std::string& out) {
+    json_finline void ToJSON(const std::shared_ptr<T>& from, detail::stringbuf& out) {
         detail::pointers::ToJSON(from, out);
     }
 
@@ -73,7 +73,7 @@ namespace JSON {
     }
 
     template<typename T>
-    json_finline void ToJSON(const std::weak_ptr<T>& from, std::string& out) {
+    json_finline void ToJSON(const std::weak_ptr<T>& from, detail::stringbuf& out) {
         detail::pointers::ToJSON(from, out);
     }
 
@@ -83,7 +83,7 @@ namespace JSON {
     }
 
     template<typename T>
-    json_finline void ToJSON(const std::auto_ptr<T>& from, std::string& out) {
+    json_finline void ToJSON(const std::auto_ptr<T>& from, detail::stringbuf& out) {
         detail::pointers::ToJSON(from, out);
     }
 
@@ -93,7 +93,7 @@ namespace JSON {
     }
 
     template<typename T, typename D>
-    json_finline void ToJSON(const std::unique_ptr<T, D>& from, std::string& out) {
+    json_finline void ToJSON(const std::unique_ptr<T, D>& from, detail::stringbuf& out) {
         detail::pointers::ToJSON(from, out);
     }
 

@@ -5,11 +5,14 @@
 #include <string>
 
 namespace JSON {
+    namespace detail {
+        struct stringbuf;
+    }
 
    using jsonIter = const char*;
 
     template<typename ClassFor>
-    void ToJSON(const ClassFor& classFrom, std::string& out);
+    void ToJSON(const ClassFor& classFrom, detail::stringbuf& out);
 
     template<typename ClassFor>
     std::string ToJSON(const ClassFor& classFrom);

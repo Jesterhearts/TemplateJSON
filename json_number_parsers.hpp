@@ -20,7 +20,7 @@ namespace detail {
     constexpr uint8_t MaxIntegerStringLength<8>() { return 20; };
 
     template<typename Type, Type base>
-    json_finline void itoa(Type value, std::string& out) {
+    json_finline void itoa(Type value, detail::stringbuf& out) {
         static_assert(base > 1 && base <= 10, "Unsupported base");
         static_assert(std::is_integral<Type>::value, "Must be an integral type");
         const auto BufferSize = MaxIntegerStringLength<sizeof(Type)>() + std::is_signed<Type>::value;
@@ -65,18 +65,18 @@ namespace detail {
 
     template<typename ClassType,
              enable_if<ClassType, std::is_floating_point> = true>
-    json_finline void ToJSON(ClassType from, std::string& out) {
+    json_finline void ToJSON(ClassType from, detail::stringbuf& out) {
         out.append(boost::lexical_cast<std::string>(from));
     }
 
     template<typename ClassType,
              enable_if<ClassType, std::is_integral> = true>
-    json_finline void ToJSON(ClassType from, std::string& out) {
+    json_finline void ToJSON(ClassType from, detail::stringbuf& out) {
         itoa<ClassType, 10>(from, out);
     }
 
     template<>
-    json_finline void ToJSON<bool, true>(bool from, std::string& out) {
+    json_finline void ToJSON<bool, true>(bool from, detail::stringbuf& out) {
         out.append(from ? "true" : "false", from ? 4 : 5);
     }
 

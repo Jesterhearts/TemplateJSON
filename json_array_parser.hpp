@@ -6,21 +6,19 @@ namespace JSON {
 namespace detail {
     template<typename ClassType,
              enable_if<ClassType, std::is_array> = true>
-    json_finline std::string ToJSON(const ClassType& from) {
+    json_finline void ToJSON(const ClassType& from, detail::stringbuf& out) {
         if(std::extent<ClassType>::value == 0) {
-            return "[]";
+            out.append("[]", 2);
         }
 
-        std::string json("[");
-        json.append(detail::ToJSON(from[0]));
+        out.push_back('[');
+        detail::ToJSON<typename std::remove_extent<ClassType>::type>(from[0], out);
 
         for(size_t i = 1; i < std::extent<ClassType>::value; ++i) {
-            json.push_back(',');
-            json.append(detail::ToJSON(from[i]));
+            out.push_back(',');
+            detail::ToJSON<typename std::remove_extent<ClassType>::type>(from[i], out);
         }
-        json.push_back(']');
-
-        return json;
+        out.push_back(']');
     }
 
     template<typename ClassType,

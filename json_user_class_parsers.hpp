@@ -7,39 +7,39 @@ namespace JSON {
 namespace detail {
     template<typename classFor, typename underlyingType>
     json_finline void MemberToJSON(const classFor& classFrom, underlyingType classFor::* member,
-                                   std::string& out) {
-        detail::ToJSON(classFrom.*member, out);
+                                   detail::stringbuf& out) {
+        detail::ToJSON<typename std::remove_const<underlyingType>::type>(classFrom.*member, out);
     }
 
     template<typename classFor, typename underlyingType>
     json_finline void MemberToJSON(const classFor& classFrom, underlyingType* member,
-                                   std::string& out) {
-        detail::ToJSON(*member, out);
+                                   detail::stringbuf& out) {
+        detail::ToJSON<typename std::remove_const<underlyingType>::type>(*member, out);
     }
 
     template<typename classFor,
              typename underlyingType, underlyingType member,
              template<typename UT, UT MT> class Member>
     json_finline void MemberToJSON(const classFor& classFrom, Member<underlyingType, member>&&,
-                                   std::string& out) {
+                                   detail::stringbuf& out) {
         MemberToJSON(classFrom, member, out);
     }
 
 #ifndef _MSC_VER
     template<typename classFor,
              template<typename... M> class ML>
-    json_finline void MembersToJSON(const classFor& classFrom, std::string& out, ML<>&&) {}
+    json_finline void MembersToJSON(const classFor& classFrom, detail::stringbuf& out, ML<>&&) {}
 #else
     template<typename classFor,
              typename... members,
              template<typename... M> class ML>
-    json_finline void MembersToJSON(const classFor& classFrom, std::string& out, ML<members...>&&) {}
+    json_finline void MembersToJSON(const classFor& classFrom, detail::stringbuf& out, ML<members...>&&) {}
 #endif
 
     template<typename classFor,
              typename member, typename... members,
              template<typename... M> class ML>
-    json_finline void MembersToJSON(const classFor& classFrom, std::string& out,
+    json_finline void MembersToJSON(const classFor& classFrom, detail::stringbuf& out,
                                     ML<member, members...>&&) {
         out.append(member::key, sizeof(member::key) - 1);
         out.push_back(':');

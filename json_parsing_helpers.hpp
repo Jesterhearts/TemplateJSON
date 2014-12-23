@@ -20,37 +20,37 @@ namespace JSON {
         using enable_if_const = typename std::enable_if<std::is_const<basic_type<ClassType>>::value, bool>::type;
 
         template<typename ClassType, enable_if<ClassType, std::is_enum> = true>
-        void ToJSON(ClassType from, std::string& out);
+        void ToJSON(ClassType from, detail::stringbuf& out);
 
         template<typename ClassType, enable_if<ClassType, std::is_enum> = true>
         jsonIter FromJSON(jsonIter iter, ClassType& into);
 
         template<typename ClassType, enable_if<ClassType, std::is_integral> = true>
-        void ToJSON(ClassType from, std::string& out);
+        void ToJSON(ClassType from, detail::stringbuf& out);
 
         template<typename ClassType, enable_if<ClassType, std::is_integral> = true>
         jsonIter FromJSON(jsonIter iter, ClassType& into);
 
         template<typename ClassType, enable_if<ClassType, std::is_floating_point> = true>
-        void ToJSON(ClassType from, std::string& out);
+        void ToJSON(ClassType from, detail::stringbuf& out);
 
         template<typename ClassType, enable_if<ClassType, std::is_floating_point> = true>
         jsonIter FromJSON(jsonIter iter, ClassType& into);
 
         template<typename ClassType, enable_if<ClassType, std::is_pointer> = true>
-        void ToJSON(ClassType from, std::string& out);
+        void ToJSON(ClassType from, detail::stringbuf& out);
 
         template<typename ClassType, enable_if<ClassType, std::is_pointer> = true>
         jsonIter FromJSON(jsonIter iter, ClassType& into);
 
         template<typename ClassType, enable_if<ClassType, std::is_array> = true>
-        void ToJSON(ClassType& from, std::string& out);
+        void ToJSON(ClassType& from, detail::stringbuf& out);
 
         template<typename ClassType, enable_if<ClassType, std::is_array> = true>
         jsonIter FromJSON(jsonIter iter, ClassType& into);
 
         template<typename ClassType, enable_if<ClassType, std::is_class> = true>
-        void ToJSON(const ClassType& from, std::string& out);
+        void ToJSON(const ClassType& from, detail::stringbuf& out);
 
         template<typename ClassType, enable_if<ClassType, std::is_class> = true>
         jsonIter FromJSON(jsonIter iter, ClassType& into);
@@ -58,6 +58,33 @@ namespace JSON {
         template<typename ClassType, enable_if_const<ClassType> = true>
         json_deserialize_const_warning
         jsonIter FromJSON(jsonIter iter, ClassType& into);
+
+        struct stringbuf {
+            stringbuf() : m_buf(std::ios_base::in | std::ios_base::out | std::ios_base::binary) {}
+
+            json_finline
+            void push_back(char c) {
+                m_buf.sputc(c);
+            }
+
+            json_finline
+            void append(const char* str, size_t len) {
+                m_buf.sputn(str, len);
+            }
+
+            json_finline
+            void append(const std::string& str) {
+                m_buf.sputn(str.c_str(), str.length());
+            }
+
+            json_finline
+            std::string str() {
+                return m_buf.str();
+            }
+
+        private:
+            std::stringbuf m_buf;
+        };
     }
 
     json_no_return inline void ThrowBadJSONError(jsonIter iter, std::string&& errmsg) {

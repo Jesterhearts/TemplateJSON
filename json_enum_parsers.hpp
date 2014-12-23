@@ -50,7 +50,7 @@ namespace JSON {
 
         template<typename ClassType,
                  enable_if<ClassType, std::is_enum> = true>
-        json_finline void ToJSON(ClassType from, std::string& out) {
+        json_finline void ToJSON(ClassType from, detail::stringbuf& out) {
             using underlying_type = typename std::underlying_type<ClassType>::type;
             detail::ToJSON(static_cast<underlying_type>(from), out);
         }
