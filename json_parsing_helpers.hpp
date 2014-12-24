@@ -4,6 +4,7 @@
 
 #include <stdexcept>
 #include <cstring>
+#include <cstdlib>
 
 namespace JSON {
         namespace detail {
@@ -44,7 +45,7 @@ namespace JSON {
         jsonIter FromJSON(jsonIter iter, ClassType& into);
 
         template<typename ClassType, enable_if<ClassType, std::is_array> = true>
-        void ToJSON(ClassType& from, detail::stringbuf& out);
+        void ToJSON(const ClassType& from, detail::stringbuf& out);
 
         template<typename ClassType, enable_if<ClassType, std::is_array> = true>
         jsonIter FromJSON(jsonIter iter, ClassType& into);
@@ -60,30 +61,57 @@ namespace JSON {
         jsonIter FromJSON(jsonIter iter, ClassType& into);
 
         struct stringbuf {
-            stringbuf() : m_buf(std::ios_base::in | std::ios_base::out | std::ios_base::binary) {}
+            stringbuf() {
+                m_size = 1024;
+                m_buf = static_cast<char*>(std::malloc(m_size));
+                index = m_buf;
+            }
+
+            ~stringbuf() {
+                std::free(m_buf);
+            }
 
             json_finline
             void push_back(char c) {
-                m_buf.sputc(c);
+                allocate(1);
+                *(index++) = c;
             }
 
             json_finline
             void append(const char* str, size_t len) {
-                m_buf.sputn(str, len);
+                allocate(len);
+                std::memcpy(index, str, len);
+                index += len;
             }
 
             json_finline
             void append(const std::string& str) {
-                m_buf.sputn(str.c_str(), str.length());
+                append(str.c_str(), str.length());
             }
 
             json_finline
-            std::string str() {
-                return m_buf.str();
+            std::string to_string() {
+                return std::string(m_buf, std::distance(m_buf, index));
             }
 
         private:
-            std::stringbuf m_buf;
+            char* index;
+            char* m_buf;
+            size_t m_size;
+
+            json_finline
+            void allocate(size_t size) {
+                size_t newsize = std::distance(m_buf, index) + size;
+                if(m_size < newsize) {
+                    newsize *= 1.2;
+                    char* new_mem = static_cast<char*>(std::realloc(m_buf, newsize));
+                    if (!new_mem) {
+                        throw std::bad_alloc();
+                    }
+                    m_buf = new_mem;
+                    m_size = newsize;
+                }
+            }
         };
     }
 

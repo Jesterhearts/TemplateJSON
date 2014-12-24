@@ -24,35 +24,35 @@
 #include "json_member_mapper.hpp"
 
 namespace JSON {
-    template<typename classFor>
-    void ToJSON(const classFor& classFrom, detail::stringbuf& out) {
+    template<typename ClassType>
+    void ToJSON(const ClassType& classFrom, detail::stringbuf& out) {
         out.push_back('{');
-        detail::MembersToJSON(classFrom, out, MembersHolder<classFor>::members());
+        detail::MembersToJSON(classFrom, out, MembersHolder<ClassType>::members());
 
         out.push_back('}');
     }
 
-    template<typename classFor>
-    std::string ToJSON(const classFor& classFrom) {
+    template<typename ClassType>
+    std::string ToJSON(const ClassType& classFrom) {
         detail::stringbuf json;
 
         JSON::ToJSON(classFrom, json);
 
-        return json.str();
+        return json.to_string();
     }
 
-    template<typename classFor>
-    jsonIter FromJSON(jsonIter iter, classFor& classInto) {
+    template<typename ClassType>
+    jsonIter FromJSON(jsonIter iter, ClassType& classInto) {
         iter = ValidateObjectStart(iter);
 
-        iter = detail::MembersFromJSON(classInto, iter, MembersHolder<classFor>::members());
+        iter = detail::MembersFromJSON(classInto, iter, MembersHolder<ClassType>::members());
 
         return ValidateObjectEnd(iter);
     }
 
-    template<typename classFor>
-    classFor FromJSON(const std::string& jsonData) {
-        classFor classInto;
+    template<typename ClassType>
+    ClassType FromJSON(const std::string& jsonData) {
+        ClassType classInto;
         auto iter = jsonData.c_str();
 
         FromJSON(iter, classInto);

@@ -11,19 +11,19 @@ namespace JSON {
 
    using jsonIter = const char*;
 
-    template<typename ClassFor>
-    void ToJSON(const ClassFor& classFrom, detail::stringbuf& out);
+    template<typename ClassType>
+    void ToJSON(const ClassType& classFrom, detail::stringbuf& out);
 
-    template<typename ClassFor>
-    std::string ToJSON(const ClassFor& classFrom);
+    template<typename ClassType>
+    std::string ToJSON(const ClassType& classFrom);
 
-    template<typename ClassFor>
-    ClassFor FromJSON(const std::string& jsonString);
+    template<typename ClassType>
+    ClassType FromJSON(const std::string& jsonString);
 
-    template<typename ClassFor>
-    jsonIter FromJSON(jsonIter iter, ClassFor& into);
+    template<typename ClassType>
+    jsonIter FromJSON(jsonIter iter, ClassType& into);
 
-    template<typename classType>
+    template<typename ClassType>
     struct MembersHolder;
 
     template<typename memberType, memberType member>
