@@ -21,7 +21,7 @@ namespace tjson {
     ClassType from_json(const std::string& jsonString);
 
     template<typename ClassType>
-    jsonIter from_json(jsonIter iter, ClassType& into);
+    jsonIter from_json(jsonIter iter, ClassType* into);
 
     template<typename ClassType>
     struct MembersHolder;

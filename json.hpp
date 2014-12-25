@@ -40,10 +40,10 @@ namespace tjson {
     }
 
     template<typename ClassType>
-    jsonIter from_json(jsonIter iter, ClassType& classInto) {
+    jsonIter from_json(jsonIter iter, ClassType* into) {
         iter = parse_object_start(iter);
 
-        iter = detail::members_from_json(classInto, iter, MembersHolder<ClassType>::members());
+        iter = detail::members_from_json(into, iter, MembersHolder<ClassType>::members());
 
         return parse_object_end(iter);
     }
@@ -70,10 +70,10 @@ namespace tjson {
         };
 
         _data data;
-        // ClassType classInto;
+        // ClassType into;
         auto iter = jsonData.c_str();
 
-        from_json(iter, *data);
+        from_json(iter, static_cast<ClassType*>(data));
 
         return std::move(data);
     }

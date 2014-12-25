@@ -57,11 +57,11 @@ namespace tjson {
 
         template<typename ClassType,
                  enable_if<ClassType, std::is_enum> = true>
-        json_finline jsonIter from_json(jsonIter iter, ClassType& into) {
+        json_finline jsonIter from_json(jsonIter iter, ClassType* into) {
             using underlying_type = typename std::underlying_type<ClassType>::type;
             underlying_type value;
-            iter = detail::from_json(iter, value);
-            into = validate_enum(iter, value, EnumValidator<ClassType>::values());
+            iter = detail::from_json(iter, &value);
+            *into = validate_enum(iter, value, EnumValidator<ClassType>::values());
             return iter;
         }
     }

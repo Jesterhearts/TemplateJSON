@@ -129,21 +129,21 @@ namespace detail {
 
     template<typename ClassType,
              enable_if<ClassType, std::is_integral> = true>
-    json_finline jsonIter from_json(jsonIter iter, ClassType& into) {
-        return atoi(iter, into);
+    json_finline jsonIter from_json(jsonIter iter, ClassType* into) {
+        return atoi(iter, *into);
     }
 
     template<>
-    json_finline jsonIter from_json<bool, true>(jsonIter iter, bool& into) {
+    json_finline jsonIter from_json<bool, true>(jsonIter iter, bool* into) {
         iter = advance_past_whitespace(iter);
 
         if(memcmp("true", iter, 4) == 0) {
-            into = true;
+            *into = true;
             return iter + 4;
         }
 
         if(memcmp("false", iter, 5) == 0) {
-            into = false;
+            *into = false;
             return iter + 5;
         }
 
@@ -152,12 +152,12 @@ namespace detail {
 
     template<typename ClassType,
              enable_if<ClassType, std::is_floating_point> = true>
-    json_finline jsonIter from_json(jsonIter iter, ClassType& into) {
+    json_finline jsonIter from_json(jsonIter iter, ClassType* into) {
         iter = advance_past_whitespace(iter);
         auto endOfNumber = find_end_of_number(iter);
 
         try {
-            into = boost::lexical_cast<ClassType>(iter, std::distance(iter, endOfNumber));
+            *into = boost::lexical_cast<ClassType>(iter, std::distance(iter, endOfNumber));
         } catch(boost::bad_lexical_cast& e) {
             json_parsing_error(iter, e.what());
         }

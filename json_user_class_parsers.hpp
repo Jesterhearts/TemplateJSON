@@ -52,42 +52,42 @@ namespace detail {
     }
 
     template<typename ClassType, typename UnderlyingType>
-    json_finline jsonIter member_from_json(ClassType& classOn, jsonIter iter,
-                                         UnderlyingType ClassType::* member) {
-        return detail::from_json(iter, classOn.*member);
+    json_finline jsonIter member_from_json(ClassType* into, jsonIter iter,
+                                           UnderlyingType ClassType::* member) {
+        return detail::from_json(iter, &(into->*member));
     }
 
     template<typename ClassType, typename UnderlyingType>
-    json_finline jsonIter member_from_json(ClassType& classOn, jsonIter iter,
-                                         UnderlyingType* member) {
-        return detail::from_json(iter, *member);
+    json_finline jsonIter member_from_json(ClassType* into, jsonIter iter,
+                                           UnderlyingType* member) {
+        return detail::from_json(iter, member);
     }
 
     template<typename ClassType,
              typename UnderlyingType, UnderlyingType member,
              template<typename UT, UT MT> class MemberInfo>
-    json_finline jsonIter member_from_json(ClassType& classOn, jsonIter iter,
-                                         MemberInfo<UnderlyingType, member>&&) {
-        return member_from_json(classOn, iter, member);
+    json_finline jsonIter member_from_json(ClassType* into, jsonIter iter,
+                                           MemberInfo<UnderlyingType, member>&&) {
+        return member_from_json(into, iter, member);
     }
 
     template<typename ClassType, typename memberType>
-    json_finline jsonIter member_from_json(ClassType& classOn, jsonIter iter) {
-        return member_from_json(classOn, iter, memberType());
+    json_finline jsonIter member_from_json(ClassType* into, jsonIter iter) {
+        return member_from_json(into, iter, memberType());
     }
 
 #ifndef _MSC_VER
     template<typename ClassType,
              template<typename... M> class ML,
              typename... value_types>
-    json_finline jsonIter member_from_json(ClassType& on, jsonIter startOfKey, size_t keylen, jsonIter iter,
-                                         ML<>&&) {
+    json_finline jsonIter member_from_json(ClassType* on, jsonIter startOfKey, size_t keylen, jsonIter iter,
+                                           ML<>&&) {
 #else
     template<typename ClassType,
         typename... members,
         template<typename... M> class ML,
         typename... value_types>
-    json_finline jsonIter member_from_json(ClassType& on, jsonIter startOfKey, size_t keylen, jsonIter iter,
+    json_finline jsonIter member_from_json(ClassType* on, jsonIter startOfKey, size_t keylen, jsonIter iter,
                                          ML<members...>&&) {
 #endif
         json_parsing_error(startOfKey, "No key in object");
@@ -96,7 +96,7 @@ namespace detail {
     template<typename ClassType,
              typename member, typename... members,
              template<typename... M> class ML>
-    json_finline jsonIter member_from_json(ClassType& on, jsonIter startOfKey, size_t keylen, jsonIter iter,
+    json_finline jsonIter member_from_json(ClassType* on, jsonIter startOfKey, size_t keylen, jsonIter iter,
                                          ML<member, members...>&&) {
         constexpr const size_t len = sizeof(member::key) - 1;
         if(keylen == len && std::memcmp(startOfKey, member::key, len) == 0) {
@@ -109,13 +109,13 @@ namespace detail {
 
     template<typename ClassType, size_t membersRemaining>
     struct Reader {
-        json_finline static jsonIter members_from_json(ClassType& classInto, jsonIter iter) {
+        json_finline static jsonIter members_from_json(ClassType* into, jsonIter iter) {
             jsonIter startOfKey = find_key_begin(iter);
             size_t keylen = std::distance(startOfKey, find_key_end(startOfKey + 1));
 
             iter = parse_key_value_mapping(startOfKey + keylen);
 
-            iter = member_from_json(classInto, startOfKey, keylen, iter, MembersHolder<ClassType>::members());
+            iter = member_from_json(into, startOfKey, keylen, iter, MembersHolder<ClassType>::members());
 
             iter = advance_past_whitespace(iter);
             if(*iter == ',')  {
@@ -125,7 +125,7 @@ namespace detail {
                 json_parsing_error(iter, "Missing key separator");
             }
 
-            return Reader<ClassType, membersRemaining - 1>::members_from_json(classInto, iter);
+            return Reader<ClassType, membersRemaining - 1>::members_from_json(into, iter);
         }
 
         Reader() = delete;
@@ -134,13 +134,13 @@ namespace detail {
 
     template<typename ClassType>
     struct Reader<ClassType, 1> {
-        json_finline static jsonIter members_from_json(ClassType& classInto, jsonIter iter) {
+        json_finline static jsonIter members_from_json(ClassType* into, jsonIter iter) {
             jsonIter startOfKey = find_key_begin(iter);
             size_t keylen = std::distance(startOfKey, find_key_end(startOfKey + 1));
 
             iter = parse_key_value_mapping(startOfKey + keylen);
 
-            iter = member_from_json(classInto, startOfKey, keylen, iter, MembersHolder<ClassType>::members());
+            iter = member_from_json(into, startOfKey, keylen, iter, MembersHolder<ClassType>::members());
 
             iter = advance_past_whitespace(iter);
             if(*iter == ',') {
@@ -158,8 +158,8 @@ namespace detail {
     };
 
     template<typename ClassType, typename... types, template<typename... M> class ML>
-    json_finline jsonIter members_from_json(ClassType& classInto, jsonIter iter, ML<types...>&&) {
-        return Reader<ClassType, sizeof...(types)>::members_from_json(classInto, iter);
+    json_finline jsonIter members_from_json(ClassType* into, jsonIter iter, ML<types...>&&) {
+        return Reader<ClassType, sizeof...(types)>::members_from_json(into, iter);
     }
 } /* detail */
 } /* JSON */

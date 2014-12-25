@@ -25,16 +25,17 @@ namespace tjson {
 
         template<typename ClassType,
                  enable_if<ClassType, std::is_pointer> = true>
-        json_finline jsonIter from_json(jsonIter iter, ClassType& into) {
+        json_finline jsonIter from_json(jsonIter iter, ClassType* into) {
+            //Placement TODO
             iter = advance_past_whitespace(iter);
 
             if(memcmp("null", iter, 4) == 0) {
-                into = nullptr;
+                *into = nullptr;
                 return iter + 4;
             }
 
             typedef typename std::remove_pointer<ClassType>::type InternalClass;
-            into = new InternalClass;
+            *into = new InternalClass;
             iter = detail::from_json<InternalClass>(iter, *into);
             return iter;
         }
@@ -55,10 +56,11 @@ namespace tjson {
 
             template<typename T, typename... D,
                      template<typename T, typename... D> class SmartPointerType>
-            json_finline jsonIter from_json(jsonIter iter, SmartPointerType<T, D...>& into) {
+            json_finline jsonIter from_json(jsonIter iter, SmartPointerType<T, D...>* into) {
+                //Placement TODO
                 T* temp;
-                iter = detail::from_json(iter, temp);
-                into.reset(temp);
+                iter = detail::from_json(iter, &temp);
+                into->reset(temp);
                 return iter;
             }
         }
@@ -70,7 +72,7 @@ namespace tjson {
     }
 
     template<typename T>
-    json_finline jsonIter from_json(jsonIter iter, std::shared_ptr<T>& into) {
+    json_finline jsonIter from_json(jsonIter iter, std::shared_ptr<T>* into) {
         return detail::pointers::from_json(iter, into);
     }
 
@@ -80,7 +82,7 @@ namespace tjson {
     }
 
     template<typename T>
-    json_finline jsonIter from_json(jsonIter iter, std::weak_ptr<T>& into) {
+    json_finline jsonIter from_json(jsonIter iter, std::weak_ptr<T>* into) {
         return detail::pointers::from_json(iter, into);
     }
 
@@ -90,7 +92,7 @@ namespace tjson {
     }
 
     template<typename T>
-    json_finline jsonIter from_json(jsonIter iter, std::auto_ptr<T>& into) {
+    json_finline jsonIter from_json(jsonIter iter, std::auto_ptr<T>* into) {
         return detail::pointers::from_json(iter, into);
     }
 
@@ -100,7 +102,7 @@ namespace tjson {
     }
 
     template<typename T, typename D>
-    jsonIter from_json(jsonIter iter, std::unique_ptr<T, D>& into) {
+    jsonIter from_json(jsonIter iter, std::unique_ptr<T, D>* into) {
         return detail::pointers::from_json(iter, into);
     }
 }
