@@ -13,10 +13,6 @@
 #include <boost/preprocessor/variadic/to_seq.hpp>
 #include <boost/preprocessor/variadic/elem.hpp>
 
-#ifdef JSON_MULTITHREADED
-#include <atomic>
-#endif
-
 #include "json_common_defs.hpp"
 #include "json_value_parser.hpp"
 #include "json_user_class_parsers.hpp"

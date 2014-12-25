@@ -18,7 +18,8 @@ namespace tjson {
                 out.append("null", 4);
             }
             else {
-                detail::to_json(*from, out);
+                typedef typename std::decay<decltype(*from)>::type pointed_at;
+                detail::to_json<pointed_at>(*from, out);
             }
         }
 
@@ -34,7 +35,7 @@ namespace tjson {
 
             typedef typename std::remove_pointer<ClassType>::type InternalClass;
             into = new InternalClass;
-            iter = detail::from_json(iter, *into);
+            iter = detail::from_json<InternalClass>(iter, *into);
             return iter;
         }
 
@@ -46,7 +47,8 @@ namespace tjson {
                     out.append("null", 4);
                 }
                 else {
-                    detail::to_json(*from.get(), out);
+                    typedef typename std::decay<decltype(*from.get())>::type pointed_at;
+                    detail::to_json<pointed_at>(*from.get(), out);
                 }
             }
 
