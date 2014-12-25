@@ -2,6 +2,7 @@
 #ifndef __JSON_PARSING_HELPERS_HPP__
 #define __JSON_PARSING_HELPERS_HPP__
 
+#include <algorithm>
 #include <stdexcept>
 #include <cstring>
 #include <cstdlib>
@@ -122,7 +123,7 @@ namespace JSON {
     }
 
     json_finline jsonIter AdvancePastWhitespace(jsonIter iter) {
-        while(std::isspace(*iter)) {
+        while(isspace(*iter)) {
             ++iter;
         }
 
@@ -134,7 +135,7 @@ namespace JSON {
             ++iter;
         }
 
-        while(std::isdigit(*iter)) {
+        while(isdigit(*iter)) {
             ++iter;
         }
 
@@ -142,7 +143,7 @@ namespace JSON {
             ++iter;
         }
 
-        while(std::isdigit(*iter)) {
+        while(isdigit(*iter)) {
             ++iter;
         }
 
@@ -153,7 +154,7 @@ namespace JSON {
             }
         }
 
-        while(std::isdigit(*iter)) {
+        while(isdigit(*iter)) {
             ++iter;
         }
 
