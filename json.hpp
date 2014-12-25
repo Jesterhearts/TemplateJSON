@@ -13,6 +13,8 @@
 #include <boost/preprocessor/variadic/to_seq.hpp>
 #include <boost/preprocessor/variadic/elem.hpp>
 
+#include <cstdlib>
+
 #include "json_common_defs.hpp"
 #include "json_value_parser.hpp"
 #include "json_user_class_parsers.hpp"
@@ -48,12 +50,32 @@ namespace tjson {
 
     template<typename ClassType>
     ClassType from_json(const std::string& jsonData) {
-        ClassType classInto;
+        struct _data {
+            using _storage = typename
+                std::aligned_storage<sizeof(ClassType), std::alignment_of<ClassType>::value>::type;
+
+            operator ClassType*() {
+                return static_cast<ClassType*>(static_cast<void*>(&data));
+            }
+
+            operator ClassType&&() {
+                return std::move(*static_cast<ClassType*>(*this));
+            }
+
+            ~_data() {
+                static_cast<ClassType*>(static_cast<void*>(&data))->~ClassType();
+            }
+
+            _storage data;
+        };
+
+        _data data;
+        // ClassType classInto;
         auto iter = jsonData.c_str();
 
-        from_json(iter, classInto);
+        from_json(iter, *data);
 
-        return classInto;
+        return std::move(data);
     }
 };
 
