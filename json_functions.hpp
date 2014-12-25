@@ -4,24 +4,24 @@
 
 #include <string>
 
-namespace JSON {
+namespace tjson {
     namespace detail {
-        struct stringbuf;
+        struct Stringbuf;
     }
 
-   using jsonIter = const char*;
+    using jsonIter = const char*;
 
     template<typename ClassType>
-    void ToJSON(const ClassType& classFrom, detail::stringbuf& out);
+    void to_json(const ClassType& classFrom, detail::Stringbuf& out);
 
     template<typename ClassType>
-    std::string ToJSON(const ClassType& classFrom);
+    std::string to_json(const ClassType& classFrom);
 
     template<typename ClassType>
-    ClassType FromJSON(const std::string& jsonString);
+    ClassType from_json(const std::string& jsonString);
 
     template<typename ClassType>
-    jsonIter FromJSON(jsonIter iter, ClassType& into);
+    jsonIter from_json(jsonIter iter, ClassType& into);
 
     template<typename ClassType>
     struct MembersHolder;

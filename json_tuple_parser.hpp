@@ -5,37 +5,37 @@
 /* I want to include as few headers as possible, but tuples suck to set up properly */
 #include <tuple>
 
-namespace JSON {
+namespace tjson {
     template<typename TupleType,
              size_t curIndex,
              bool lastValue,
              typename curType,
              typename... Types>
     struct TupleHandler {
-        json_finline static void ToJSON(const TupleType& classFrom, detail::stringbuf& out) {
-            detail::ToJSON(std::get<curIndex>(classFrom), out);
+        json_finline static void to_json(const TupleType& classFrom, detail::Stringbuf& out) {
+            detail::to_json(std::get<curIndex>(classFrom), out);
             out.push_back(',');
             TupleHandler<TupleType,
                          curIndex + 1,
                          sizeof...(Types) == 1,
                          Types...
-                        >::ToJSON(classFrom, out);
+                        >::to_json(classFrom, out);
         }
 
-        json_finline static jsonIter FromJSON(jsonIter iter, TupleType& into) {
+        json_finline static jsonIter from_json(jsonIter iter, TupleType& into) {
             curType& value = std::get<curIndex>(into);
 
-            iter = detail::FromJSON(iter, value);
-            iter = AdvancePastWhitespace(iter);
+            iter = detail::from_json(iter, value);
+            iter = advance_past_whitespace(iter);
             if(*iter != ',') {
-                ThrowBadJSONError(iter, "Not a valid tuple value");
+                json_parsing_error(iter, "Not a valid tuple value");
             }
             ++iter;
             return TupleHandler<TupleType,
                                 curIndex + 1,
                                 sizeof...(Types) == 1,
                                 Types...
-                               >::FromJSON(iter, into);
+                               >::from_json(iter, into);
         }
     };
 
@@ -48,16 +48,16 @@ namespace JSON {
                          true,
                          curType,
                          Types...> {
-        json_finline static void ToJSON(const TupleType& classFrom, detail::stringbuf& out) {
-            detail::ToJSON(std::get<curIndex>(classFrom), out);
+        json_finline static void to_json(const TupleType& classFrom, detail::Stringbuf& out) {
+            detail::to_json(std::get<curIndex>(classFrom), out);
         }
 
-        json_finline static jsonIter FromJSON(jsonIter iter, TupleType& into) {
+        json_finline static jsonIter from_json(jsonIter iter, TupleType& into) {
             curType& value = std::get<curIndex>(into);
-            iter = detail::FromJSON(iter, value);
-            iter = AdvancePastWhitespace(iter);
+            iter = detail::from_json(iter, value);
+            iter = advance_past_whitespace(iter);
             if(*iter != ']') {
-                ThrowBadJSONError(iter, "No tuple end token");
+                json_parsing_error(iter, "No tuple end token");
             }
             ++iter;
             return iter;
@@ -65,20 +65,20 @@ namespace JSON {
     };
 
     template<typename... Types>
-    void ToJSON(const std::tuple<Types...>& from, detail::stringbuf& out) {
+    void to_json(const std::tuple<Types...>& from, detail::Stringbuf& out) {
         out.push_back('[');
         TupleHandler<std::tuple<Types...>,
                      0,
                      sizeof...(Types) == 1,
                      Types...
-                    >::ToJSON(from, out);
+                    >::to_json(from, out);
         out.push_back(']');
     }
 
     template<typename... Types>
-    jsonIter FromJSON(jsonIter iter, std::tuple<Types...>& into) {
+    jsonIter from_json(jsonIter iter, std::tuple<Types...>& into) {
         if(*iter != '[') {
-            ThrowBadJSONError(iter, "No tuple start token");
+            json_parsing_error(iter, "No tuple start token");
         }
         ++iter;
 
@@ -86,7 +86,7 @@ namespace JSON {
                             0,
                             sizeof...(Types) == 1,
                             Types...
-                           >::FromJSON(iter, into);
+                           >::from_json(iter, into);
     }
 }
 #endif

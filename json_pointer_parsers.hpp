@@ -9,23 +9,23 @@ namespace std {
     template<typename T> class auto_ptr;
 }
 
-namespace JSON {
+namespace tjson {
     namespace detail {
         template<typename ClassType,
                  enable_if<ClassType, std::is_pointer> = true>
-        json_finline void ToJSON(ClassType from, detail::stringbuf& out) {
+        json_finline void to_json(ClassType from, detail::Stringbuf& out) {
             if(!from) {
                 out.append("null", 4);
             }
             else {
-                detail::ToJSON(*from, out);
+                detail::to_json(*from, out);
             }
         }
 
         template<typename ClassType,
                  enable_if<ClassType, std::is_pointer> = true>
-        json_finline jsonIter FromJSON(jsonIter iter, ClassType& into) {
-            iter = AdvancePastWhitespace(iter);
+        json_finline jsonIter from_json(jsonIter iter, ClassType& into) {
+            iter = advance_past_whitespace(iter);
 
             if(memcmp("null", iter, 4) == 0) {
                 into = nullptr;
@@ -34,28 +34,28 @@ namespace JSON {
 
             typedef typename std::remove_pointer<ClassType>::type InternalClass;
             into = new InternalClass;
-            iter = detail::FromJSON(iter, *into);
+            iter = detail::from_json(iter, *into);
             return iter;
         }
 
         namespace pointers {
             template<typename T, typename... D,
                      template<typename T, typename... D> class SmartPointerType>
-            json_finline void ToJSON(const SmartPointerType<T, D...>& from, detail::stringbuf& out) {
+            json_finline void to_json(const SmartPointerType<T, D...>& from, detail::Stringbuf& out) {
                 if(!from) {
                     out.append("null", 4);
                 }
                 else {
-                    detail::ToJSON(*from.get(), out);
+                    detail::to_json(*from.get(), out);
                 }
             }
 
 
             template<typename T, typename... D,
                      template<typename T, typename... D> class SmartPointerType>
-            json_finline jsonIter FromJSON(jsonIter iter, SmartPointerType<T, D...>& into) {
+            json_finline jsonIter from_json(jsonIter iter, SmartPointerType<T, D...>& into) {
                 T* temp;
-                iter = detail::FromJSON(iter, temp);
+                iter = detail::from_json(iter, temp);
                 into.reset(temp);
                 return iter;
             }
@@ -63,43 +63,43 @@ namespace JSON {
     }
 
     template<typename T>
-    json_finline void ToJSON(const std::shared_ptr<T>& from, detail::stringbuf& out) {
-        detail::pointers::ToJSON(from, out);
+    json_finline void to_json(const std::shared_ptr<T>& from, detail::Stringbuf& out) {
+        detail::pointers::to_json(from, out);
     }
 
     template<typename T>
-    json_finline jsonIter FromJSON(jsonIter iter, std::shared_ptr<T>& into) {
-        return detail::pointers::FromJSON(iter, into);
+    json_finline jsonIter from_json(jsonIter iter, std::shared_ptr<T>& into) {
+        return detail::pointers::from_json(iter, into);
     }
 
     template<typename T>
-    json_finline void ToJSON(const std::weak_ptr<T>& from, detail::stringbuf& out) {
-        detail::pointers::ToJSON(from, out);
+    json_finline void to_json(const std::weak_ptr<T>& from, detail::Stringbuf& out) {
+        detail::pointers::to_json(from, out);
     }
 
     template<typename T>
-    json_finline jsonIter FromJSON(jsonIter iter, std::weak_ptr<T>& into) {
-        return detail::pointers::FromJSON(iter, into);
+    json_finline jsonIter from_json(jsonIter iter, std::weak_ptr<T>& into) {
+        return detail::pointers::from_json(iter, into);
     }
 
     template<typename T>
-    json_finline void ToJSON(const std::auto_ptr<T>& from, detail::stringbuf& out) {
-        detail::pointers::ToJSON(from, out);
+    json_finline void to_json(const std::auto_ptr<T>& from, detail::Stringbuf& out) {
+        detail::pointers::to_json(from, out);
     }
 
     template<typename T>
-    json_finline jsonIter FromJSON(jsonIter iter, std::auto_ptr<T>& into) {
-        return detail::pointers::FromJSON(iter, into);
+    json_finline jsonIter from_json(jsonIter iter, std::auto_ptr<T>& into) {
+        return detail::pointers::from_json(iter, into);
     }
 
     template<typename T, typename D>
-    json_finline void ToJSON(const std::unique_ptr<T, D>& from, detail::stringbuf& out) {
-        detail::pointers::ToJSON(from, out);
+    json_finline void to_json(const std::unique_ptr<T, D>& from, detail::Stringbuf& out) {
+        detail::pointers::to_json(from, out);
     }
 
     template<typename T, typename D>
-    jsonIter FromJSON(jsonIter iter, std::unique_ptr<T, D>& into) {
-        return detail::pointers::FromJSON(iter, into);
+    jsonIter from_json(jsonIter iter, std::unique_ptr<T, D>& into) {
+        return detail::pointers::from_json(iter, into);
     }
 }
 

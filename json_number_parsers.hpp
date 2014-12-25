@@ -7,23 +7,23 @@
 #include <algorithm>
 #include <limits>
 
-namespace JSON {
+namespace tjson {
 namespace detail {
-    template<size_t bytes> constexpr uint8_t MaxIntegerStringLength();
+    template<size_t bytes> constexpr uint8_t max_string_length();
     template<> //127, 255
-    constexpr uint8_t MaxIntegerStringLength<1>() { return 3; };
+    constexpr uint8_t max_string_length<1>() { return 3; };
     template<> //32767, 65535
-    constexpr uint8_t MaxIntegerStringLength<2>() { return 5; };
+    constexpr uint8_t max_string_length<2>() { return 5; };
     template<> //2147483647, 4294967295
-    constexpr uint8_t MaxIntegerStringLength<4>() { return 10; };
+    constexpr uint8_t max_string_length<4>() { return 10; };
     template<> //9223372036854775807, 18446744073709551615
-    constexpr uint8_t MaxIntegerStringLength<8>() { return 20; };
+    constexpr uint8_t max_string_length<8>() { return 20; };
 
     template<typename Type, Type base>
-    json_finline void itoa(Type value, detail::stringbuf& out) {
+    json_finline void itoa(Type value, detail::Stringbuf& out) {
         static_assert(base > 1 && base <= 10, "Unsupported base");
         static_assert(std::is_integral<Type>::value, "Must be an integral type");
-        const auto BufferSize = MaxIntegerStringLength<sizeof(Type)>() + std::is_signed<Type>::value;
+        const auto BufferSize = max_string_length<sizeof(Type)>() + std::is_signed<Type>::value;
 
         if(!value) {
             out.push_back('0');
@@ -65,18 +65,18 @@ namespace detail {
 
     template<typename ClassType,
              enable_if<ClassType, std::is_floating_point> = true>
-    json_finline void ToJSON(ClassType from, detail::stringbuf& out) {
+    json_finline void to_json(ClassType from, detail::Stringbuf& out) {
         out.append(boost::lexical_cast<std::string>(from));
     }
 
     template<typename ClassType,
              enable_if<ClassType, std::is_integral> = true>
-    json_finline void ToJSON(ClassType from, detail::stringbuf& out) {
+    json_finline void to_json(ClassType from, detail::Stringbuf& out) {
         itoa<ClassType, 10>(from, out);
     }
 
     template<>
-    json_finline void ToJSON<bool, true>(bool from, detail::stringbuf& out) {
+    json_finline void to_json<bool, true>(bool from, detail::Stringbuf& out) {
         out.append(from ? "true" : "false", from ? 4 : 5);
     }
 
@@ -84,10 +84,10 @@ namespace detail {
     json_finline jsonIter atoi(jsonIter iter, Type& into) {
         static_assert(std::is_integral<Type>::value, "Must be an integral value");
 
-        iter = AdvancePastWhitespace(iter);
+        iter = advance_past_whitespace(iter);
 
         if(!std::is_signed<Type>::value && *iter == '-') {
-            ThrowBadJSONError(iter, "Not a valid integral number");
+            json_parsing_error(iter, "Not a valid integral number");
         }
 
         const Type sign = (std::is_signed<Type>::value && *iter == '-') ? -1 : 1;
@@ -99,18 +99,18 @@ namespace detail {
 
         for(into = 0; std::isdigit(*iter); ++iter) {
             if(into > std::numeric_limits<Type>::max() / 10) {
-                ThrowBadJSONError(iter, "Value will overflow");
+                json_parsing_error(iter, "Value will overflow");
             }
             into *= 10;
 
             Type temp = (*iter) - '0';
             if(sign != -1 && temp > std::numeric_limits<Type>::max() - into) {
-                ThrowBadJSONError(iter, "Value will overflow");
+                json_parsing_error(iter, "Value will overflow");
             }
 
             if(sign == -1 && temp > std::numeric_limits<Type>::max() - into) {
                 if(temp > std::numeric_limits<Type>::max() - into + 1) {
-                    ThrowBadJSONError(iter, "Value will overflow");
+                    json_parsing_error(iter, "Value will overflow");
                 }
                 offByOne = true;
                 temp -= 1;
@@ -129,13 +129,13 @@ namespace detail {
 
     template<typename ClassType,
              enable_if<ClassType, std::is_integral> = true>
-    json_finline jsonIter FromJSON(jsonIter iter, ClassType& into) {
+    json_finline jsonIter from_json(jsonIter iter, ClassType& into) {
         return atoi(iter, into);
     }
 
     template<>
-    json_finline jsonIter FromJSON<bool, true>(jsonIter iter, bool& into) {
-        iter = AdvancePastWhitespace(iter);
+    json_finline jsonIter from_json<bool, true>(jsonIter iter, bool& into) {
+        iter = advance_past_whitespace(iter);
 
         if(memcmp("true", iter, 4) == 0) {
             into = true;
@@ -147,19 +147,19 @@ namespace detail {
             return iter + 5;
         }
 
-        ThrowBadJSONError(iter, "Could not convert to number");
+        json_parsing_error(iter, "Could not convert to number");
     }
 
     template<typename ClassType,
              enable_if<ClassType, std::is_floating_point> = true>
-    json_finline jsonIter FromJSON(jsonIter iter, ClassType& into) {
-        iter = AdvancePastWhitespace(iter);
-        auto endOfNumber = AdvancePastNumbers(iter);
+    json_finline jsonIter from_json(jsonIter iter, ClassType& into) {
+        iter = advance_past_whitespace(iter);
+        auto endOfNumber = find_end_of_number(iter);
 
         try {
             into = boost::lexical_cast<ClassType>(iter, std::distance(iter, endOfNumber));
         } catch(boost::bad_lexical_cast& e) {
-            ThrowBadJSONError(iter, e.what());
+            json_parsing_error(iter, e.what());
         }
 
         return endOfNumber;

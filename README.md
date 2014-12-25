@@ -15,8 +15,8 @@ To create a class:
 
 To convert a class to/from json:
 - `#include "json_functions.hpp"`
-- Call `JSON::ToJSON<YourClass>(classInstance)`
-- Or `JSON::FromJSON<YourClass>()`
+- Call `tjson::to_json(YourClass)`
+- Or `tjson::from_json(string_for_your_class)`
 
 
 --------
@@ -42,13 +42,13 @@ To convert the class to a JSON string:
 
     #include "json_functions.hpp"
     MySimpleClass simple;
-    std::string json = JSON::ToJSON<MySimpleClass>(simple);
+    std::string json = tjson::to_json(simple);
     /* json == {"m_int":10} */
     
 To create an instance of the class from JSON:
     
     #include "json_functions.hpp"
-    MySimpleClass simple = JSON::FromJSON<MySimpleClass>(json);
+    MySimpleClass simple = tjson::from_json<MySimpleClass>(json);
     
 ---
 Json conversion is fully-recursive for any type that is JSON_ENABLED. This includes all stl types and any user-defined classes which are JSON-Enabled using this code.
@@ -67,7 +67,7 @@ e.g.
     #include "json.hpp"
     JSON_ENABLE(NestedContainer, (m_simpleClass), (m_int, "not_nested_int"))
     
-Calling ToJSON would produce:
+Calling to_json would produce:
 
     {"m_simpleClass":{"m_int":10},"not_nested_int":20}
 

@@ -20,13 +20,13 @@ int main() {
     std::string json;
 
     Simple simple;
-    json = JSON::ToJSON<Simple>(simple);
+    json = tjson::to_json<Simple>(simple);
     std::cout << json << std::endl;
 
     try
     {
-        Simple simple = JSON::FromJSON<Simple>(json);
-        json = JSON::ToJSON<Simple>(simple);
+        Simple simple = tjson::from_json<Simple>(json);
+        json = tjson::to_json<Simple>(simple);
         std::cout << "deserialized: " << json << std::endl << std::endl;
     }
     catch(const std::invalid_argument& e)
@@ -35,13 +35,13 @@ int main() {
     }
 
     NestedContainer nc;
-    json = JSON::ToJSON<NestedContainer>(nc);
+    json = tjson::to_json<NestedContainer>(nc);
     std::cout << json << std::endl;
 
     try
     {
-        NestedContainer nc2 = JSON::FromJSON<NestedContainer>(json);
-        json = JSON::ToJSON<NestedContainer>(nc2);
+        NestedContainer nc2 = tjson::from_json<NestedContainer>(json);
+        json = tjson::to_json<NestedContainer>(nc2);
         std::cout << "deserialized: " << json << std::endl << std::endl;
     }
     catch(const std::invalid_argument& e)
@@ -50,13 +50,13 @@ int main() {
     }
 
     Test a;
-    json = JSON::ToJSON<Test>(a);
+    json = tjson::to_json<Test>(a);
     std::cout << json << std::endl;
 
     try
     {
-        Test t2 = JSON::FromJSON<Test>(json);
-        json = JSON::ToJSON<Test>(t2);
+        Test t2 = tjson::from_json<Test>(json);
+        json = tjson::to_json<Test>(t2);
         std::cout << "deserialized: " << json << std::endl << std::endl;
     }
     catch(const std::invalid_argument& e)
@@ -65,12 +65,12 @@ int main() {
     }
 
     Nested n;
-    json = JSON::ToJSON<Nested>(n);
+    json = tjson::to_json<Nested>(n);
     std::cout << json << std::endl;
     try
     {
-        Nested n2 = JSON::FromJSON<Nested>(json);
-        json = JSON::ToJSON<Nested>(n2);
+        Nested n2 = tjson::from_json<Nested>(json);
+        json = tjson::to_json<Nested>(n2);
         std::cout << "deserialized: " << json << std::endl;
     }
     catch(const std::invalid_argument& e)
@@ -82,13 +82,13 @@ int main() {
     v.myvec.push_back('a');
     v.myvec.push_back('b');
     v.myvec.push_back('c');
-    json = JSON::ToJSON<HasVector>(v);
+    json = tjson::to_json<HasVector>(v);
     std::cout << json << std::endl;
 
     try
     {
-        HasVector v2 = JSON::FromJSON<HasVector>(json);
-        json = JSON::ToJSON<HasVector>(v2);
+        HasVector v2 = tjson::from_json<HasVector>(json);
+        json = tjson::to_json<HasVector>(v2);
         std::cout << "deserialized: " << json << std::endl << std::endl;
     }
     catch(const std::invalid_argument& e)
@@ -98,12 +98,12 @@ int main() {
 
     UsesTuple ut;
     ut.mytuple = std::make_tuple('t', 10, 12.5, 100);
-    json = JSON::ToJSON<UsesTuple>(ut);
+    json = tjson::to_json<UsesTuple>(ut);
     std::cout << json << std::endl;
     try
     {
-        UsesTuple ut2 = JSON::FromJSON<UsesTuple>(json);
-        json = JSON::ToJSON<UsesTuple>(ut2);
+        UsesTuple ut2 = tjson::from_json<UsesTuple>(json);
+        json = tjson::to_json<UsesTuple>(ut2);
         std::cout << "deserialized: " << json << std::endl << std::endl;
     }
     catch(const std::invalid_argument& e)
@@ -114,13 +114,13 @@ int main() {
     HasMap hm;
     hm.mymap.insert(std::make_pair(1337, 3.14));
     hm.mymap.insert(std::make_pair(314159, 100.0));
-    json = JSON::ToJSON<HasMap>(hm);
+    json = tjson::to_json<HasMap>(hm);
     std::cout << json << std::endl;
 
     try
     {
-        HasMap hm2 = JSON::FromJSON<HasMap>(json);
-        json = JSON::ToJSON<HasMap>(hm2);
+        HasMap hm2 = tjson::from_json<HasMap>(json);
+        json = tjson::to_json<HasMap>(hm2);
         std::cout << "deserialized: " << json << std::endl << std::endl;
     }
     catch(const std::invalid_argument& e)
@@ -130,12 +130,12 @@ int main() {
 
     HasPTR p;
     p.myptr = nullptr;
-    json = JSON::ToJSON<HasPTR>(p);
+    json = tjson::to_json<HasPTR>(p);
     std::cout << json << std::endl;
     try
     {
-        HasPTR hp2 = JSON::FromJSON<HasPTR>(json);
-        json = JSON::ToJSON<HasPTR>(hp2);
+        HasPTR hp2 = tjson::from_json<HasPTR>(json);
+        json = tjson::to_json<HasPTR>(hp2);
         std::cout << "deserialized: " << json << std::endl << std::endl;
     }
     catch(const std::invalid_argument& e)
@@ -144,13 +144,13 @@ int main() {
     }
 
     p.myptr = new int(10);
-    json = JSON::ToJSON<HasPTR>(p);
+    json = tjson::to_json<HasPTR>(p);
     std::cout << json << std::endl;
     delete p.myptr;
     try
     {
-        HasPTR hp2 = JSON::FromJSON<HasPTR>(json);
-        json = JSON::ToJSON<HasPTR>(hp2);
+        HasPTR hp2 = tjson::from_json<HasPTR>(json);
+        json = tjson::to_json<HasPTR>(hp2);
         std::cout << "deserialized: " << json << std::endl << std::endl;
     }
     catch(const std::invalid_argument& e)
@@ -162,12 +162,12 @@ int main() {
     ha.myintarr[0] = 1;
     ha.myintarr[1] = 1;
     ha.myintarr[2] = 2;
-    json = JSON::ToJSON<HasArray>(ha);
+    json = tjson::to_json<HasArray>(ha);
     std::cout << json << std::endl;
     try
     {
-        HasArray ha2 = JSON::FromJSON<HasArray>(json);
-        json = JSON::ToJSON<HasArray>(ha2);
+        HasArray ha2 = tjson::from_json<HasArray>(json);
+        json = tjson::to_json<HasArray>(ha2);
         std::cout << "deserialized: " << json << std::endl << std::endl;
     }
     catch(const std::invalid_argument& e)
@@ -176,12 +176,12 @@ int main() {
     }
 
     HasSmrtPtrs hsp;
-    json = JSON::ToJSON<HasSmrtPtrs>(hsp);
+    json = tjson::to_json<HasSmrtPtrs>(hsp);
     std::cout << json << std::endl;
     try
     {
-        HasSmrtPtrs hsp2 = JSON::FromJSON<HasSmrtPtrs>(json);
-        json = JSON::ToJSON<HasSmrtPtrs>(hsp2);
+        HasSmrtPtrs hsp2 = tjson::from_json<HasSmrtPtrs>(json);
+        json = tjson::to_json<HasSmrtPtrs>(hsp2);
         std::cout << "deserialized: " << json << std::endl << std::endl;
     }
     catch(const std::invalid_argument& e)
@@ -191,12 +191,12 @@ int main() {
 
     hsp.mysmartint.reset(new int(10));
     hsp.myshrdint.reset(new int(11));
-    json = JSON::ToJSON<HasSmrtPtrs>(hsp);
+    json = tjson::to_json<HasSmrtPtrs>(hsp);
     std::cout << json << std::endl;
     try
     {
-        HasSmrtPtrs hsp2 = JSON::FromJSON<HasSmrtPtrs>(json);
-        json = JSON::ToJSON<HasSmrtPtrs>(hsp2);
+        HasSmrtPtrs hsp2 = tjson::from_json<HasSmrtPtrs>(json);
+        json = tjson::to_json<HasSmrtPtrs>(hsp2);
         std::cout << "deserialized: " << json << std::endl << std::endl;
     }
     catch(const std::invalid_argument& e)

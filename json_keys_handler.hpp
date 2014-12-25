@@ -2,7 +2,7 @@
 #ifndef __JSON_KEYS_HANDLER_HPP__
 #define __JSON_KEYS_HANDLER_HPP__
 
-namespace JSON {
+namespace tjson {
 
 #define JSON_CREATE_KEYS(CLASS_NAME, ...)               \
     BOOST_PP_SEQ_FOR_EACH(                              \

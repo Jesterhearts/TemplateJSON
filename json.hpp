@@ -23,39 +23,39 @@
 #include "json_keys_handler.hpp"
 #include "json_member_mapper.hpp"
 
-namespace JSON {
+namespace tjson {
     template<typename ClassType>
-    void ToJSON(const ClassType& classFrom, detail::stringbuf& out) {
+    void to_json(const ClassType& classFrom, detail::Stringbuf& out) {
         out.push_back('{');
-        detail::MembersToJSON(classFrom, out, MembersHolder<ClassType>::members());
+        detail::members_to_json(classFrom, out, MembersHolder<ClassType>::members());
 
         out.push_back('}');
     }
 
     template<typename ClassType>
-    std::string ToJSON(const ClassType& classFrom) {
-        detail::stringbuf json;
+    std::string to_json(const ClassType& classFrom) {
+        detail::Stringbuf json;
 
-        JSON::ToJSON(classFrom, json);
+        tjson::to_json(classFrom, json);
 
         return json.to_string();
     }
 
     template<typename ClassType>
-    jsonIter FromJSON(jsonIter iter, ClassType& classInto) {
-        iter = ValidateObjectStart(iter);
+    jsonIter from_json(jsonIter iter, ClassType& classInto) {
+        iter = parse_object_start(iter);
 
-        iter = detail::MembersFromJSON(classInto, iter, MembersHolder<ClassType>::members());
+        iter = detail::members_from_json(classInto, iter, MembersHolder<ClassType>::members());
 
-        return ValidateObjectEnd(iter);
+        return parse_object_end(iter);
     }
 
     template<typename ClassType>
-    ClassType FromJSON(const std::string& jsonData) {
+    ClassType from_json(const std::string& jsonData) {
         ClassType classInto;
         auto iter = jsonData.c_str();
 
-        FromJSON(iter, classInto);
+        from_json(iter, classInto);
 
         return classInto;
     }
@@ -63,16 +63,16 @@ namespace JSON {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 #define JSON_ENABLE(CLASS_NAME, ...)                                \
-    namespace JSON {                                                \
+    namespace tjson {                                                \
         JSON_CREATE_KEYS(CLASS_NAME, __VA_ARGS__)                   \
         JSON_CREATE_MEMBERS(CLASS_NAME, __VA_ARGS__)                \
                                                                     \
-        template std::string ToJSON<CLASS_NAME>(const CLASS_NAME&);     \
-        template CLASS_NAME FromJSON<CLASS_NAME>(const std::string&);   \
+        template std::string to_json<CLASS_NAME>(const CLASS_NAME&);     \
+        template CLASS_NAME from_json<CLASS_NAME>(const std::string&);   \
     }
 
 #define JSON_ENABLE_ENUM(ENUM_NAME, ...)                            \
-    namespace JSON {                                                \
+    namespace tjson {                                                \
         template<>                                                  \
         struct EnumValidator<ENUM_NAME> {                           \
             constexpr static EnumValueList<ENUM_NAME, __VA_ARGS__>  \
@@ -83,7 +83,7 @@ namespace JSON {
     }
 
 #define JSON_ENABLE_CONTIGUOUS_ENUM(ENUM_NAME, ...)                         \
-    namespace JSON {                                                        \
+    namespace tjson {                                                        \
         template<>                                                          \
         struct EnumValidator<ENUM_NAME> {                                   \
             constexpr static ContiguousEnumValueList<ENUM_NAME, __VA_ARGS__>\

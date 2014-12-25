@@ -7,7 +7,7 @@
 #include <cstring>
 #include <cstdlib>
 
-namespace JSON {
+namespace tjson {
         namespace detail {
         template<typename ClassType>
         using basic_type = typename std::remove_reference<ClassType>::type;
@@ -22,53 +22,53 @@ namespace JSON {
         using enable_if_const = typename std::enable_if<std::is_const<basic_type<ClassType>>::value, bool>::type;
 
         template<typename ClassType, enable_if<ClassType, std::is_enum> = true>
-        void ToJSON(ClassType from, detail::stringbuf& out);
+        void to_json(ClassType from, detail::Stringbuf& out);
 
         template<typename ClassType, enable_if<ClassType, std::is_enum> = true>
-        jsonIter FromJSON(jsonIter iter, ClassType& into);
+        jsonIter from_json(jsonIter iter, ClassType& into);
 
         template<typename ClassType, enable_if<ClassType, std::is_integral> = true>
-        void ToJSON(ClassType from, detail::stringbuf& out);
+        void to_json(ClassType from, detail::Stringbuf& out);
 
         template<typename ClassType, enable_if<ClassType, std::is_integral> = true>
-        jsonIter FromJSON(jsonIter iter, ClassType& into);
+        jsonIter from_json(jsonIter iter, ClassType& into);
 
         template<typename ClassType, enable_if<ClassType, std::is_floating_point> = true>
-        void ToJSON(ClassType from, detail::stringbuf& out);
+        void to_json(ClassType from, detail::Stringbuf& out);
 
         template<typename ClassType, enable_if<ClassType, std::is_floating_point> = true>
-        jsonIter FromJSON(jsonIter iter, ClassType& into);
+        jsonIter from_json(jsonIter iter, ClassType& into);
 
         template<typename ClassType, enable_if<ClassType, std::is_pointer> = true>
-        void ToJSON(ClassType from, detail::stringbuf& out);
+        void to_json(ClassType from, detail::Stringbuf& out);
 
         template<typename ClassType, enable_if<ClassType, std::is_pointer> = true>
-        jsonIter FromJSON(jsonIter iter, ClassType& into);
+        jsonIter from_json(jsonIter iter, ClassType& into);
 
         template<typename ClassType, enable_if<ClassType, std::is_array> = true>
-        void ToJSON(const ClassType& from, detail::stringbuf& out);
+        void to_json(const ClassType& from, detail::Stringbuf& out);
 
         template<typename ClassType, enable_if<ClassType, std::is_array> = true>
-        jsonIter FromJSON(jsonIter iter, ClassType& into);
+        jsonIter from_json(jsonIter iter, ClassType& into);
 
         template<typename ClassType, enable_if<ClassType, std::is_class> = true>
-        void ToJSON(const ClassType& from, detail::stringbuf& out);
+        void to_json(const ClassType& from, detail::Stringbuf& out);
 
         template<typename ClassType, enable_if<ClassType, std::is_class> = true>
-        jsonIter FromJSON(jsonIter iter, ClassType& into);
+        jsonIter from_json(jsonIter iter, ClassType& into);
 
         template<typename ClassType, enable_if_const<ClassType> = true>
         json_deserialize_const_warning
-        jsonIter FromJSON(jsonIter iter, ClassType& into);
+        jsonIter from_json(jsonIter iter, ClassType& into);
 
-        struct stringbuf {
-            stringbuf() {
+        struct Stringbuf {
+            Stringbuf() {
                 m_size = 1024;
                 m_buf = static_cast<char*>(std::malloc(m_size));
                 index = m_buf;
             }
 
-            ~stringbuf() {
+            ~Stringbuf() {
                 std::free(m_buf);
             }
 
@@ -116,13 +116,13 @@ namespace JSON {
         };
     }
 
-    json_no_return inline void ThrowBadJSONError(jsonIter iter, std::string&& errmsg) {
+    json_no_return inline void json_parsing_error(jsonIter iter, std::string&& errmsg) {
         jsonIter endIter = iter + std::min<size_t>(std::strlen(iter), 1000);
         std::string badJson(iter, endIter);
         throw std::invalid_argument(errmsg + ": " + badJson);
     }
 
-    json_finline jsonIter AdvancePastWhitespace(jsonIter iter) {
+    json_finline jsonIter advance_past_whitespace(jsonIter iter) {
         while(isspace(*iter)) {
             ++iter;
         }
@@ -130,7 +130,7 @@ namespace JSON {
         return iter;
     }
 
-    json_finline jsonIter AdvancePastNumbers(jsonIter iter) {
+    json_finline jsonIter find_end_of_number(jsonIter iter) {
         if(*iter == '-') {
             ++iter;
         }
@@ -161,7 +161,7 @@ namespace JSON {
         return iter;
     }
 
-    json_finline jsonIter AdvanceToEndOfString(jsonIter iter) {
+    json_finline jsonIter find_end_of_string(jsonIter iter) {
         bool escaping = true;
 
         while(iter) {
@@ -178,48 +178,48 @@ namespace JSON {
         return iter;
     }
 
-    json_finline jsonIter ValidateObjectStart(jsonIter iter) {
-        iter = AdvancePastWhitespace(iter);
+    json_finline jsonIter parse_object_start(jsonIter iter) {
+        iter = advance_past_whitespace(iter);
         if(*iter != '{') {
-            ThrowBadJSONError(iter, "No object start token");
+            json_parsing_error(iter, "No object start token");
         }
         ++iter;
 
         return iter;
     }
 
-    json_finline jsonIter ValidateObjectEnd(jsonIter iter) {
-        iter = AdvancePastWhitespace(iter);
+    json_finline jsonIter parse_object_end(jsonIter iter) {
+        iter = advance_past_whitespace(iter);
         if(*iter != '}') {
-            ThrowBadJSONError(iter, "No object end token");
+            json_parsing_error(iter, "No object end token");
         }
         ++iter;
         return iter;
     }
 
-    json_finline jsonIter ValidateKeyValueMapping(jsonIter iter) {
-        iter = AdvancePastWhitespace(iter);
+    json_finline jsonIter parse_key_value_mapping(jsonIter iter) {
+        iter = advance_past_whitespace(iter);
         if(*iter != ':') {
-            ThrowBadJSONError(iter, "Not a valid key-value mapping");
+            json_parsing_error(iter, "Not a valid key-value mapping");
         }
         ++iter;
         return iter;
     }
 
     /* Advance past start quote of key string */
-    json_finline jsonIter FindStartOfKey(jsonIter iter) {
-        iter = AdvancePastWhitespace(iter);
+    json_finline jsonIter find_key_begin(jsonIter iter) {
+        iter = advance_past_whitespace(iter);
         if(*iter != '\"') {
-            ThrowBadJSONError(iter, "Missing key");
+            json_parsing_error(iter, "Missing key");
         }
         return iter;
     }
 
     /* Advance to end quote of key string */
-    json_finline jsonIter FindEndOfKey(jsonIter iter) {
-        iter = AdvanceToEndOfString(iter);
+    json_finline jsonIter find_key_end(jsonIter iter) {
+        iter = find_end_of_string(iter);
         if(*iter != '\"') {
-            ThrowBadJSONError(iter, "No close \" for key");
+            json_parsing_error(iter, "No close \" for key");
         }
 
         return iter + 1;

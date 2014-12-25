@@ -6,18 +6,18 @@
 
 #define JSON_PRIVATE_ACCESS()                               \
     template<typename ClassType>                            \
-    friend std::string JSON::ToJSON(const ClassType&);      \
+    friend std::string tjson::to_json(const ClassType&);      \
                                                             \
     template<typename ClassType>                            \
-    friend ClassType JSON::FromJSON(const std::string&);    \
+    friend ClassType tjson::from_json(const std::string&);    \
                                                             \
     template<typename ClassType>                            \
-    friend struct JSON::MembersHolder;                      \
+    friend struct tjson::MembersHolder;                      \
                                                             \
     template<typename memberType, memberType member>        \
-    friend struct JSON::MemberInfo;                         \
+    friend struct tjson::MemberInfo;                         \
                                                             \
     template<typename ClassType>                            \
-    friend JSON::jsonIter JSON::FromJSON(JSON::jsonIter, ClassType&);
+    friend tjson::jsonIter tjson::from_json(tjson::jsonIter, ClassType&);
 
 #endif

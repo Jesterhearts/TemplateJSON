@@ -2,41 +2,41 @@
 #ifndef __JSON_ARRAY_PARSER_HPP__
 #define __JSON_ARRAY_PARSER_HPP__
 
-namespace JSON {
+namespace tjson {
 namespace detail {
     template<typename ClassType,
              enable_if<ClassType, std::is_array> = true>
-    json_finline void ToJSON(const ClassType& from, detail::stringbuf& out) {
+    json_finline void to_json(const ClassType& from, detail::Stringbuf& out) {
         if(std::extent<ClassType>::value == 0) {
             out.append("[]", 2);
         }
 
         out.push_back('[');
-        detail::ToJSON<typename std::remove_extent<ClassType>::type>(from[0], out);
+        detail::to_json<typename std::remove_extent<ClassType>::type>(from[0], out);
 
         for(size_t i = 1; i < std::extent<ClassType>::value; ++i) {
             out.push_back(',');
-            detail::ToJSON<typename std::remove_extent<ClassType>::type>(from[i], out);
+            detail::to_json<typename std::remove_extent<ClassType>::type>(from[i], out);
         }
         out.push_back(']');
     }
 
     template<typename ClassType,
              enable_if<ClassType, std::is_array> = true>
-    json_finline jsonIter FromJSON(jsonIter iter, ClassType& into) {
-        iter = AdvancePastWhitespace(iter);
+    json_finline jsonIter from_json(jsonIter iter, ClassType& into) {
+        iter = advance_past_whitespace(iter);
 
         if(*iter != '[') {
-            ThrowBadJSONError(iter, "No array start token");
+            json_parsing_error(iter, "No array start token");
         }
         ++iter;
 
         for(size_t i = 0; i < std::extent<ClassType>::value; ++i) {
-            iter = detail::FromJSON(iter, into[i]);
-            iter = AdvancePastWhitespace(iter);
+            iter = detail::from_json(iter, into[i]);
+            iter = advance_past_whitespace(iter);
 
             if(*iter != ',' && i < std::extent<ClassType>::value - 1) {
-                ThrowBadJSONError(iter, "Missing comma in JSON array");
+                json_parsing_error(iter, "Missing comma in JSON array");
             }
             else if(*iter == ',') {
                 ++iter;
@@ -44,7 +44,7 @@ namespace detail {
         }
 
         if(*iter != ']') {
-            ThrowBadJSONError(iter, "No end or too many items in JSON array");
+            json_parsing_error(iter, "No end or too many items in JSON array");
         }
 
         ++iter;

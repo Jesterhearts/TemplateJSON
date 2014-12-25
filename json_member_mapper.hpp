@@ -2,49 +2,49 @@
 #ifndef __JSON_MEMBER_MAPPER_HPP__
 #define __JSON_MEMBER_MAPPER_HPP__
 
-namespace JSON {
+namespace tjson {
     template<typename memberType, memberType member>
     struct MemberInfo {};
 
     template<typename... members>
     struct MemberList {};
 
-    template<typename ClassType, typename underlyingType>
-    json_finline jsonIter MemberFromJSON(ClassType& classOn, jsonIter iter,
-                                         underlyingType ClassType::* member) {
-        return detail::FromJSON(iter, classOn.*member);
+    template<typename ClassType, typename UnderlyingType>
+    json_finline jsonIter member_from_json(ClassType& classOn, jsonIter iter,
+                                         UnderlyingType ClassType::* member) {
+        return detail::from_json(iter, classOn.*member);
     }
 
-    template<typename ClassType, typename underlyingType>
-    json_finline jsonIter MemberFromJSON(ClassType& classOn, jsonIter iter,
-                                         underlyingType* member) {
-        return detail::FromJSON(iter, *member);
+    template<typename ClassType, typename UnderlyingType>
+    json_finline jsonIter member_from_json(ClassType& classOn, jsonIter iter,
+                                         UnderlyingType* member) {
+        return detail::from_json(iter, *member);
     }
 
     template<typename ClassType,
-             typename underlyingType, underlyingType member,
+             typename UnderlyingType, UnderlyingType member,
              template<typename UT, UT MT> class MemberInfo>
-    json_finline jsonIter MemberFromJSON(ClassType& classOn, jsonIter iter,
-                                         MemberInfo<underlyingType, member>&&) {
-        return MemberFromJSON(classOn, iter, member);
+    json_finline jsonIter member_from_json(ClassType& classOn, jsonIter iter,
+                                         MemberInfo<UnderlyingType, member>&&) {
+        return member_from_json(classOn, iter, member);
     }
 
     template<typename ClassType, typename memberType>
-    json_finline jsonIter MemberFromJSON(ClassType& classOn, jsonIter iter) {
-        return MemberFromJSON(classOn, iter, memberType());
+    json_finline jsonIter member_from_json(ClassType& classOn, jsonIter iter) {
+        return member_from_json(classOn, iter, memberType());
     }
 
     template<typename ClassType,
              typename member, typename... members,
              template<typename... M> class ML>
-    json_finline jsonIter MemberFromJSON(ClassType& on, jsonIter startOfKey, size_t keylen, jsonIter iter,
+    json_finline jsonIter member_from_json(ClassType& on, jsonIter startOfKey, size_t keylen, jsonIter iter,
                                          ML<member, members...>&&) {
         constexpr const size_t len = sizeof(member::key) - 1;
         if(keylen == len && std::memcmp(startOfKey, member::key, len) == 0) {
-            return MemberFromJSON<ClassType, member>(on, iter);
+            return member_from_json<ClassType, member>(on, iter);
         }
         else {
-            return MemberFromJSON(on, startOfKey, keylen, iter, ML<members...>());
+            return member_from_json(on, startOfKey, keylen, iter, ML<members...>());
         }
     }
 
@@ -52,17 +52,17 @@ namespace JSON {
     template<typename ClassType,
              template<typename... M> class ML,
              typename... value_types>
-    json_finline jsonIter MemberFromJSON(ClassType& on, jsonIter startOfKey, size_t keylen, jsonIter iter,
+    json_finline jsonIter member_from_json(ClassType& on, jsonIter startOfKey, size_t keylen, jsonIter iter,
                                          ML<>&&) {
 #else
     template<typename ClassType,
         typename... members,
         template<typename... M> class ML,
         typename... value_types>
-    json_finline jsonIter MemberFromJSON(ClassType& on, jsonIter startOfKey, size_t keylen, jsonIter iter,
+    json_finline jsonIter member_from_json(ClassType& on, jsonIter startOfKey, size_t keylen, jsonIter iter,
                                          ML<members...>&&) {
 #endif
-        ThrowBadJSONError(startOfKey, "No key in object");
+        json_parsing_error(startOfKey, "No key in object");
     }
 
 #define JSON_LIST_MEMBERS(CLASS_NAME, ...)          \

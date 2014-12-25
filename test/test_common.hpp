@@ -16,14 +16,14 @@ void RunTest() {
     std::string json;
 
     TestType t1;
-    json = JSON::ToJSON<TestType>(t1);
+    json = tjson::to_json<TestType>(t1);
 
     std::cout << "\tserialized: " << json << std::endl;
 
     try
     {
-        TestType t2 = JSON::FromJSON<TestType>(json);
-        std::string json2 = JSON::ToJSON<TestType>(t2);
+        TestType t2 = tjson::from_json<TestType>(json);
+        std::string json2 = tjson::to_json<TestType>(t2);
         if(json == json2) {
             std::cout << "\tSuccess!" << std::endl;
         } else {

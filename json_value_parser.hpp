@@ -14,25 +14,25 @@
 #include "json_tuple_parser.hpp"
 #include "json_pointer_parsers.hpp"
 
-namespace JSON {
+namespace tjson {
     template<>
-    void ToJSON(const std::string& from, detail::stringbuf& out) {
+    void to_json(const std::string& from, detail::Stringbuf& out) {
         out.push_back('\"');
         out.append(from);
         out.push_back('\"');
     }
 
     template<>
-    jsonIter FromJSON(jsonIter iter, std::string& classInto) {
-        iter = AdvancePastWhitespace(iter);
+    jsonIter from_json(jsonIter iter, std::string& classInto) {
+        iter = advance_past_whitespace(iter);
         if(*iter != '\"') {
-            ThrowBadJSONError(iter, "Not a valid string begin token");
+            json_parsing_error(iter, "Not a valid string begin token");
         }
 
         ++iter;
-        auto endOfString = AdvanceToEndOfString(iter);
+        auto endOfString = find_end_of_string(iter);
         if(*endOfString != '\"') {
-            ThrowBadJSONError(iter, "Not a valid string end token");
+            json_parsing_error(iter, "Not a valid string end token");
         }
 
         size_t len = std::distance(iter, endOfString);
@@ -44,7 +44,7 @@ namespace JSON {
     }
 
     template<>
-    void ToJSON(const std::wstring& from, detail::stringbuf& out) {
+    void to_json(const std::wstring& from, detail::Stringbuf& out) {
         out.push_back('\"');
 
         std::string narrowString(from.begin(), from.end());
@@ -55,16 +55,16 @@ namespace JSON {
 
 
     template<>
-    jsonIter FromJSON(jsonIter iter, std::wstring& classInto) {
-        iter = AdvancePastWhitespace(iter);
+    jsonIter from_json(jsonIter iter, std::wstring& classInto) {
+        iter = advance_past_whitespace(iter);
         if(*iter != '\"') {
-            ThrowBadJSONError(iter, "Not a valid string begin token");
+            json_parsing_error(iter, "Not a valid string begin token");
         }
 
         ++iter;
-        auto endOfString = AdvanceToEndOfString(iter);
+        auto endOfString = find_end_of_string(iter);
         if(*endOfString != '\"') {
-            ThrowBadJSONError(iter, "Not a valid string end token");
+            json_parsing_error(iter, "Not a valid string end token");
         }
 
         classInto = std::wstring(iter, endOfString);
@@ -73,20 +73,20 @@ namespace JSON {
     }
 
     template<typename T1, typename T2>
-    void ToJSON(const std::pair<T1, T2>& from, detail::stringbuf& out) {
+    void to_json(const std::pair<T1, T2>& from, detail::Stringbuf& out) {
         out.push_back('[');
-        detail::ToJSON(from.first, out);
+        detail::to_json(from.first, out);
         out.push_back(',');
-        detail::ToJSON(from.second, out);
+        detail::to_json(from.second, out);
         out.push_back(']');
     }
 
     template<typename T1, typename T2>
-    jsonIter FromJSON(jsonIter iter, std::pair<T1, T2>& into) {
-        iter = AdvancePastWhitespace(iter);
+    jsonIter from_json(jsonIter iter, std::pair<T1, T2>& into) {
+        iter = advance_past_whitespace(iter);
 
         if(*iter != '[') {
-            ThrowBadJSONError(iter, "No array start token");
+            json_parsing_error(iter, "No array start token");
         }
         ++iter;
 
@@ -96,19 +96,19 @@ namespace JSON {
         FirstType& first = const_cast<FirstType&>(into.first);
         SecondType& second = const_cast<SecondType&>(into.second);
 
-        iter = detail::FromJSON(iter, first);
+        iter = detail::from_json(iter, first);
 
-        iter = AdvancePastWhitespace(iter);
+        iter = advance_past_whitespace(iter);
         if(*iter != ',') {
-            ThrowBadJSONError(iter, "Pair does not have two values");
+            json_parsing_error(iter, "Pair does not have two values");
         }
         ++iter;
 
-        iter = detail::FromJSON(iter, second);
+        iter = detail::from_json(iter, second);
 
-        iter = AdvancePastWhitespace(iter);
+        iter = advance_past_whitespace(iter);
         if(*iter != ']') {
-            ThrowBadJSONError(iter, "No end to JSON pair");
+            json_parsing_error(iter, "No end to JSON pair");
         }
 
         ++iter;
@@ -117,29 +117,29 @@ namespace JSON {
 
     namespace detail {
         template<>
-        json_finline void ToJSON<char, true>(char from, detail::stringbuf& out) {
+        json_finline void to_json<char, true>(char from, detail::Stringbuf& out) {
             out.push_back('\"');
             out.push_back(from);
             out.push_back('\"');
         }
 
         template<>
-        json_finline jsonIter FromJSON<char, true>(jsonIter iter, char& into) {
-            iter = AdvancePastWhitespace(iter);
+        json_finline jsonIter from_json<char, true>(jsonIter iter, char& into) {
+            iter = advance_past_whitespace(iter);
 
             if(*iter != '\"') {
-                ThrowBadJSONError(iter, "Not a valid string begin token");
+                json_parsing_error(iter, "Not a valid string begin token");
             }
             ++iter;
 
             if(!*iter) {
-                ThrowBadJSONError(iter,"No string data");
+                json_parsing_error(iter,"No string data");
             }
 
             //Todo, handle unicode escape sequences
             auto endOfString = iter + 1;
             if(*endOfString != '\"') {
-                ThrowBadJSONError(iter,"No string end token");
+                json_parsing_error(iter,"No string end token");
             }
 
             into = *iter;
@@ -149,7 +149,7 @@ namespace JSON {
         }
 
         template<>
-        json_finline void ToJSON<wchar_t, true>(wchar_t from, detail::stringbuf& out) {
+        json_finline void to_json<wchar_t, true>(wchar_t from, detail::Stringbuf& out) {
             out.push_back('\"');
 
             std::wstring wideChar(1, from);
@@ -160,22 +160,22 @@ namespace JSON {
         }
 
         template<>
-        json_finline jsonIter FromJSON<wchar_t, true>(jsonIter iter, wchar_t& into) {
-            iter = AdvancePastWhitespace(iter);
+        json_finline jsonIter from_json<wchar_t, true>(jsonIter iter, wchar_t& into) {
+            iter = advance_past_whitespace(iter);
             if(*iter != '\"') {
-                ThrowBadJSONError(iter, "Not a valid string begin token");
+                json_parsing_error(iter, "Not a valid string begin token");
             }
 
             ++iter;
 
             if(!*iter) {
-                ThrowBadJSONError(iter,"No string data");
+                json_parsing_error(iter,"No string data");
             }
 
             //Todo, handle unicode escape sequences
             auto endOfString = iter + 1;
             if(*endOfString != '\"') {
-                ThrowBadJSONError(iter,"No string end token");
+                json_parsing_error(iter,"No string end token");
             }
 
             into = std::wstring(iter, endOfString)[0];
@@ -187,22 +187,22 @@ namespace JSON {
         template<typename ClassType,
                  enable_if_const<ClassType> = true>
         json_deserialize_const_warning
-        json_finline jsonIter FromJSON(jsonIter iter, ClassType& into) {
+        json_finline jsonIter from_json(jsonIter iter, ClassType& into) {
             //TODO: allow advancing without generating data
             typename std::remove_const<ClassType>::type shadow;
-            return detail::FromJSON(iter, shadow);
+            return detail::from_json(iter, shadow);
         }
 
         template<typename ClassType,
                  enable_if<ClassType, std::is_class> = true>
-        json_finline void ToJSON(const ClassType& from, detail::stringbuf& out) {
-            JSON::ToJSON(from, out);
+        json_finline void to_json(const ClassType& from, detail::Stringbuf& out) {
+            tjson::to_json(from, out);
         }
 
         template<typename ClassType,
                  enable_if<ClassType, std::is_class> = true>
-        json_finline jsonIter FromJSON(jsonIter iter, ClassType& classInto) {
-            return JSON::FromJSON(iter, classInto);
+        json_finline jsonIter from_json(jsonIter iter, ClassType& classInto) {
+            return tjson::from_json(iter, classInto);
         }
     }
 }
