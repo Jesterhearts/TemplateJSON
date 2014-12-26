@@ -26,41 +26,41 @@ namespace tjson {
         void to_json(ClassType from, detail::Stringbuf& out);
 
         template<typename ClassType, enable_if<ClassType, std::is_enum> = true>
-        jsonIter from_json(jsonIter iter, ClassType* into);
+        jsonIter from_json(jsonIter iter, DataMember<ClassType>& into);
 
         template<typename ClassType, enable_if<ClassType, std::is_integral> = true>
         void to_json(ClassType from, detail::Stringbuf& out);
 
         template<typename ClassType, enable_if<ClassType, std::is_integral> = true>
-        jsonIter from_json(jsonIter iter, ClassType* into);
+        jsonIter from_json(jsonIter iter, DataMember<ClassType>& into);
 
         template<typename ClassType, enable_if<ClassType, std::is_floating_point> = true>
         void to_json(ClassType from, detail::Stringbuf& out);
 
         template<typename ClassType, enable_if<ClassType, std::is_floating_point> = true>
-        jsonIter from_json(jsonIter iter, ClassType* into);
+        jsonIter from_json(jsonIter iter, DataMember<ClassType>& into);
 
         template<typename ClassType, enable_if<ClassType, std::is_pointer> = true>
         void to_json(ClassType from, detail::Stringbuf& out);
 
         template<typename ClassType, enable_if<ClassType, std::is_pointer> = true>
-        jsonIter from_json(jsonIter iter, ClassType* into);
+        jsonIter from_json(jsonIter iter, DataMember<ClassType>& into);
 
         template<typename ClassType, enable_if<ClassType, std::is_array> = true>
         void to_json(const ClassType& from, detail::Stringbuf& out);
 
         template<typename ClassType, enable_if<ClassType, std::is_array> = true>
-        jsonIter from_json(jsonIter iter, ClassType* into);
+        jsonIter from_json(jsonIter iter, DataMember<ClassType>& into);
 
         template<typename ClassType, enable_if<ClassType, std::is_class> = true>
         void to_json(const ClassType& from, detail::Stringbuf& out);
 
         template<typename ClassType, enable_if<ClassType, std::is_class> = true>
-        jsonIter from_json(jsonIter iter, ClassType* into);
+        jsonIter from_json(jsonIter iter, DataMember<ClassType>& into);
 
         template<typename ClassType, enable_if_const<ClassType> = true>
         json_deserialize_const_warning
-        jsonIter from_json(jsonIter iter, ClassType* into);
+        jsonIter from_json(jsonIter iter, DataMember<ClassType>& into);
 
         struct Stringbuf {
             Stringbuf() {

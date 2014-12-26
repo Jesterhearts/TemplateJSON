@@ -81,7 +81,7 @@ namespace detail {
     }
 
     template<typename Type>
-    json_finline jsonIter atoi(jsonIter iter, Type& into) {
+    json_finline jsonIter atoi(jsonIter iter, DataMember<Type>& into) {
         static_assert(std::is_integral<Type>::value, "Must be an integral value");
 
         iter = advance_past_whitespace(iter);
@@ -96,68 +96,70 @@ namespace detail {
         }
 
         bool offByOne = false;
+        Type value;
 
-        for(into = 0; std::isdigit(*iter); ++iter) {
-            if(into > std::numeric_limits<Type>::max() / 10) {
+        for(value = 0; std::isdigit(*iter); ++iter) {
+            if(value > std::numeric_limits<Type>::max() / 10) {
                 json_parsing_error(iter, "Value will overflow");
             }
-            into *= 10;
+            value *= 10;
 
             Type temp = (*iter) - '0';
-            if(sign != -1 && temp > std::numeric_limits<Type>::max() - into) {
+            if(sign != -1 && temp > std::numeric_limits<Type>::max() - value) {
                 json_parsing_error(iter, "Value will overflow");
             }
 
-            if(sign == -1 && temp > std::numeric_limits<Type>::max() - into) {
-                if(temp > std::numeric_limits<Type>::max() - into + 1) {
+            if(sign == -1 && temp > std::numeric_limits<Type>::max() - value) {
+                if(temp > std::numeric_limits<Type>::max() - value + 1) {
                     json_parsing_error(iter, "Value will overflow");
                 }
                 offByOne = true;
                 temp -= 1;
             }
 
-            into += temp;
+            value += temp;
         }
 
-        into *= sign;
+        value *= sign;
         if(offByOne) {
-            into -= 1;
+            value -= 1;
         }
+        into.write(value);
 
         return iter;
     }
 
     template<typename ClassType,
              enable_if<ClassType, std::is_integral> = true>
-    json_finline jsonIter from_json(jsonIter iter, ClassType* into) {
-        return atoi(iter, *into);
+    json_finline jsonIter from_json(jsonIter iter, DataMember<ClassType>& into) {
+        return atoi(iter, into);
     }
 
     template<>
-    json_finline jsonIter from_json<bool, true>(jsonIter iter, bool* into) {
+    json_finline jsonIter from_json<bool, true>(jsonIter iter, DataMember<bool>& into) {
         iter = advance_past_whitespace(iter);
 
         if(memcmp("true", iter, 4) == 0) {
-            *into = true;
+            into.write(true);
             return iter + 4;
         }
 
         if(memcmp("false", iter, 5) == 0) {
-            *into = false;
+            into.write(false);
             return iter + 5;
         }
 
-        json_parsing_error(iter, "Could not convert to number");
+        json_parsing_error(iter, "Could not read bool");
     }
 
     template<typename ClassType,
              enable_if<ClassType, std::is_floating_point> = true>
-    json_finline jsonIter from_json(jsonIter iter, ClassType* into) {
+    json_finline jsonIter from_json(jsonIter iter, DataMember<ClassType>& into) {
         iter = advance_past_whitespace(iter);
         auto endOfNumber = find_end_of_number(iter);
 
         try {
-            *into = boost::lexical_cast<ClassType>(iter, std::distance(iter, endOfNumber));
+            into.write(boost::lexical_cast<ClassType>(iter, std::distance(iter, endOfNumber)));
         } catch(boost::bad_lexical_cast& e) {
             json_parsing_error(iter, e.what());
         }

@@ -132,7 +132,7 @@ namespace tjson {
         }
 
         template<>
-        json_finline jsonIter from_json<char, true>(jsonIter iter, char* into) {
+        json_finline jsonIter from_json<char, true>(jsonIter iter, DataMember<char>& into) {
             iter = advance_past_whitespace(iter);
 
             if(*iter != '\"') {
@@ -150,7 +150,7 @@ namespace tjson {
                 json_parsing_error(iter,"No string end token");
             }
 
-            *into = *iter;
+            into.write(*iter);
 
             ++endOfString;
             return endOfString;
@@ -168,7 +168,7 @@ namespace tjson {
         }
 
         template<>
-        json_finline jsonIter from_json<wchar_t, true>(jsonIter iter, wchar_t* into) {
+        json_finline jsonIter from_json<wchar_t, true>(jsonIter iter, DataMember<wchar_t>& into) {
             iter = advance_past_whitespace(iter);
             if(*iter != '\"') {
                 json_parsing_error(iter, "Not a valid string begin token");
@@ -186,7 +186,7 @@ namespace tjson {
                 json_parsing_error(iter,"No string end token");
             }
 
-            *into = std::wstring(iter, endOfString)[0];
+            into.write(std::wstring(iter, endOfString)[0]);
 
             ++endOfString;
             return endOfString;

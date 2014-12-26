@@ -34,7 +34,6 @@ namespace detail {
         members_to_json(classFrom, out, MemberList<members...>());
     }
 
-    template<>
     json_finline jsonIter member_from_json(DataList<>& into, jsonIter startOfKey, size_t keylen,
                                            jsonIter iter, MemberList<>&&) {
         json_parsing_error(startOfKey, "No key in object");
@@ -48,7 +47,7 @@ namespace detail {
         constexpr const size_t len = sizeof(member::key) - 1;
 
         if(keylen == len && std::memcmp(startOfKey, member::key, len) == 0) {
-            return detail::from_json(into.data, iter);
+            return detail::from_json(iter, into.data);
         }
         else {
             return member_from_json(into.next, startOfKey, keylen, iter, MemberList<members...>());
