@@ -4,9 +4,6 @@
 #include "json_test_integrals.cpp"
 #include "json_test_strings.cpp"
 
-const char Test::mychar;
-const char Test::mychar2;
-
 int main() {
     TestIntegrals();
     TestFloats();

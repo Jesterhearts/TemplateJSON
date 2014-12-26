@@ -30,10 +30,10 @@ namespace detail {
 
     template<typename ClassType>
     struct initialized_flag<ClassType, typename std::enable_if<!std::is_trivially_destructible<ClassType>::value, bool>::type> {
-        initialized_flag() : initialized(false) {}
+        constexpr initialized_flag() : initialized(false) {}
 
         json_finline void set_initialized() { initialized = true; }
-        json_finline bool check_initialized() { return initialized; }
+        json_finline bool is_initialized() { return initialized; }
 
     private:
         bool initialized;
@@ -42,28 +42,27 @@ namespace detail {
     template<typename ClassType>
     struct initialized_flag<ClassType, typename std::enable_if<std::is_trivially_destructible<ClassType>::value, bool>::type> {
         json_finline void set_initialized() { }
-        json_finline bool check_initialized() { return true; }
+        json_finline bool is_initialized() { return true; }
     };
 
     template<typename StoredType>
     struct DataMember : initialized_flag<StoredType> {
-        using initialized_flag<StoredType>::set_initialized;
-        using initialized_flag<StoredType>::check_initialized;
+        using initialized_flag<StoredType>::is_initialized;
 
         template<typename... Args>
         json_finline void write(Args&&... args) {
-            assert(!check_initialized());
+            DestroyStorage<StoredType>();
             new (&storage) StoredType{ std::forward<Args>(args)... };
             set_initialized();
         }
 
         json_finline StoredType&& consume() {
-            assert(check_initialized());
+            assert(is_initialized());
             return std::move(*static_cast<StoredType*>(static_cast<void*>(&storage)));
         }
 
         json_finline StoredType& access() {
-            assert(check_initialized());
+            assert(is_initialized());
             return *static_cast<StoredType*>(static_cast<void*>(&storage));
         }
 
@@ -72,11 +71,13 @@ namespace detail {
         }
 
     private:
+        using initialized_flag<StoredType>::set_initialized;
+
         template<typename Destroying,
                  typename std::enable_if<!std::is_trivially_destructible<Destroying>::value, bool>::type = true>
         json_finline
         void DestroyStorage() {
-            if(check_initialized()) {
+            if(is_initialized()) {
                 static_cast<StoredType*>(static_cast<void*>(&storage))->~StoredType();
             }
         }
@@ -117,56 +118,58 @@ namespace detail {
         /**
          * Data store is no longer valid after this call
          */
-        ClassType realize() {
+        static ClassType realize() {
             return realize(data_list);
         }
 
         /**
          * Data store is no longer valid after this call
          */
-        void transfer_to(DataMember<ClassType>& into) {
+        static void transfer_to(DataMember<ClassType>& into) {
             transfer_to(into, data_list);
         }
 
-        decltype(data_list_type(MembersHolder<ClassType>::members())) data_list;
+        static thread_local decltype(data_list_type(MembersHolder<ClassType>::members())) data_list;
 
     private:
         //For constructing/returning an object
         template<typename DataType, typename... Values>
-        json_finline ClassType realize(DataList<DataType>& list, Values&&... values) {
+        json_finline static ClassType realize(DataList<DataType>& list, Values&&... values) {
             return ClassType{ std::forward<Values>(values)..., list.data.consume() };
         }
 
         template<typename DataType, typename... DataTypes, typename... Values>
-        json_finline ClassType realize(DataList<DataType, DataTypes...>& list, Values&&... values) {
+        json_finline static ClassType realize(DataList<DataType, DataTypes...>& list, Values&&... values) {
             return realize(list.next(), std::forward<Values>(values)..., list.data.consume());
         }
 
         template<typename DataType, typename... DataTypes>
-        json_finline ClassType realize(DataList<DataType, DataTypes...>& list) {
+        json_finline static ClassType realize(DataList<DataType, DataTypes...>& list) {
             return realize(list.next(), list.data.consume());
         }
 
         //For initializing a DataMember
         template<typename DataType, typename... Values>
-        json_finline void transfer_to(DataMember<ClassType>& into, DataList<DataType>& list,
-                                      Values&&... values) {
+        json_finline static void transfer_to(DataMember<ClassType>& into, DataList<DataType>& list,
+                                             Values&&... values) {
             into.write(std::forward<Values>(values)..., list.data.consume());
         }
 
         template<typename DataType, typename... DataTypes, typename... Values>
-        json_finline void transfer_to(DataMember<ClassType>& into,
-                                      DataList<DataType, DataTypes...>& list, Values&&... values) {
+        json_finline static void transfer_to(DataMember<ClassType>& into,
+                                             DataList<DataType, DataTypes...>& list, Values&&... values) {
             transfer_to(into, list.next(), std::forward<Values>(values)..., list.data.consume());
         }
 
         template<typename DataType, typename... DataTypes>
-        json_finline void transfer_to(DataMember<ClassType>& into,
-                                      DataList<DataType, DataTypes...>& list) {
+        json_finline static void transfer_to(DataMember<ClassType>& into,
+                                             DataList<DataType, DataTypes...>& list) {
             transfer_to(into, list.next(), list.data.consume());
         }
-
     };
+
+    template<typename ClassType>
+    thread_local decltype(data_list_type(MembersHolder<ClassType>::members())) DataStore<ClassType>::data_list;
 }
 }
 
