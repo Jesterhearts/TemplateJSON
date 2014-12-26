@@ -7,6 +7,10 @@
 void TestStrings();
 
 struct strings {
+    strings(std::string s, std::wstring ws, std::string us, std::wstring uws)
+        :   string(s), wstring(ws), unicode(us), wunicode(uws)
+    {}
+
     strings()
         :   string("A basic string"),
             wstring(L"A basic wstring"),
@@ -23,7 +27,9 @@ struct strings {
 };
 
 struct chars {
-    chars(): c('c'), wc(L'w') {}
+    chars(char c, wchar_t wc) : c(c), wc(wc) {}
+
+    chars() : c('c'), wc(L'w') {}
 
     char c;
     wchar_t wc;

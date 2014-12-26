@@ -57,20 +57,8 @@ namespace detail {
         DataList<NextType, Types...> next;
     };
 
-    template<template<typename... M> class ML, typename... DataMembers>
-    constexpr auto data_list_type(ML<>&&, DataMembers&&...)
-        -> DataList<DataMembers...> {}
-
-    template<typename member, typename... members, template<typename... M> class ML,
-             typename... DataMembers>
-    constexpr auto data_list_type(ML<member, members...>&&, DataMembers&&... datas)
-        -> decltype(data_list_type(ML<members...>(), std::forward<DataMembers>(datas)...,
-                                   typename underlying<member>::type())) {}
-
-    template<typename member, typename... members,
-             template<typename... M> class ML>
-    constexpr auto data_list_type(ML<member, members...>&&)
-        -> decltype(data_list_type(ML<members...>(), typename underlying<member>::type())) {}
+    template<typename... members>
+    constexpr DataList<typename underlying<members>::type...> data_list_type(MemberList<members...>&&) {}
 
     template<typename ClassType>
     struct DataStore {

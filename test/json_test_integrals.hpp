@@ -8,6 +8,8 @@
 void TestIntegrals();
 
 struct bools {
+    bools(bool t, bool f) : t(t), f(f) {}
+
     bools() : t(true), f(false) {}
 
     bool t;
@@ -15,6 +17,9 @@ struct bools {
 };
 
 struct shorts {
+    shorts(short v1, short v2, unsigned short v3, unsigned short v4)
+        :   min_s(v1), max_s(v2), min_us(v3), max_us(v4) {}
+
     shorts()
         :   min_s(std::numeric_limits<short>::min()),
             max_s(std::numeric_limits<short>::max()),
@@ -29,6 +34,9 @@ struct shorts {
 };
 
 struct ints {
+    ints(int v1, int v2, unsigned int v3, unsigned int v4)
+        :   min_i(v1), max_i(v2), min_ui(v3), max_ui(v4) {}
+
     ints()
         :   min_i(std::numeric_limits<int>::min()),
             max_i(std::numeric_limits<int>::max()),
@@ -43,6 +51,9 @@ struct ints {
 };
 
 struct uchars {
+    uchars(unsigned char v1, unsigned char v2, unsigned wchar_t v3, unsigned wchar_t v4)
+        :   min_uc(v1), max_uc(v2), min_uwc(v3), max_uwc(v4) {}
+
     uchars()
         :   min_uc(std::numeric_limits<unsigned char>::min()),
             max_uc(std::numeric_limits<unsigned char>::max()),
@@ -58,6 +69,9 @@ struct uchars {
 };
 
 struct longs {
+    longs(long v1, long v2, unsigned long v3, unsigned long v4)
+        :   min_l(v1), max_l(v2), min_ul(v3), max_ul(v4) {}
+
     longs()
         :   min_l(std::numeric_limits<long>::min()),
             max_l(std::numeric_limits<long>::max()),
@@ -72,6 +86,9 @@ struct longs {
 };
 
 struct longlongs {
+    longlongs(long long v1, long long v2, unsigned long long v3, unsigned long long v4)
+        :   min_ll(v1), max_ll(v2), min_ull(v3), max_ull(v4) {}
+
     longlongs()
         :   min_ll(std::numeric_limits<long long>::min()),
             max_ll(std::numeric_limits<long long>::max()),
@@ -86,6 +103,9 @@ struct longlongs {
 };
 
 struct int8_ts {
+    int8_ts(int8_t v1, int8_t v2, uint8_t v3, uint8_t v4)
+        :   min_i8(v1), max_i8(v2), min_ui8(v3), max_ui8(v4) {}
+
     int8_ts()
         :   min_i8(std::numeric_limits<int8_t>::min()),
             max_i8(std::numeric_limits<int8_t>::max()),
@@ -100,6 +120,9 @@ struct int8_ts {
 };
 
 struct int16_ts {
+    int16_ts(int16_t v1, int16_t v2, uint16_t v3, uint16_t v4)
+        :   min_i16(v1), max_i16(v2), min_ui16(v3), max_ui16(v4) {}
+
     int16_ts()
         :   min_i16(std::numeric_limits<int16_t>::min()),
             max_i16(std::numeric_limits<int16_t>::max()),
@@ -114,6 +137,9 @@ struct int16_ts {
 };
 
 struct int32_ts {
+    int32_ts(int32_t v1, int32_t v2, uint32_t v3, uint32_t v4)
+        :   min_i32(v1), max_i32(v2), min_ui32(v3), max_ui32(v4) {}
+
     int32_ts()
         :   min_i32(std::numeric_limits<int32_t>::min()),
             max_i32(std::numeric_limits<int32_t>::max()),
@@ -128,6 +154,9 @@ struct int32_ts {
 };
 
 struct int64_ts {
+    int64_ts(int64_t v1, int64_t v2, uint64_t v3, uint64_t v4)
+        :   min_i64(v1), max_i64(v2), min_ui64(v3), max_ui64(v4) {}
+
     int64_ts()
         :   min_i64(std::numeric_limits<int64_t>::min()),
             max_i64(std::numeric_limits<int64_t>::max()),

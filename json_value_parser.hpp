@@ -209,7 +209,7 @@ namespace tjson {
 
         template<typename ClassType,
                  enable_if<ClassType, std::is_class> = true>
-        json_finline jsonIter from_json(jsonIter iter, ClassType* into) {
+        json_finline jsonIter from_json(jsonIter iter, DataMember<ClassType>& into) {
             return tjson::from_json(iter, into);
         }
     }
