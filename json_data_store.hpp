@@ -6,6 +6,7 @@
 #include <type_traits>
 #include <utility>
 
+#include "json_common_defs.hpp"
 #include "json_functions.hpp"
 #include "json_member_mapper.hpp"
 
@@ -26,11 +27,11 @@ namespace detail {
     template<typename StoredType>
     struct DataMember {
         template<typename... Args>
-        void write(Args&&... args) {
+        json_finline void write(Args&&... args) {
             new (&storage) StoredType(std::forward<Args>(args)...);
         }
 
-        StoredType&& consume() {
+        json_finline StoredType&& consume() {
             return std::move(*static_cast<StoredType*>(static_cast<void*>(&storage)));
         }
 
@@ -42,11 +43,12 @@ namespace detail {
     };
 
     template<typename... Types>
-    struct DataList;
+    struct DataList {};
 
     template<typename StoredType>
     struct DataList<StoredType> {
         DataMember<StoredType> data;
+        DataList<> next;
     };
 
     template<typename StoredType, typename NextType, typename... Types>
@@ -62,7 +64,8 @@ namespace detail {
     template<typename member, typename... members, template<typename... M> class ML,
              typename... DataMembers>
     constexpr auto data_list_type(ML<member, members...>&&, DataMembers&&... datas)
-        -> decltype(data_list_type(ML<members...>(), std::forward<DataMembers>(datas)..., typename underlying<member>::type())) {}
+        -> decltype(data_list_type(ML<members...>(), std::forward<DataMembers>(datas)...,
+                                   typename underlying<member>::type())) {}
 
     template<typename member, typename... members,
              template<typename... M> class ML>
@@ -71,27 +74,59 @@ namespace detail {
 
     template<typename ClassType>
     struct DataStore {
+    public:
+        /**
+         * Data store is no longer valid after this call
+         */
+        json_finline ClassType realize() {
+            return realize(data_list);
+        }
 
+        /**
+         * Data store is no longer valid after this call
+         */
+        json_finline void transfer_to(DataMember<ClassType>& into) {
+            transfer_to(into, data_list);
+        }
+
+        decltype(data_list_type(MembersHolder<ClassType>::members())) data_list;
+
+    private:
+        //For constructing/returning an object
         template<typename DataType, typename... Values>
-        ClassType realize(DataList<DataType>& list, Values&&... values) {
-            return ClassType{std::forward<Values>(values)..., list.data.consume()};
+        json_finline ClassType realize(DataList<DataType>& list, Values&&... values) {
+            return ClassType{ std::forward<Values>(values)..., list.data.consume() };
         }
 
         template<typename DataType, typename... DataTypes, typename... Values>
-        ClassType realize(DataList<DataType, DataTypes...>& list, Values&&... values) {
+        json_finline ClassType realize(DataList<DataType, DataTypes...>& list, Values&&... values) {
             return realize(list.next, std::forward<Values>(values)..., list.data.consume());
         }
 
         template<typename DataType, typename... DataTypes>
-        ClassType realize(DataList<DataType, DataTypes...>& list) {
+        json_finline ClassType realize(DataList<DataType, DataTypes...>& list) {
             return realize(list.next, list.data.consume());
         }
 
-        ClassType realize() {
-            return realize(data_list);
+        //For initializing a DataMember
+        template<typename DataType, typename... Values>
+        json_finline void transfer_to(DataMember<ClassType>& into, DataList<DataType>& list,
+                                      Values&&... values) {
+            into.write(std::forward<Values>(values)..., list.data.consume());
         }
 
-        decltype(data_list_type(MembersHolder<ClassType>::members())) data_list;
+        template<typename DataType, typename... DataTypes, typename... Values>
+        json_finline void transfer_to(DataMember<ClassType>& into,
+                                      DataList<DataType, DataTypes...>& list, Values&&... values) {
+            transfer_to(into, list.next, std::forward<Values>(values)..., list.data.consume());
+        }
+
+        template<typename DataType, typename... DataTypes>
+        json_finline void transfer_to(DataMember<ClassType>& into,
+                                      DataList<DataType, DataTypes...>& list) {
+            transfer_to(into, list.next, list.data.consume());
+        }
+
     };
 }
 }

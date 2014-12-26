@@ -7,6 +7,7 @@
 #include <type_traits>
 
 #include "json_parsing_helpers.hpp"
+#include "json_data_store.hpp"
 #include "json_number_parsers.hpp"
 #include "json_enum_parsers.hpp"
 #include "json_iterable_parser.hpp"
@@ -15,6 +16,12 @@
 #include "json_pointer_parsers.hpp"
 
 namespace tjson {
+    template<typename ClassType>
+    jsonIter from_json(jsonIter iter, detail::DataStore<ClassType>& into);
+
+    template<typename ClassType>
+    jsonIter from_json(jsonIter iter, detail::DataMember<ClassType>& into);
+
     template<>
     void to_json(const std::string& from, detail::Stringbuf& out) {
         out.push_back('\"');
@@ -23,7 +30,7 @@ namespace tjson {
     }
 
     template<>
-    jsonIter from_json(jsonIter iter, std::string* into) {
+    jsonIter from_json(jsonIter iter, detail::DataMember<std::string>& into) {
         iter = advance_past_whitespace(iter);
         if(*iter != '\"') {
             json_parsing_error(iter, "Not a valid string begin token");
@@ -36,7 +43,7 @@ namespace tjson {
         }
 
         size_t len = std::distance(iter, endOfString);
-        new (into) std::string(iter, len);
+        into.write(iter, len);
 
         ++endOfString;
         return endOfString;
@@ -54,7 +61,7 @@ namespace tjson {
 
 
     template<>
-    jsonIter from_json(jsonIter iter, std::wstring* into) {
+    jsonIter from_json(jsonIter iter, detail::DataMember<std::wstring>& into) {
         iter = advance_past_whitespace(iter);
         if(*iter != '\"') {
             json_parsing_error(iter, "Not a valid string begin token");
@@ -66,7 +73,7 @@ namespace tjson {
             json_parsing_error(iter, "Not a valid string end token");
         }
 
-        new (into) std::wstring(iter, endOfString);
+        into.write(iter ,endOfString);
         ++endOfString;
         return endOfString;
     }

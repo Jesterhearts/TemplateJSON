@@ -16,6 +16,7 @@
 #include <cstdlib>
 
 #include "json_common_defs.hpp"
+#include "json_data_store.hpp"
 #include "json_value_parser.hpp"
 #include "json_user_class_parsers.hpp"
 #include "json_keys_handler.hpp"
@@ -40,7 +41,7 @@ namespace tjson {
     }
 
     template<typename ClassType>
-    jsonIter from_json(jsonIter iter, ClassType* into) {
+    jsonIter from_json(jsonIter iter, detail::DataStore<ClassType>& into) {
         iter = parse_object_start(iter);
 
         iter = detail::members_from_json(into, iter, MembersHolder<ClassType>::members());
@@ -49,33 +50,25 @@ namespace tjson {
     }
 
     template<typename ClassType>
+    jsonIter from_json(jsonIter iter, detail::DataMember<ClassType>& into) {
+        detail::DataStore<ClassType> data;
+
+        iter = from_json(iter, data);
+
+        data.transfer_to(into);
+
+        return iter;
+    }
+
+    template<typename ClassType>
     ClassType from_json(const std::string& jsonData) {
-        struct _data {
-            using _storage = typename
-                std::aligned_storage<sizeof(ClassType), std::alignment_of<ClassType>::value>::type;
+        detail::DataStore<ClassType> data;
 
-            operator ClassType*() {
-                return static_cast<ClassType*>(static_cast<void*>(&data));
-            }
-
-            operator ClassType&&() {
-                return std::move(*static_cast<ClassType*>(*this));
-            }
-
-            ~_data() {
-                static_cast<ClassType*>(static_cast<void*>(&data))->~ClassType();
-            }
-
-            _storage data;
-        };
-
-        _data data;
-        // ClassType into;
         auto iter = jsonData.c_str();
 
-        from_json(iter, static_cast<ClassType*>(data));
+        from_json(iter, data);
 
-        return std::move(data);
+        return data.realize();
     }
 };
 

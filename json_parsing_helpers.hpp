@@ -9,6 +9,7 @@
 
 namespace tjson {
         namespace detail {
+
         template<typename ClassType>
         using basic_type = typename std::remove_reference<ClassType>::type;
 
@@ -114,7 +115,7 @@ namespace tjson {
                 }
             }
         };
-    }
+    } /* detail */
 
     json_no_return inline void json_parsing_error(jsonIter iter, std::string&& errmsg) {
         jsonIter endIter = iter + std::min<size_t>(std::strlen(iter), 1000);

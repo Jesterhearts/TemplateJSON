@@ -41,8 +41,9 @@ public:
 
 class Test {
 public:
-     static const char mychar = 'x';
-     static const char mychar2 = 'y';
+    Test() : mychar('x'), mychar2('y') {}
+    const char mychar;
+    const char mychar2;
 };
 
 
