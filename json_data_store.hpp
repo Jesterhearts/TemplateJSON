@@ -28,7 +28,7 @@ namespace detail {
     struct DataMember {
         template<typename... Args>
         json_finline void write(Args&&... args) {
-            new (&storage) StoredType(std::forward<Args>(args)...);
+            new (&storage) StoredType{ std::forward<Args>(args)... };
         }
 
         json_finline StoredType&& consume() {
@@ -37,13 +37,13 @@ namespace detail {
 
         template<typename Destroying,
                  typename std::enable_if<std::is_class<Destroying>::value, bool>::type = true>
-        DestroyStorage() {
+       void DestroyStorage() {
             static_cast<StoredType*>(static_cast<void*>(&storage))->~StoredType();
         }
 
         template<typename Destroying,
                  typename std::enable_if<!std::is_class<Destroying>::value, bool>::type = true>
-        DestroyStorage() { }
+        void DestroyStorage() { }
 
         ~DataMember() {
             DestroyStorage<StoredType>();
