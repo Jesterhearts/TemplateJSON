@@ -88,7 +88,7 @@ namespace tjson {
     }
 
     template<typename T1, typename T2>
-    jsonIter from_json(jsonIter iter, std::pair<T1, T2>* into) {
+    jsonIter from_json(jsonIter iter, detail::DataMember<std::pair<T1, T2>>& into) {
         //Placement TODO
 
         iter = advance_past_whitespace(iter);
@@ -101,8 +101,8 @@ namespace tjson {
         typedef typename std::remove_cv<T1>::type FirstType;
         typedef typename std::remove_cv<T2>::type SecondType;
 
-        FirstType& first = const_cast<FirstType&>(into.first);
-        SecondType& second = const_cast<SecondType&>(into.second);
+        detail::DataMember<FirstType> first;
+        detail::DataMember<SecondType> second;
 
         iter = detail::from_json(iter, first);
 
@@ -113,6 +113,7 @@ namespace tjson {
         ++iter;
 
         iter = detail::from_json(iter, second);
+        into.write(first.consume(), second.consume());
 
         iter = advance_past_whitespace(iter);
         if(*iter != ']') {
@@ -195,10 +196,8 @@ namespace tjson {
         template<typename ClassType,
                  enable_if_const<ClassType> = true>
         json_deserialize_const_warning
-        json_finline jsonIter from_json(jsonIter iter, ClassType* into) {
-            //TODO: allow advancing without generating data
-            typename std::remove_const<ClassType>::type shadow;
-            return detail::from_json(iter, shadow);
+        json_finline jsonIter from_json(jsonIter iter, DataMember<ClassType>& into) {
+            return detail::from_json(iter, into);
         }
 
         template<typename ClassType,

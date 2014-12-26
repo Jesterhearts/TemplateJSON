@@ -35,8 +35,18 @@ namespace detail {
             return std::move(*static_cast<StoredType*>(static_cast<void*>(&storage)));
         }
 
-        ~DataMember() {
+        template<typename Destroying,
+                 typename std::enable_if<std::is_class<Destroying>::value, bool>::type = true>
+        DestroyStorage() {
             static_cast<StoredType*>(static_cast<void*>(&storage))->~StoredType();
+        }
+
+        template<typename Destroying,
+                 typename std::enable_if<!std::is_class<Destroying>::value, bool>::type = true>
+        DestroyStorage() { }
+
+        ~DataMember() {
+            DestroyStorage<StoredType>();
         }
 
         raw_data<StoredType> storage;

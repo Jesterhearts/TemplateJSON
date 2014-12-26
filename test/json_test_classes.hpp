@@ -11,6 +11,8 @@
 
 class Simple {
 public:
+    Simple(int s) : s(s) {};
+
     Simple() : s(10) {};
 private:
     int s;
@@ -26,6 +28,8 @@ public:
 
 class MySimpleClass {
 public:
+    MySimpleClass(int i) : m_int(i) {};
+
     MySimpleClass() : m_int(10) {};
 
     int m_int;
@@ -34,6 +38,8 @@ public:
 
 class NestedContainer {
 public:
+    NestedContainer(MySimpleClass&& m, int i) : m_simpleClass(m), m_int(i) {}
+
     NestedContainer() : m_simpleClass(), m_int(20) {};
     MySimpleClass m_simpleClass;
     int m_int;
@@ -41,6 +47,8 @@ public:
 
 class Test {
 public:
+    Test(char c1, char c2) : mychar(c1), mychar2(c2) {}
+
     Test() : mychar('x'), mychar2('y') {}
     const char mychar;
     const char mychar2;
@@ -49,6 +57,7 @@ public:
 
 class Nested : Test {
 public:
+    Nested(Simple&& s) : mytest(s) {}
      // JSON_INHERITS(Nested, Test);
      Simple mytest;
 };

@@ -13,7 +13,7 @@ namespace tjson {
     namespace detail {
         template<typename ClassType,
                  enable_if<ClassType, std::is_pointer> = true>
-        json_finline void to_json(const ClassType& from, detail::Stringbuf& out) {
+        json_finline void to_json(ClassType from, detail::Stringbuf& out) {
             if(!from) {
                 out.append("null", 4);
             }
