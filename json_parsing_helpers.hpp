@@ -59,7 +59,6 @@ namespace tjson {
         jsonIter from_json(jsonIter iter, DataMember<ClassType>& into);
 
         template<typename ClassType, enable_if_const<ClassType> = true>
-        json_deserialize_const_warning
         jsonIter from_json(jsonIter iter, DataMember<ClassType>& into);
 
         struct Stringbuf {

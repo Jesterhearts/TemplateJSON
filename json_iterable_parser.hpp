@@ -64,7 +64,7 @@ namespace tjson {
         }
 
         template<typename... T, template<typename... T> class Container>
-        json_finline jsonIter from_json(jsonIter iter, Container<T...>* into) {
+        json_finline jsonIter from_json(jsonIter iter, DataMember<Container<T...>>& into) {
             //Placement TODO
             iter = advance_past_whitespace(iter);
             if(*iter != '[') {
@@ -74,11 +74,13 @@ namespace tjson {
 
             using value_type = typename Container<T...>::value_type;
             using inserter = IterableInserter<Container<T...>, value_type>;
+
+            into.write();
             while(iter && *iter != ']') {
-                value_type input;
+                DataMember<value_type> input;
                 iter = detail::from_json(iter, input);
 
-                inserter::insert(into, std::move(input));
+                inserter::insert(into.access(), input.consume());
                 iter = advance_past_whitespace(iter);
 
                 if(*iter == ',') {
@@ -102,7 +104,7 @@ namespace tjson {
     }
 
     template<typename T, std::size_t A>
-    jsonIter from_json(jsonIter iter, std::array<T, A>* into) {
+    jsonIter from_json(jsonIter iter, detail::DataMember<std::array<T, A>>& into) {
         return detail::iterables::from_json(iter, into);
     }
 
@@ -112,7 +114,7 @@ namespace tjson {
     }
 
     template<typename T, typename A>
-    jsonIter from_json(jsonIter iter, std::deque<T, A>* into) {
+    jsonIter from_json(jsonIter iter, detail::DataMember<std::deque<T, A>>& into) {
         return detail::iterables::from_json(iter, into);
     }
 
@@ -122,7 +124,7 @@ namespace tjson {
     }
 
     template<typename T, typename A>
-    jsonIter from_json(jsonIter iter, std::forward_list<T, A>* into) {
+    jsonIter from_json(jsonIter iter, detail::DataMember<std::forward_list<T, A>>& into) {
         return detail::iterables::from_json(iter, into);
     }
 
@@ -132,7 +134,7 @@ namespace tjson {
     }
 
     template<typename T, typename A>
-    jsonIter from_json(jsonIter iter, std::list<T, A>* into) {
+    jsonIter from_json(jsonIter iter, detail::DataMember<std::list<T, A>>& into) {
         return detail::iterables::from_json(iter, into);
     }
 
@@ -142,7 +144,7 @@ namespace tjson {
     }
 
     template<typename T, typename A>
-    jsonIter from_json(jsonIter iter, std::vector<T, A>* into) {
+    jsonIter from_json(jsonIter iter, detail::DataMember<std::vector<T, A>>& into) {
         return detail::iterables::from_json(iter, into);
     }
 
@@ -152,7 +154,7 @@ namespace tjson {
     }
 
     template<typename K, typename C, typename A>
-    jsonIter from_json(jsonIter iter, std::set<K, C, A>* into) {
+    jsonIter from_json(jsonIter iter, detail::DataMember<std::set<K, C, A>>& into) {
         return detail::iterables::from_json(iter, into);
     }
 
@@ -162,7 +164,7 @@ namespace tjson {
     }
 
     template<typename K, typename C, typename A>
-    jsonIter from_json(jsonIter iter, std::multiset<K, C, A>* into) {
+    jsonIter from_json(jsonIter iter, detail::DataMember<std::multiset<K, C, A>>& into) {
         return detail::iterables::from_json(iter, into);
     }
 
@@ -172,7 +174,7 @@ namespace tjson {
     }
 
     template<typename K, typename H, typename KE, typename A>
-    jsonIter from_json(jsonIter iter, std::unordered_set<K, H, KE, A>* into) {
+    jsonIter from_json(jsonIter iter, detail::DataMember<std::unordered_set<K, H, KE, A>>& into) {
         return detail::iterables::from_json(iter, into);
     }
 
@@ -182,7 +184,7 @@ namespace tjson {
     }
 
     template<typename K, typename T, typename C, typename A>
-    jsonIter from_json(jsonIter iter, std::map<K, T, C, A>* into) {
+    jsonIter from_json(jsonIter iter, detail::DataMember<std::map<K, T, C, A>>& into) {
         return detail::iterables::from_json(iter, into);
     }
 }

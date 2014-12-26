@@ -195,7 +195,6 @@ namespace tjson {
 
         template<typename ClassType,
                  enable_if_const<ClassType> = true>
-        json_deserialize_const_warning
         json_finline jsonIter from_json(jsonIter iter, DataMember<ClassType>& into) {
             return detail::from_json(iter, into);
         }

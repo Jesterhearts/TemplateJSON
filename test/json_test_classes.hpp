@@ -95,6 +95,10 @@ public:
 class HasSmrtPtrs {
 public:
     HasSmrtPtrs() {}
+
+    HasSmrtPtrs(std::unique_ptr<int>&& msi, std::shared_ptr<int>&& shrdi)
+        :   mysmartint(std::move(msi)), myshrdint(std::move(shrdi)) {}
+
     HasSmrtPtrs(HasSmrtPtrs&& other)
         : mysmartint(std::move(other.mysmartint)), myshrdint(std::move(other.mysmartint)) {};
 

@@ -22,10 +22,12 @@ namespace tjson {
                         >::to_json(classFrom, out);
         }
 
-        json_finline static jsonIter from_json(jsonIter iter, TupleType* into) {
-            curType& value = std::get<curIndex>(*into);
+        json_finline static jsonIter from_json(jsonIter iter, detail::DataMember<TupleType>& into) {
+            detail::DataMember<curType> data;
 
-            iter = detail::from_json(iter, &value);
+            iter = detail::from_json(iter, data);
+            std::get<curIndex>(into.access()) = data.consume();
+
             iter = advance_past_whitespace(iter);
             if(*iter != ',') {
                 json_parsing_error(iter, "Not a valid tuple value");
@@ -52,9 +54,12 @@ namespace tjson {
             detail::to_json(std::get<curIndex>(classFrom), out);
         }
 
-        json_finline static jsonIter from_json(jsonIter iter, TupleType* into) {
-            curType& value = std::get<curIndex>(*into);
-            iter = detail::from_json(iter, &value);
+        json_finline static jsonIter from_json(jsonIter iter, detail::DataMember<TupleType>& into) {
+            detail::DataMember<curType> data;
+
+            iter = detail::from_json(iter, data);
+            std::get<curIndex>(into.access()) = data.consume();
+
             iter = advance_past_whitespace(iter);
             if(*iter != ']') {
                 json_parsing_error(iter, "No tuple end token");
@@ -76,12 +81,13 @@ namespace tjson {
     }
 
     template<typename... Types>
-    jsonIter from_json(jsonIter iter, std::tuple<Types...>* into) {
+    jsonIter from_json(jsonIter iter, detail::DataMember<std::tuple<Types...>>& into) {
         if(*iter != '[') {
             json_parsing_error(iter, "No tuple start token");
         }
         ++iter;
 
+        into.write();
         return TupleHandler<std::tuple<Types...>,
                             0,
                             sizeof...(Types) == 1,
