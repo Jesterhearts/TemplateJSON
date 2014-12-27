@@ -12,7 +12,7 @@ namespace std {
 namespace tjson {
     namespace detail {
         template<typename ClassType,
-                 enable_if<ClassType, std::is_pointer> = true>
+                 enable_if<ClassType, std::is_pointer>>
         json_finline void to_json(ClassType from, detail::Stringbuf& out) {
             if(!from) {
                 out.append("null", 4);
@@ -24,7 +24,7 @@ namespace tjson {
         }
 
         template<typename ClassType,
-                 enable_if<ClassType, std::is_pointer> = true>
+                 enable_if<ClassType, std::is_pointer>>
         json_finline jsonIter from_json(jsonIter iter, DataMember<ClassType>& into) {
             //Placement TODO
             iter = advance_past_whitespace(iter);

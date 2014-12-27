@@ -64,13 +64,13 @@ namespace detail {
     }
 
     template<typename ClassType,
-             enable_if<ClassType, std::is_floating_point> = true>
+             enable_if<ClassType, std::is_floating_point>>
     json_finline void to_json(ClassType from, detail::Stringbuf& out) {
         out.append(boost::lexical_cast<std::string>(from));
     }
 
     template<typename ClassType,
-             enable_if<ClassType, std::is_integral> = true>
+             enable_if<ClassType, std::is_integral>>
     json_finline void to_json(ClassType from, detail::Stringbuf& out) {
         itoa<ClassType, 10>(from, out);
     }
@@ -130,7 +130,7 @@ namespace detail {
     }
 
     template<typename ClassType,
-             enable_if<ClassType, std::is_integral> = true>
+             enable_if<ClassType, std::is_integral>>
     json_finline jsonIter from_json(jsonIter iter, DataMember<ClassType>& into) {
         return atoi(iter, into);
     }
@@ -153,7 +153,7 @@ namespace detail {
     }
 
     template<typename ClassType,
-             enable_if<ClassType, std::is_floating_point> = true>
+             enable_if<ClassType, std::is_floating_point>>
     json_finline jsonIter from_json(jsonIter iter, DataMember<ClassType>& into) {
         iter = advance_past_whitespace(iter);
         auto endOfNumber = find_end_of_number(iter);

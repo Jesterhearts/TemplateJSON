@@ -26,13 +26,8 @@ namespace tjson {
         decltype(&CLASS_NAME:: JSON_VARNAME VARDATA),   \
         &CLASS_NAME:: JSON_VARNAME VARDATA
 
-#ifndef _MSC_VER
 #define JSON_KEY_NAME(...)                                         \
     BOOST_PP_OVERLOAD(JSON_KEY_NAME, __VA_ARGS__)(__VA_ARGS__)
-#else
-#define JSON_KEY_NAME(...)                                                                   \
-    BOOST_PP_CAT(BOOST_PP_OVERLOAD(JSON_KEY_NAME, __VA_ARGS__)(__VA_ARGS__),BOOST_PP_EMPTY())
-#endif
 
 #define JSON_KEY_NAME2(VARNAME, JSONKEY)   \
     JSONKEY

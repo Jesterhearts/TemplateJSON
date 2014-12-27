@@ -44,13 +44,8 @@ namespace tjson {
         ~MembersHolder() = delete;                                  \
     };
 
-#ifndef _MSC_VER
 #define JSON_VARNAME(...)                                      \
     BOOST_PP_OVERLOAD(JSON_VARNAME, __VA_ARGS__)(__VA_ARGS__)
-#else
-#define JSON_VARNAME(...)                                                                   \
-    BOOST_PP_CAT(BOOST_PP_OVERLOAD(JSON_VARNAME, __VA_ARGS__)(__VA_ARGS__),BOOST_PP_EMPTY())
-#endif
 
 #define JSON_VARNAME1(VARNAME)  \
     VARNAME

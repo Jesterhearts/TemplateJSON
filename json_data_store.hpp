@@ -109,7 +109,9 @@ namespace detail {
      */
     template<typename... members>
     constexpr DataList<typename underlying<members>::type...>
-    data_list_type(MemberList<members...>&&) {}
+    data_list_type(MemberList<members...>&&) {
+        return DataList<typename underlying<members>::type...>();
+    }
 
     /**
      * Used to get the next node in the data list.

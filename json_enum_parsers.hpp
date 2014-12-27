@@ -49,14 +49,14 @@ namespace tjson {
         }
 
         template<typename ClassType,
-                 enable_if<ClassType, std::is_enum> = true>
+                 enable_if<ClassType, std::is_enum>>
         json_finline void to_json(ClassType from, detail::Stringbuf& out) {
             using underlying_type = typename std::underlying_type<ClassType>::type;
             detail::to_json(static_cast<underlying_type>(from), out);
         }
 
         template<typename ClassType,
-                 enable_if<ClassType, std::is_enum> = true>
+                 enable_if<ClassType, std::is_enum>>
         json_finline jsonIter from_json(jsonIter iter, DataMember<ClassType>& into) {
             using underlying_type = typename std::underlying_type<ClassType>::type;
             DataMember<underlying_type> value;

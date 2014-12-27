@@ -191,13 +191,13 @@ namespace tjson {
         }
 
         template<typename ClassType,
-                 enable_if<ClassType, std::is_class> = true>
+                 enable_if<ClassType, std::is_class>>
         json_finline void to_json(const ClassType& from, detail::Stringbuf& out) {
             tjson::to_json(from, out);
         }
 
         template<typename ClassType,
-                 enable_if<ClassType, std::is_class> = true>
+                 enable_if<ClassType, std::is_class>>
         json_finline jsonIter from_json(jsonIter iter, DataMember<ClassType>& into) {
             return tjson::from_json(iter, into);
         }
