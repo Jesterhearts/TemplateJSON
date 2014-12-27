@@ -10,6 +10,7 @@
 
 #include "json_common_defs.hpp"
 #include "json_functions.hpp"
+#include "json_internal_declarations.hpp"
 #include "json_member_mapper.hpp"
 
 namespace tjson {
@@ -114,22 +115,27 @@ namespace detail {
     template<typename StoredType>
     struct DataList<StoredType> : DataList<> {
         DataMember<StoredType> data;
-        json_finline DataList<>& next() {
-            return static_cast<DataList<>&>(*this);
-        }
     };
 
     template<typename StoredType, typename NextType, typename... Types>
     struct DataList<StoredType, NextType, Types...> : DataList<NextType, Types...> {
         DataMember<StoredType> data;
-        json_finline DataList<NextType, Types...>& next() {
-            return static_cast<DataList<NextType, Types...>&>(*this);
-        }
     };
 
+    /**
+     * Used to deduce the type of the DataList required to store the members for a particular class
+     */
     template<typename... members>
     constexpr DataList<typename underlying<members>::type...>
     data_list_type(MemberList<members...>&&) {}
+
+    /**
+     * Used to get the next node in the data list.
+     */
+    template<typename DataType, typename... DataTypes>
+    constexpr DataList<DataTypes...>& data_list_next(DataList<DataType, DataTypes...>& list) {
+        return static_cast<DataList<DataTypes...>&>(list);
+    }
 
     template<typename ClassType>
     struct DataStore {
@@ -160,13 +166,13 @@ namespace detail {
         template<typename DataType, typename... DataTypes, typename... Values,
                  typename std::enable_if<!std::is_array<DataType>::value, bool>::type = true>
         json_finline ClassType realize(DataList<DataType, DataTypes...>& list, Values&&... values) {
-            return realize(list.next(), std::forward<Values>(values)..., list.data.consume());
+            return realize(data_list_next(list), std::forward<Values>(values)..., list.data.consume());
         }
 
         template<typename DataType, typename... DataTypes, typename... Values,
                  typename std::enable_if<std::is_array<DataType>::value, bool>::type = true>
         json_finline ClassType realize(DataList<DataType, DataTypes...>& list, Values&&... values) {
-            return realize(list.next(), std::forward<Values>(values)...);
+            return realize(data_list_next(list), std::forward<Values>(values)...);
         }
 
         //For initializing a DataMember
@@ -179,7 +185,7 @@ namespace detail {
         template<typename DataType, typename... DataTypes, typename... Values>
         json_finline void transfer_to(DataMember<ClassType>& into,
                                       DataList<DataType, DataTypes...>& list, Values&&... values) {
-            transfer_to(into, list.next(), std::forward<Values>(values)..., list.data.consume());
+            transfer_to(into, data_list_next(list), std::forward<Values>(values)..., list.data.consume());
         }
     };
 }

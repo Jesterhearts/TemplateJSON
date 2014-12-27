@@ -51,7 +51,7 @@ namespace detail {
             return detail::from_json(iter, into.data);
         }
         else {
-            return member_from_json(into.next(), startOfKey, keylen, iter, MemberList<members...>());
+            return member_from_json(data_list_next(into), startOfKey, keylen, iter, MemberList<members...>());
         }
     }
 
