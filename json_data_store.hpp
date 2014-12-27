@@ -24,7 +24,7 @@ namespace detail {
 
     template<typename ClassType, typename UnderlyingType, UnderlyingType ClassType::* member>
     struct underlying<MemberInfo<UnderlyingType ClassType::*, member>> {
-        using type = typename std::remove_const<UnderlyingType>::type;
+        using type = basic_type<UnderlyingType>;
     };
 
     template<typename, typename enabled = bool>
@@ -51,27 +51,9 @@ namespace detail {
     struct DataMember : initialized_flag<StoredType> {
         using initialized_flag<StoredType>::is_initialized;
 
-        template<typename... Args, typename TypeFor = StoredType,
-                 typename std::enable_if<!std::is_array<TypeFor>::value, bool>::type = true>
+        template<typename... Args>
         json_finline void write(Args&&... args) {
             new (&storage) StoredType{ std::forward<Args>(args)... };
-            set_initialized();
-        }
-
-        template<typename... Args, typename TypeFor = StoredType,
-                 typename std::enable_if<std::is_array<TypeFor>::value
-                                         && std::rank<TypeFor>::value == 1, bool>::type = true>
-        json_finline void write(size_t location, Args&&... args) {
-            using StoreType = typename std::remove_extent<StoredType>::type;
-            new (&(access()[location])) StoreType{ std::forward<Args>(args)... };
-            set_initialized();
-        }
-
-        template<typename Array, typename TypeFor = StoredType,
-                 typename std::enable_if<std::is_array<TypeFor>::value
-                                         && 1 < std::rank<TypeFor>::value, bool>::type = true>
-        json_finline void write(size_t location, Array&& args) {
-            memcpy(&(access()[location]), args, sizeof(Array));
             set_initialized();
         }
 
@@ -163,16 +145,9 @@ namespace detail {
             return ClassType{ std::forward<Values>(values)... };
         }
 
-        template<typename DataType, typename... DataTypes, typename... Values,
-                 typename std::enable_if<!std::is_array<DataType>::value, bool>::type = true>
+        template<typename DataType, typename... DataTypes, typename... Values>
         json_finline ClassType realize(DataList<DataType, DataTypes...>& list, Values&&... values) {
             return realize(data_list_next(list), std::forward<Values>(values)..., list.data.consume());
-        }
-
-        template<typename DataType, typename... DataTypes, typename... Values,
-                 typename std::enable_if<std::is_array<DataType>::value, bool>::type = true>
-        json_finline ClassType realize(DataList<DataType, DataTypes...>& list, Values&&... values) {
-            return realize(data_list_next(list), std::forward<Values>(values)...);
         }
 
         //For initializing a DataMember

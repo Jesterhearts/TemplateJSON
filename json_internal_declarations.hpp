@@ -42,12 +42,6 @@ namespace detail {
         template<typename ClassType, enable_if<ClassType, std::is_pointer> = true>
         inline jsonIter from_json(jsonIter iter, DataMember<ClassType>& into);
 
-        template<typename ClassType, enable_if<ClassType, std::is_array> = true>
-        inline void to_json(const ClassType& from, detail::Stringbuf& out);
-
-        template<typename ClassType, enable_if<ClassType, std::is_array> = true>
-        inline jsonIter from_json(jsonIter iter, DataMember<ClassType>& into);
-
         template<typename ClassType, enable_if<ClassType, std::is_class> = true>
         inline void to_json(const ClassType& from, detail::Stringbuf& out);
 

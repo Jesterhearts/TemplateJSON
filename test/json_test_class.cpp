@@ -22,6 +22,4 @@ JSON_ENABLE(HasMap, (mymap));
 
 JSON_ENABLE(HasPTR, (myptr));
 
-JSON_ENABLE(HasArray, (myintarr), (mynestedarr));
-
 JSON_ENABLE(HasSmrtPtrs, (mysmartint), (myshrdint));

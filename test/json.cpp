@@ -153,23 +153,6 @@ int main() {
         std::cout << e.what() << std::endl;
     }
 
-    HasArray ha;
-    ha.myintarr[0] = 1;
-    ha.myintarr[1] = 1;
-    ha.myintarr[2] = 2;
-    json = tjson::to_json<HasArray>(ha);
-    std::cout << json << std::endl;
-    try
-    {
-        HasArray ha2 = tjson::from_json<HasArray>(json);
-        json = tjson::to_json<HasArray>(ha2);
-        std::cout << "deserialized: " << json << std::endl << std::endl;
-    }
-    catch(const std::invalid_argument& e)
-    {
-        std::cout << e.what() << std::endl;
-    }
-
     HasSmrtPtrs hsp;
     json = tjson::to_json<HasSmrtPtrs>(hsp);
     std::cout << json << std::endl;

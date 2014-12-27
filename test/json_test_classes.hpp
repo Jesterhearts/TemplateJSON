@@ -87,13 +87,6 @@ public:
 };
 
 
-class HasArray {
-public:
-    int myintarr[3];
-    int mynestedarr[3][3];
-};
-
-
 class HasSmrtPtrs {
 public:
     HasSmrtPtrs() {}
