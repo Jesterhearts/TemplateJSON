@@ -7,11 +7,6 @@
 #include <iostream>
 #include <sstream>
 
-#ifndef _MSC_VER
-const char Test::mychar;
-const char Test::mychar2;
-#endif
-
 int main() {
     TestIntegrals();
     TestFloats();

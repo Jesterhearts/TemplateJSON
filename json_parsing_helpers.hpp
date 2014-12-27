@@ -11,55 +11,49 @@ namespace tjson {
         namespace detail {
 
         template<typename ClassType>
-        using basic_type = typename std::remove_reference<ClassType>::type;
+        using non_const = typename std::remove_const<ClassType>::type;
 
         template<typename ClassType>
-        using non_const = typename std::enable_if<!std::is_const<basic_type<ClassType>>::value, ClassType>::type;
+        using basic_type = non_const<typename std::remove_reference<ClassType>::type>;
 
         template<typename ClassType, template<typename C> class decider>
-        using enable_if = typename std::enable_if<decider<non_const<ClassType>>::value, bool>::type;
-
-        template<typename ClassType>
-        using enable_if_const = typename std::enable_if<std::is_const<basic_type<ClassType>>::value, bool>::type;
+        using enable_if = typename std::enable_if<decider<basic_type<ClassType>>::value, bool>::type;
 
         template<typename ClassType, enable_if<ClassType, std::is_enum> = true>
-        void to_json(ClassType from, detail::Stringbuf& out);
+        inline void to_json(ClassType from, detail::Stringbuf& out);
 
         template<typename ClassType, enable_if<ClassType, std::is_enum> = true>
-        jsonIter from_json(jsonIter iter, DataMember<ClassType>& into);
+        inline jsonIter from_json(jsonIter iter, DataMember<ClassType>& into);
 
         template<typename ClassType, enable_if<ClassType, std::is_integral> = true>
-        void to_json(ClassType from, detail::Stringbuf& out);
+        inline void to_json(ClassType from, detail::Stringbuf& out);
 
         template<typename ClassType, enable_if<ClassType, std::is_integral> = true>
-        jsonIter from_json(jsonIter iter, DataMember<ClassType>& into);
+        inline jsonIter from_json(jsonIter iter, DataMember<ClassType>& into);
 
         template<typename ClassType, enable_if<ClassType, std::is_floating_point> = true>
-        void to_json(ClassType from, detail::Stringbuf& out);
+        inline void to_json(ClassType from, detail::Stringbuf& out);
 
         template<typename ClassType, enable_if<ClassType, std::is_floating_point> = true>
-        jsonIter from_json(jsonIter iter, DataMember<ClassType>& into);
+        inline jsonIter from_json(jsonIter iter, DataMember<ClassType>& into);
 
         template<typename ClassType, enable_if<ClassType, std::is_pointer> = true>
-        void to_json(ClassType from, detail::Stringbuf& out);
+        inline void to_json(ClassType from, detail::Stringbuf& out);
 
         template<typename ClassType, enable_if<ClassType, std::is_pointer> = true>
-        jsonIter from_json(jsonIter iter, DataMember<ClassType>& into);
+        inline jsonIter from_json(jsonIter iter, DataMember<ClassType>& into);
 
         template<typename ClassType, enable_if<ClassType, std::is_array> = true>
-        void to_json(const ClassType& from, detail::Stringbuf& out);
+        inline void to_json(const ClassType& from, detail::Stringbuf& out);
 
         template<typename ClassType, enable_if<ClassType, std::is_array> = true>
-        jsonIter from_json(jsonIter iter, DataMember<ClassType>& into);
+        inline jsonIter from_json(jsonIter iter, DataMember<ClassType>& into);
 
         template<typename ClassType, enable_if<ClassType, std::is_class> = true>
-        void to_json(const ClassType& from, detail::Stringbuf& out);
+        inline void to_json(const ClassType& from, detail::Stringbuf& out);
 
         template<typename ClassType, enable_if<ClassType, std::is_class> = true>
-        jsonIter from_json(jsonIter iter, DataMember<ClassType>& into);
-
-        template<typename ClassType, enable_if_const<ClassType> = true>
-        jsonIter from_json(jsonIter iter, DataMember<ClassType>& into);
+        inline jsonIter from_json(jsonIter iter, DataMember<ClassType>& into);
 
         struct Stringbuf {
             Stringbuf() {

@@ -17,20 +17,20 @@
 
 namespace tjson {
     template<typename ClassType>
-    jsonIter from_json(jsonIter iter, detail::DataStore<ClassType>& into);
+    inline jsonIter from_json(jsonIter iter, detail::DataStore<ClassType>& into);
 
     template<typename ClassType>
-    jsonIter from_json(jsonIter iter, detail::DataMember<ClassType>& into);
+    inline jsonIter from_json(jsonIter iter, detail::DataMember<ClassType>& into);
 
     template<>
-    void to_json(const std::string& from, detail::Stringbuf& out) {
+    inline void to_json(const std::string& from, detail::Stringbuf& out) {
         out.push_back('\"');
         out.append(from);
         out.push_back('\"');
     }
 
     template<>
-    jsonIter from_json(jsonIter iter, detail::DataMember<std::string>& into) {
+    inline jsonIter from_json(jsonIter iter, detail::DataMember<std::string>& into) {
         iter = advance_past_whitespace(iter);
         if(*iter != '\"') {
             json_parsing_error(iter, "Not a valid string begin token");
@@ -50,7 +50,7 @@ namespace tjson {
     }
 
     template<>
-    void to_json(const std::wstring& from, detail::Stringbuf& out) {
+    inline void to_json(const std::wstring& from, detail::Stringbuf& out) {
         out.push_back('\"');
 
         std::string narrowString(from.begin(), from.end());
@@ -61,7 +61,7 @@ namespace tjson {
 
 
     template<>
-    jsonIter from_json(jsonIter iter, detail::DataMember<std::wstring>& into) {
+    inline jsonIter from_json(jsonIter iter, detail::DataMember<std::wstring>& into) {
         iter = advance_past_whitespace(iter);
         if(*iter != '\"') {
             json_parsing_error(iter, "Not a valid string begin token");
@@ -79,7 +79,7 @@ namespace tjson {
     }
 
     template<typename T1, typename T2>
-    void to_json(const std::pair<T1, T2>& from, detail::Stringbuf& out) {
+    inline void to_json(const std::pair<T1, T2>& from, detail::Stringbuf& out) {
         out.push_back('[');
         detail::to_json(from.first, out);
         out.push_back(',');
@@ -88,9 +88,7 @@ namespace tjson {
     }
 
     template<typename T1, typename T2>
-    jsonIter from_json(jsonIter iter, detail::DataMember<std::pair<T1, T2>>& into) {
-        //Placement TODO
-
+    inline jsonIter from_json(jsonIter iter, detail::DataMember<std::pair<T1, T2>>& into) {
         iter = advance_past_whitespace(iter);
 
         if(*iter != '[') {
@@ -191,12 +189,6 @@ namespace tjson {
 
             ++endOfString;
             return endOfString;
-        }
-
-        template<typename ClassType,
-                 enable_if_const<ClassType> = true>
-        json_finline jsonIter from_json(jsonIter iter, DataMember<ClassType>& into) {
-            return detail::from_json(iter, into);
         }
 
         template<typename ClassType,

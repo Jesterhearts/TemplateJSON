@@ -24,7 +24,7 @@
 
 namespace tjson {
     template<typename ClassType>
-    void to_json(const ClassType& classFrom, detail::Stringbuf& out) {
+    inline void to_json(const ClassType& classFrom, detail::Stringbuf& out) {
         out.push_back('{');
         detail::members_to_json(classFrom, out, MembersHolder<ClassType>::members());
 
@@ -32,7 +32,7 @@ namespace tjson {
     }
 
     template<typename ClassType>
-    std::string to_json(const ClassType& classFrom) {
+    inline std::string to_json(const ClassType& classFrom) {
         detail::Stringbuf json;
 
         tjson::to_json(classFrom, json);
@@ -41,7 +41,7 @@ namespace tjson {
     }
 
     template<typename ClassType>
-    jsonIter from_json(jsonIter iter, detail::DataStore<ClassType>& into) {
+    inline jsonIter from_json(jsonIter iter, detail::DataStore<ClassType>& into) {
         iter = parse_object_start(iter);
 
         iter = detail::members_from_json(into, iter, MembersHolder<ClassType>::members());
@@ -50,7 +50,7 @@ namespace tjson {
     }
 
     template<typename ClassType>
-    jsonIter from_json(jsonIter iter, detail::DataMember<ClassType>& into) {
+    inline jsonIter from_json(jsonIter iter, detail::DataMember<ClassType>& into) {
         detail::DataStore<ClassType> data;
 
         iter = from_json(iter, data);
@@ -61,7 +61,7 @@ namespace tjson {
     }
 
     template<typename ClassType>
-    ClassType from_json(const std::string& jsonData) {
+    inline ClassType from_json(const std::string& jsonData) {
         detail::DataStore<ClassType> data;
 
         auto iter = jsonData.c_str();

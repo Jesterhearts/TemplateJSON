@@ -99,92 +99,92 @@ namespace tjson {
     } /* detail */
 
     template<typename T, std::size_t A>
-    void to_json(const std::array<T, A>& from, detail::Stringbuf& out) {
+    inline void to_json(const std::array<T, A>& from, detail::Stringbuf& out) {
         detail::iterables::to_json(from, out);
     }
 
     template<typename T, std::size_t A>
-    jsonIter from_json(jsonIter iter, detail::DataMember<std::array<T, A>>& into) {
+    inline jsonIter from_json(jsonIter iter, detail::DataMember<std::array<T, A>>& into) {
         return detail::iterables::from_json(iter, into);
     }
 
     template<typename T, typename A>
-    void to_json(const std::deque<T, A>& from, detail::Stringbuf& out) {
+    inline void to_json(const std::deque<T, A>& from, detail::Stringbuf& out) {
         detail::iterables::to_json(from, out);
     }
 
     template<typename T, typename A>
-    jsonIter from_json(jsonIter iter, detail::DataMember<std::deque<T, A>>& into) {
+    inline jsonIter from_json(jsonIter iter, detail::DataMember<std::deque<T, A>>& into) {
         return detail::iterables::from_json(iter, into);
     }
 
     template<typename T, typename A>
-    void to_json(const std::forward_list<T, A>& from, detail::Stringbuf& out) {
+    inline void to_json(const std::forward_list<T, A>& from, detail::Stringbuf& out) {
         detail::iterables::to_json(from, out);
     }
 
     template<typename T, typename A>
-    jsonIter from_json(jsonIter iter, detail::DataMember<std::forward_list<T, A>>& into) {
+    inline jsonIter from_json(jsonIter iter, detail::DataMember<std::forward_list<T, A>>& into) {
         return detail::iterables::from_json(iter, into);
     }
 
     template<typename T, typename A>
-    void to_json(const std::list<T, A>& from, detail::Stringbuf& out) {
+    inline void to_json(const std::list<T, A>& from, detail::Stringbuf& out) {
         detail::iterables::to_json(from, out);
     }
 
     template<typename T, typename A>
-    jsonIter from_json(jsonIter iter, detail::DataMember<std::list<T, A>>& into) {
+    inline jsonIter from_json(jsonIter iter, detail::DataMember<std::list<T, A>>& into) {
         return detail::iterables::from_json(iter, into);
     }
 
     template<typename T, typename A>
-    void to_json(const std::vector<T, A>& from, detail::Stringbuf& out) {
+    inline void to_json(const std::vector<T, A>& from, detail::Stringbuf& out) {
         detail::iterables::to_json(from, out);
     }
 
     template<typename T, typename A>
-    jsonIter from_json(jsonIter iter, detail::DataMember<std::vector<T, A>>& into) {
-        return detail::iterables::from_json(iter, into);
-    }
-
-    template<typename K, typename C, typename A>
-    void to_json(const std::set<K, C, A>& from, detail::Stringbuf& out) {
-        detail::iterables::to_json(from, out);
-    }
-
-    template<typename K, typename C, typename A>
-    jsonIter from_json(jsonIter iter, detail::DataMember<std::set<K, C, A>>& into) {
+    inline jsonIter from_json(jsonIter iter, detail::DataMember<std::vector<T, A>>& into) {
         return detail::iterables::from_json(iter, into);
     }
 
     template<typename K, typename C, typename A>
-    void to_json(const std::multiset<K, C, A>& from, detail::Stringbuf& out) {
+    inline void to_json(const std::set<K, C, A>& from, detail::Stringbuf& out) {
         detail::iterables::to_json(from, out);
     }
 
     template<typename K, typename C, typename A>
-    jsonIter from_json(jsonIter iter, detail::DataMember<std::multiset<K, C, A>>& into) {
+    inline jsonIter from_json(jsonIter iter, detail::DataMember<std::set<K, C, A>>& into) {
+        return detail::iterables::from_json(iter, into);
+    }
+
+    template<typename K, typename C, typename A>
+    inline void to_json(const std::multiset<K, C, A>& from, detail::Stringbuf& out) {
+        detail::iterables::to_json(from, out);
+    }
+
+    template<typename K, typename C, typename A>
+    inline jsonIter from_json(jsonIter iter, detail::DataMember<std::multiset<K, C, A>>& into) {
         return detail::iterables::from_json(iter, into);
     }
 
     template<typename K, typename H, typename KE, typename A>
-    void to_json(const std::unordered_set<K, H, KE, A>& from, detail::Stringbuf& out) {
+    inline void to_json(const std::unordered_set<K, H, KE, A>& from, detail::Stringbuf& out) {
         detail::iterables::to_json(from, out);
     }
 
     template<typename K, typename H, typename KE, typename A>
-    jsonIter from_json(jsonIter iter, detail::DataMember<std::unordered_set<K, H, KE, A>>& into) {
+    inline jsonIter from_json(jsonIter iter, detail::DataMember<std::unordered_set<K, H, KE, A>>& into) {
         return detail::iterables::from_json(iter, into);
     }
 
     template<typename K, typename T, typename C, typename A>
-    void to_json(const std::map<K, T, C, A>& from, detail::Stringbuf& out) {
+    inline void to_json(const std::map<K, T, C, A>& from, detail::Stringbuf& out) {
         detail::iterables::to_json(from, out);
     }
 
     template<typename K, typename T, typename C, typename A>
-    jsonIter from_json(jsonIter iter, detail::DataMember<std::map<K, T, C, A>>& into) {
+    inline jsonIter from_json(jsonIter iter, detail::DataMember<std::map<K, T, C, A>>& into) {
         return detail::iterables::from_json(iter, into);
     }
 }

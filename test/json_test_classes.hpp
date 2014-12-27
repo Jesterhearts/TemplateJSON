@@ -57,6 +57,8 @@ public:
 
 class Nested : Test {
 public:
+    Nested() {}
+
     Nested(Simple&& s) : mytest(s) {}
      // JSON_INHERITS(Nested, Test);
      Simple mytest;

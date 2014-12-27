@@ -13,10 +13,8 @@ namespace detail {
              typename UnderlyingType, UnderlyingType member>
     json_finline void member_to_json(const ClassType& classFrom,
                                      MemberInfo<UnderlyingType, member>&&, detail::Stringbuf& out) {
-        using nonref = typename std::remove_reference<decltype(classFrom.*member)>::type;
-        using nonconst = typename std::remove_const<nonref>::type;
-
-        detail::to_json<nonconst>(classFrom.*member, out);
+        using type = basic_type<decltype(classFrom.*member)>;
+        detail::to_json<type>(classFrom.*member, out);
     }
 
     template<typename ClassType>

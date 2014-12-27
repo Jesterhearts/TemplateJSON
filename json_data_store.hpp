@@ -3,6 +3,7 @@
 #define __JSON_DATA_STORE_HPP__
 
 #include <cassert>
+#include <cstring>
 #include <type_traits>
 #include <typeinfo>
 #include <utility>
@@ -22,7 +23,7 @@ namespace detail {
 
     template<typename ClassType, typename UnderlyingType, UnderlyingType ClassType::* member>
     struct underlying<MemberInfo<UnderlyingType ClassType::*, member>> {
-        using type = UnderlyingType;
+        using type = typename std::remove_const<UnderlyingType>::type;
     };
 
     template<typename, typename enabled = bool>
@@ -49,9 +50,27 @@ namespace detail {
     struct DataMember : initialized_flag<StoredType> {
         using initialized_flag<StoredType>::is_initialized;
 
-        template<typename... Args>
+        template<typename... Args, typename TypeFor = StoredType,
+                 typename std::enable_if<!std::is_array<TypeFor>::value, bool>::type = true>
         json_finline void write(Args&&... args) {
             new (&storage) StoredType{ std::forward<Args>(args)... };
+            set_initialized();
+        }
+
+        template<typename... Args, typename TypeFor = StoredType,
+                 typename std::enable_if<std::is_array<TypeFor>::value
+                                         && std::rank<TypeFor>::value == 1, bool>::type = true>
+        json_finline void write(size_t location, Args&&... args) {
+            using StoreType = typename std::remove_extent<StoredType>::type;
+            new (&(access()[location])) StoreType{ std::forward<Args>(args)... };
+            set_initialized();
+        }
+
+        template<typename Array, typename TypeFor = StoredType,
+                 typename std::enable_if<std::is_array<TypeFor>::value
+                                         && 1 < std::rank<TypeFor>::value, bool>::type = true>
+        json_finline void write(size_t location, Array&& args) {
+            memcpy(&(access()[location]), args, sizeof(Array));
             set_initialized();
         }
 
@@ -109,7 +128,8 @@ namespace detail {
     };
 
     template<typename... members>
-    constexpr DataList<typename underlying<members>::type...> data_list_type(MemberList<members...>&&) {}
+    constexpr DataList<typename underlying<members>::type...>
+    data_list_type(MemberList<members...>&&) {}
 
     template<typename ClassType>
     struct DataStore {
@@ -132,38 +152,34 @@ namespace detail {
 
     private:
         //For constructing/returning an object
-        template<typename DataType, typename... Values>
-        json_finline ClassType realize(DataList<DataType>& list, Values&&... values) {
-            return ClassType{ std::forward<Values>(values)..., list.data.consume() };
+        template<typename... Values>
+        json_finline ClassType realize(DataList<>& list, Values&&... values) {
+            return ClassType{ std::forward<Values>(values)... };
         }
 
-        template<typename DataType, typename... DataTypes, typename... Values>
+        template<typename DataType, typename... DataTypes, typename... Values,
+                 typename std::enable_if<!std::is_array<DataType>::value, bool>::type = true>
         json_finline ClassType realize(DataList<DataType, DataTypes...>& list, Values&&... values) {
             return realize(list.next(), std::forward<Values>(values)..., list.data.consume());
         }
 
-        template<typename DataType, typename... DataTypes>
-        json_finline ClassType realize(DataList<DataType, DataTypes...>& list) {
-            return realize(list.next(), list.data.consume());
+        template<typename DataType, typename... DataTypes, typename... Values,
+                 typename std::enable_if<std::is_array<DataType>::value, bool>::type = true>
+        json_finline ClassType realize(DataList<DataType, DataTypes...>& list, Values&&... values) {
+            return realize(list.next(), std::forward<Values>(values)...);
         }
 
         //For initializing a DataMember
-        template<typename DataType, typename... Values>
-        json_finline void transfer_to(DataMember<ClassType>& into, DataList<DataType>& list,
-                                             Values&&... values) {
-            into.write(std::forward<Values>(values)..., list.data.consume());
+        template<typename... Values>
+        json_finline void transfer_to(DataMember<ClassType>& into, DataList<>& list,
+                                      Values&&... values) {
+            into.write(std::forward<Values>(values)...);
         }
 
         template<typename DataType, typename... DataTypes, typename... Values>
         json_finline void transfer_to(DataMember<ClassType>& into,
-                                             DataList<DataType, DataTypes...>& list, Values&&... values) {
+                                      DataList<DataType, DataTypes...>& list, Values&&... values) {
             transfer_to(into, list.next(), std::forward<Values>(values)..., list.data.consume());
-        }
-
-        template<typename DataType, typename... DataTypes>
-        json_finline void transfer_to(DataMember<ClassType>& into,
-                                             DataList<DataType, DataTypes...>& list) {
-            transfer_to(into, list.next(), list.data.consume());
         }
     };
 }
