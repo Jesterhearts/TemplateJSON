@@ -5,78 +5,79 @@
 /* I want to include as few headers as possible, but tuples suck to set up properly */
 #include <tuple>
 
+#include "json_internal_declarations.hpp"
+
 namespace tjson {
-    template<typename TupleType,
-             size_t curIndex,
-             bool lastValue,
-             typename curType,
-             typename... Types>
-    struct TupleHandler {
-        json_finline static void to_json(const TupleType& classFrom, detail::Stringbuf& out) {
-            detail::to_json(std::get<curIndex>(classFrom), out);
-            out.push_back(',');
-            TupleHandler<TupleType,
-                         curIndex + 1,
-                         sizeof...(Types) == 1,
-                         Types...
-                        >::to_json(classFrom, out);
-        }
-
-        json_finline static jsonIter from_json(jsonIter iter, detail::DataMember<TupleType>& into) {
-            detail::DataMember<curType> data;
-
-            iter = detail::from_json(iter, data);
-            std::get<curIndex>(into.access()) = data.consume();
-
-            iter = advance_past_whitespace(iter);
-            if(*iter != ',') {
-                json_parsing_error(iter, "Not a valid tuple value");
+    namespace detail {
+        template<typename TupleType,
+                 size_t curIndex,
+                 bool lastValue,
+                 typename curType,
+                 typename... Types>
+        struct TupleHandler : reference_only {
+            json_finline static void to_json(const TupleType& classFrom, Stringbuf& out) {
+                detail::to_json(std::get<curIndex>(classFrom), out);
+                out.push_back(',');
+                TupleHandler<TupleType,
+                             curIndex + 1,
+                             sizeof...(Types) == 1,
+                             Types...
+                            >::to_json(classFrom, out);
             }
-            ++iter;
-            return TupleHandler<TupleType,
-                                curIndex + 1,
-                                sizeof...(Types) == 1,
-                                Types...
-                               >::from_json(iter, into);
-        }
-    };
 
-    template<typename TupleType,
-             size_t curIndex,
-             typename curType,
-             typename... Types>
-    struct TupleHandler <TupleType,
-                         curIndex,
-                         true,
-                         curType,
-                         Types...> {
-        json_finline static void to_json(const TupleType& classFrom, detail::Stringbuf& out) {
-            detail::to_json(std::get<curIndex>(classFrom), out);
-        }
+            json_finline static jsonIter from_json(jsonIter iter, DataMember<TupleType>& into) {
+                DataMember<curType> data;
 
-        json_finline static jsonIter from_json(jsonIter iter, detail::DataMember<TupleType>& into) {
-            detail::DataMember<curType> data;
+                iter = detail::from_json(iter, data);
+                std::get<curIndex>(into.access()) = data.consume();
 
-            iter = detail::from_json(iter, data);
-            std::get<curIndex>(into.access()) = data.consume();
-
-            iter = advance_past_whitespace(iter);
-            if(*iter != ']') {
-                json_parsing_error(iter, "No tuple end token");
+                iter = advance_past_whitespace(iter);
+                if (*iter != ',') {
+                    json_parsing_error(iter, "Not a valid tuple value");
+                }
+                ++iter;
+                return TupleHandler<TupleType,
+                                    curIndex + 1,
+                                    sizeof...(Types) == 1,
+                                    Types...
+                                   >::from_json(iter, into);
             }
-            ++iter;
-            return iter;
-        }
-    };
+        };
+
+        template<typename TupleType,
+                 size_t curIndex,
+                 typename curType,
+                 typename... Types>
+        struct TupleHandler<TupleType, curIndex, true, curType, Types...> : reference_only {
+
+            json_finline static void to_json(const TupleType& classFrom, Stringbuf& out) {
+                detail::to_json(std::get<curIndex>(classFrom), out);
+            }
+
+            json_finline static jsonIter from_json(jsonIter iter, DataMember<TupleType>& into) {
+                DataMember<curType> data;
+
+                iter = detail::from_json(iter, data);
+                std::get<curIndex>(into.access()) = data.consume();
+
+                iter = advance_past_whitespace(iter);
+                if (* iter != ']') {
+                    json_parsing_error(iter, "No tuple end token");
+                }
+                ++iter;
+                return iter;
+            }
+        };
+    } /* detail */
 
     template<typename... Types>
     void to_json(const std::tuple<Types...>& from, detail::Stringbuf& out) {
         out.push_back('[');
-        TupleHandler<std::tuple<Types...>,
-                     0,
-                     sizeof...(Types) == 1,
-                     Types...
-                    >::to_json(from, out);
+        detail::TupleHandler<std::tuple<Types...>,
+                             0,
+                             sizeof...(Types) == 1,
+                             Types...
+                            >::to_json(from, out);
         out.push_back(']');
     }
 
@@ -88,11 +89,11 @@ namespace tjson {
         ++iter;
 
         into.write();
-        return TupleHandler<std::tuple<Types...>,
-                            0,
-                            sizeof...(Types) == 1,
-                            Types...
-                           >::from_json(iter, into);
+        return detail::TupleHandler<std::tuple<Types...>,
+                                    0,
+                                    sizeof...(Types) == 1,
+                                    Types...
+                                   >::from_json(iter, into);
     }
-}
+} /* tjson */
 #endif

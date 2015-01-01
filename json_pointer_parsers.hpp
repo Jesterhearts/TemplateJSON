@@ -26,7 +26,6 @@ namespace tjson {
         template<typename ClassType,
                  enable_if<ClassType, std::is_pointer>>
         json_finline jsonIter from_json(jsonIter iter, DataMember<ClassType>& into) {
-            //Placement TODO
             iter = advance_past_whitespace(iter);
 
             if(memcmp("null", iter, 4) == 0) {
@@ -59,7 +58,6 @@ namespace tjson {
             template<typename T, typename... D,
                      template<typename T, typename... D> class SmartPointerType>
             json_finline jsonIter from_json(jsonIter iter, DataMember<SmartPointerType<T, D...>>& into) {
-                //Placement TODO
                 DataMember<T> data;
                 iter = detail::from_json(iter, data);
                 into.write(new T{ data.consume() });

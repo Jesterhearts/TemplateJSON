@@ -23,23 +23,17 @@ namespace tjson {
     namespace detail {
     namespace iterables {
         template<typename Type, typename VType>
-        struct IterableInserter {
+        struct IterableInserter : reference_only {
             json_finline static void insert(Type& type, VType&& input) {
                 type.emplace(input);
             }
-
-            IterableInserter() = delete;
-            ~IterableInserter() = delete;
         };
 
         template<typename VType, typename A>
-        struct IterableInserter<std::vector<VType, A>, VType> {
+        struct IterableInserter<std::vector<VType, A>, VType> : reference_only {
             json_finline static void insert(std::vector<VType, A>& type, VType&& input) {
                 type.emplace_back(input);
             }
-
-            IterableInserter() = delete;
-            ~IterableInserter() = delete;
         };
 
         template<typename... T, template<typename... T> class Container>

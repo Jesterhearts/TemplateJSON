@@ -27,11 +27,18 @@ namespace detail {
         using type = basic_type<UnderlyingType>;
     };
 
+    struct data_internal_store_tag : reference_only {};
+    //TODO
+    struct data_external_store_tag : reference_only {};
+
     template<typename, typename enabled = bool>
     struct initialized_flag;
 
     template<typename ClassType>
-    struct initialized_flag<ClassType, typename std::enable_if<!std::is_trivially_destructible<ClassType>::value, bool>::type> {
+    struct initialized_flag<ClassType,
+                            typename std::enable_if<
+                                !std::is_trivially_destructible<ClassType>::value, bool
+                            >::type> {
         constexpr initialized_flag() : initialized(false) {}
 
         json_finline void set_initialized() { initialized = true; }
@@ -42,14 +49,16 @@ namespace detail {
     };
 
     template<typename ClassType>
-    struct initialized_flag<ClassType, typename std::enable_if<std::is_trivially_destructible<ClassType>::value, bool>::type> {
+    struct initialized_flag<ClassType,
+                            typename std::enable_if<
+                                std::is_trivially_destructible<ClassType>::value, bool
+                            >::type> {
         json_finline void set_initialized() { }
         json_finline bool is_initialized() { return true; }
     };
 
-    template<typename StoredType>
+    template<typename StoredType, typename store_tag, typename, typename, typename>
     struct DataMember : initialized_flag<StoredType> {
-        using initialized_flag<StoredType>::is_initialized;
 
         template<typename... Args>
         json_finline void write(Args&&... args) {
@@ -67,26 +76,29 @@ namespace detail {
             return *static_cast<StoredType*>(static_cast<void*>(&storage));
         }
 
-        ~DataMember() { 
+        ~DataMember() {
             DestroyStorage<StoredType>();
         }
 
     private:
+        using initialized_flag<StoredType>::is_initialized;
         using initialized_flag<StoredType>::set_initialized;
 
         template<typename Destroying,
-                 typename std::enable_if<!std::is_trivially_destructible<Destroying>::value, bool>::type = true>
-        json_finline
-        void DestroyStorage() {
+                 typename std::enable_if<
+                    !std::is_trivially_destructible<Destroying>::value, bool>
+                 ::type = true>
+        json_finline void DestroyStorage() {
             if(is_initialized()) {
                 static_cast<StoredType*>(static_cast<void*>(&storage))->~StoredType();
             }
         }
 
         template<typename Destroying,
-                 typename std::enable_if<std::is_trivially_destructible<Destroying>::value, bool>::type = true>
-        json_finline
-        void DestroyStorage() { }
+                 typename std::enable_if<
+                    std::is_trivially_destructible<Destroying>::value, bool>
+                 ::type = true>
+        json_finline void DestroyStorage() { }
 
         raw_data<StoredType> storage;
     };
