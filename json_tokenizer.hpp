@@ -1,5 +1,6 @@
 #pragma once
 #ifndef __JSON_TOKENIZER_HPP__
+#define __JSON_TOKENIZER_HPP__
 
 #include <cstring>
 #include <string>
@@ -9,7 +10,8 @@ namespace detail {
 
 //UTF8 todo
 struct Tokenizer {
-    Tokenizer(const std::string& string) : current(string.data()), end(string.data() + string.length()) { }
+    Tokenizer(const std::string& string)
+        : current(string.data()), end(string.data() + string.length()) { }
 
     char peek() {
         return *current;
@@ -47,13 +49,6 @@ struct Tokenizer {
     template<char value>
     void advance_if() {
         if(peek() == value) {
-            ++current;
-        }
-    }
-
-    template<int (test)(int)>
-    void advance_if() {
-        while(test(peek())) {
             ++current;
         }
     }
@@ -96,7 +91,7 @@ struct Tokenizer {
     }
 
     void consume_array_start() {
-        advance_past_or_fail_if_not<'['>("No array start token");
+        advance_past_or_fail_if_not<'['>("Missing [ for array start");
     }
 
     std::pair<const char*, size_t> consume_number() {
@@ -133,8 +128,15 @@ private:
     const char* current;
     const char* end;
 
+    template<int (test)(int)>
+    void advance_if() {
+        while(test(peek())) {
+            ++current;
+        }
+    }
+
     const char* consume_string_start() {
-        advance_past_or_fail_if_not<'\"'>("Missing opening \" for expected string");
+        advance_past_or_fail_if_not<'\"'>("Missing opening \" for string");
         return current;
     }
 
@@ -165,13 +167,6 @@ private:
     Tokenizer& operator=(const Tokenizer&) = delete;
 };
 
-
 }
 }
-
-
-
-
-
-#define __JSON_TOKENIZER_HPP__
 #endif
