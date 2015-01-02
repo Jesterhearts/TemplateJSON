@@ -7,9 +7,8 @@
 namespace tjson {
     namespace detail {
         struct Stringbuf;
+        struct Tokenizer;
     }
-
-    using jsonIter = const char*;
 
     template<typename ClassType>
     void to_json(const ClassType& classFrom, detail::Stringbuf& out);

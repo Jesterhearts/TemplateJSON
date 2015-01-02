@@ -4,7 +4,6 @@
 
 #include "json_functions.hpp"
 
-#define json_finline inline
 #define json_no_return [[noreturn]]
 
 #endif

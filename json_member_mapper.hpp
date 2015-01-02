@@ -33,7 +33,7 @@ namespace tjson {
 #define JSON_CREATE_MEMBERS(CLASS_NAME, ...)                        \
     template<>                                                      \
     struct MembersHolder<CLASS_NAME> {                              \
-        json_finline constexpr static MemberList<                   \
+        inline constexpr static MemberList<                   \
             JSON_LIST_MEMBERS(CLASS_NAME, __VA_ARGS__)              \
         > members() {                                               \
             return MemberList<                                      \

@@ -14,8 +14,8 @@ namespace tjson {
     template<>                                                  \
     struct MemberInfo<                                          \
         JSON_MEMBER_INFO_ARGS(CLASS_NAME, VARDATA)> {           \
-        static constexpr const char key[] = "\""                \
-            BOOST_PP_EXPAND(JSON_KEY_NAME VARDATA) "\"";        \
+        static constexpr const char key[] =                     \
+            BOOST_PP_EXPAND(JSON_KEY_NAME VARDATA);             \
     };                                                          \
                                                                 \
     constexpr const char MemberInfo<                            \

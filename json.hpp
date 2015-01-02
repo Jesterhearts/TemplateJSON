@@ -41,32 +41,27 @@ namespace tjson {
     }
 
     template<typename ClassType>
-    inline jsonIter from_json(jsonIter iter, detail::DataStore<ClassType>& into) {
-        iter = parse_object_start(iter);
-
-        iter = detail::members_from_json(into, iter, MembersHolder<ClassType>::members());
-
-        return parse_object_end(iter);
+    inline void from_json(detail::Tokenizer& tokenizer, detail::DataStore<ClassType>& into) {
+        tokenizer.consume_object_start();
+        detail::members_from_json(into, tokenizer, MembersHolder<ClassType>::members());
     }
 
     template<typename ClassType>
-    inline jsonIter from_json(jsonIter iter, detail::DataMember<ClassType>& into) {
+    inline void from_json(detail::Tokenizer& tokenizer, detail::DataMember<ClassType>& into) {
         detail::DataStore<ClassType> data;
 
-        iter = from_json(iter, data);
+        from_json(tokenizer, data);
 
         data.transfer_to(into);
-
-        return iter;
     }
 
     template<typename ClassType>
     inline ClassType from_json(const std::string& jsonData) {
         detail::DataStore<ClassType> data;
 
-        auto iter = jsonData.c_str();
+        detail::Tokenizer tokenizer(jsonData);
 
-        from_json(iter, data);
+        from_json(tokenizer, data);
 
         return data.realize();
     }

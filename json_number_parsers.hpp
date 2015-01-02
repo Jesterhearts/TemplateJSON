@@ -20,7 +20,7 @@ namespace detail {
     constexpr uint8_t max_string_length<8>() { return 20; };
 
     template<typename Type, Type base>
-    json_finline void itoa(Type value, detail::Stringbuf& out) {
+    inline void itoa(Type value, detail::Stringbuf& out) {
         static_assert(base > 1 && base <= 10, "Unsupported base");
         static_assert(std::is_integral<Type>::value, "Must be an integral type");
         const auto BufferSize = max_string_length<sizeof(Type)>() + std::is_signed<Type>::value;
@@ -65,53 +65,53 @@ namespace detail {
 
     template<typename ClassType,
              enable_if<ClassType, std::is_floating_point>>
-    json_finline void to_json(ClassType from, detail::Stringbuf& out) {
+    inline void to_json(ClassType from, detail::Stringbuf& out) {
         out.append(boost::lexical_cast<std::string>(from));
     }
 
     template<typename ClassType,
              enable_if<ClassType, std::is_integral>>
-    json_finline void to_json(ClassType from, detail::Stringbuf& out) {
+    inline void to_json(ClassType from, detail::Stringbuf& out) {
         itoa<ClassType, 10>(from, out);
     }
 
     template<>
-    json_finline void to_json<bool, true>(bool from, detail::Stringbuf& out) {
+    inline void to_json<bool, true>(bool from, detail::Stringbuf& out) {
         out.append(from ? "true" : "false", from ? 4 : 5);
     }
 
     template<typename Type>
-    json_finline jsonIter atoi(jsonIter iter, DataMember<Type>& into) {
+    inline void atoi(Tokenizer& tokenizer, DataMember<Type>& into) {
         static_assert(std::is_integral<Type>::value, "Must be an integral value");
 
-        iter = advance_past_whitespace(iter);
+        char sign_c = tokenizer.seek();
 
-        if(!std::is_signed<Type>::value && *iter == '-') {
-            json_parsing_error(iter, "Not a valid integral number");
+        if(!std::is_signed<Type>::value && sign_c == '-') {
+            tokenizer.parsing_error("Not a valid integral number");
         }
 
-        const Type sign = (std::is_signed<Type>::value && *iter == '-') ? -1 : 1;
-        if(*iter == '-' || *iter == '+') {
-            ++iter;
-        }
+        const Type sign = (std::is_signed<Type>::value && sign_c == '-') ? -1 : 1;
+        tokenizer.advance_if_either<'-', '+'>();
 
         bool offByOne = false;
         Type value;
 
-        for(value = 0; std::isdigit(*iter); ++iter) {
+        const char* position = tokenizer.position();
+
+        for(value = 0; std::isdigit(*position); ++position) {
             if(value > std::numeric_limits<Type>::max() / 10) {
-                json_parsing_error(iter, "Value will overflow");
+                tokenizer.parsing_error("Value will overflow");
             }
             value *= 10;
 
-            Type temp = (*iter) - '0';
+            Type temp = (*position) - '0';
             if(sign != -1 && temp > std::numeric_limits<Type>::max() - value) {
-                json_parsing_error(iter, "Value will overflow");
+                tokenizer.parsing_error("Value will overflow");
             }
 
             if(sign == -1 && temp > std::numeric_limits<Type>::max() - value) {
                 if(temp > std::numeric_limits<Type>::max() - value + 1) {
-                    json_parsing_error(iter, "Value will overflow");
+                    tokenizer.parsing_error("Value will overflow");
                 }
                 offByOne = true;
                 temp -= 1;
@@ -126,45 +126,44 @@ namespace detail {
         }
         into.write(value);
 
-        return iter;
+        tokenizer.skip(std::distance(tokenizer.position(), position));
     }
 
     template<typename ClassType,
              enable_if<ClassType, std::is_integral>>
-    json_finline jsonIter from_json(jsonIter iter, DataMember<ClassType>& into) {
-        return atoi(iter, into);
+    inline void from_json(Tokenizer& tokenizer, DataMember<ClassType>& into) {
+        return atoi(tokenizer, into);
     }
 
     template<>
-    json_finline jsonIter from_json<bool, true>(jsonIter iter, DataMember<bool>& into) {
-        iter = advance_past_whitespace(iter);
+    inline void from_json<bool, true>(Tokenizer& tokenizer, DataMember<bool>& into) {
+        tokenizer.seek();
 
-        if(memcmp("true", iter, 4) == 0) {
+        if(memcmp("true", tokenizer.position(), 4) == 0) {
             into.write(true);
-            return iter + 4;
+            tokenizer.skip(4);
+            return;
         }
 
-        if(memcmp("false", iter, 5) == 0) {
+        if(memcmp("false", tokenizer.position(), 5) == 0) {
             into.write(false);
-            return iter + 5;
+            tokenizer.skip(5);
+            return;
         }
 
-        json_parsing_error(iter, "Could not read bool");
+        tokenizer.parsing_error("Could not read bool");
     }
 
     template<typename ClassType,
              enable_if<ClassType, std::is_floating_point>>
-    json_finline jsonIter from_json(jsonIter iter, DataMember<ClassType>& into) {
-        iter = advance_past_whitespace(iter);
-        auto endOfNumber = find_end_of_number(iter);
+    inline void from_json(Tokenizer& tokenizer, DataMember<ClassType>& into) {
+        std::pair<const char*, size_t> startAndLength = tokenizer.consume_number();
 
         try {
-            into.write(boost::lexical_cast<ClassType>(iter, std::distance(iter, endOfNumber)));
+            into.write(boost::lexical_cast<ClassType>(startAndLength.first, startAndLength.second));
         } catch(boost::bad_lexical_cast& e) {
-            json_parsing_error(iter, e.what());
+            tokenizer.parsing_error(e.what());
         }
-
-        return endOfNumber;
     }
 }
 }

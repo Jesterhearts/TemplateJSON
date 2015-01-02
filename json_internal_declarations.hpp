@@ -12,6 +12,7 @@ namespace detail {
     };
 
     struct data_internal_store_tag;
+    struct Tokenizer;
 
     template<typename, typename = data_internal_store_tag, typename = void, typename = void,
              typename = void>
@@ -30,31 +31,31 @@ namespace detail {
     inline void to_json(ClassType from, detail::Stringbuf& out);
 
     template<typename ClassType, enable_if<ClassType, std::is_enum> = true>
-    inline jsonIter from_json(jsonIter iter, DataMember<ClassType>& into);
+    inline void from_json(Tokenizer& iter, DataMember<ClassType>& into);
 
     template<typename ClassType, enable_if<ClassType, std::is_integral> = true>
     inline void to_json(ClassType from, detail::Stringbuf& out);
 
     template<typename ClassType, enable_if<ClassType, std::is_integral> = true>
-    inline jsonIter from_json(jsonIter iter, DataMember<ClassType>& into);
+    inline void from_json(Tokenizer& iter, DataMember<ClassType>& into);
 
     template<typename ClassType, enable_if<ClassType, std::is_floating_point> = true>
     inline void to_json(ClassType from, detail::Stringbuf& out);
 
     template<typename ClassType, enable_if<ClassType, std::is_floating_point> = true>
-    inline jsonIter from_json(jsonIter iter, DataMember<ClassType>& into);
+    inline void from_json(Tokenizer& iter, DataMember<ClassType>& into);
 
     template<typename ClassType, enable_if<ClassType, std::is_pointer> = true>
     inline void to_json(ClassType from, detail::Stringbuf& out);
 
     template<typename ClassType, enable_if<ClassType, std::is_pointer> = true>
-    inline jsonIter from_json(jsonIter iter, DataMember<ClassType>& into);
+    inline void from_json(Tokenizer& iter, DataMember<ClassType>& into);
 
     template<typename ClassType, enable_if<ClassType, std::is_class> = true>
     inline void to_json(const ClassType& from, detail::Stringbuf& out);
 
     template<typename ClassType, enable_if<ClassType, std::is_class> = true>
-    inline jsonIter from_json(jsonIter iter, DataMember<ClassType>& into);
+    inline void from_json(Tokenizer& iter, DataMember<ClassType>& into);
 
 } /* detail */
 } /* tjson */

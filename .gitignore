@@ -22,3 +22,8 @@
 *.stackdump
 
 .idea/*
+bench.cpp
+bench.h
+CMakeLists.txt
+json_test_file_load.cpp
+testJSON.txt

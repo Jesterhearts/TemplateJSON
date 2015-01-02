@@ -15,32 +15,24 @@ namespace tjson {
                  typename curType,
                  typename... Types>
         struct TupleHandler : reference_only {
-            json_finline static void to_json(const TupleType& classFrom, Stringbuf& out) {
+
+            static void to_json(const TupleType& classFrom, Stringbuf& out) {
                 detail::to_json(std::get<curIndex>(classFrom), out);
                 out.push_back(',');
-                TupleHandler<TupleType,
-                             curIndex + 1,
-                             sizeof...(Types) == 1,
-                             Types...
-                            >::to_json(classFrom, out);
+                TupleHandler<TupleType, curIndex + 1, sizeof...(Types) == 1, Types...>
+                    ::to_json(classFrom, out);
             }
 
-            json_finline static jsonIter from_json(jsonIter iter, DataMember<TupleType>& into) {
+            static void from_json(Tokenizer& tokenizer, DataMember<TupleType>& into) {
                 DataMember<curType> data;
 
-                iter = detail::from_json(iter, data);
+                detail::from_json(tokenizer, data);
                 std::get<curIndex>(into.access()) = data.consume();
 
-                iter = advance_past_whitespace(iter);
-                if (*iter != ',') {
-                    json_parsing_error(iter, "Not a valid tuple value");
-                }
-                ++iter;
-                return TupleHandler<TupleType,
-                                    curIndex + 1,
-                                    sizeof...(Types) == 1,
-                                    Types...
-                                   >::from_json(iter, into);
+                tokenizer.advance_past_or_fail_if_not<','>("Not a valid tuple value");
+
+                TupleHandler<TupleType, curIndex + 1, sizeof...(Types) == 1, Types...>
+                    ::from_json(tokenizer, into);
             }
         };
 
@@ -50,22 +42,17 @@ namespace tjson {
                  typename... Types>
         struct TupleHandler<TupleType, curIndex, true, curType, Types...> : reference_only {
 
-            json_finline static void to_json(const TupleType& classFrom, Stringbuf& out) {
+            static void to_json(const TupleType& classFrom, Stringbuf& out) {
                 detail::to_json(std::get<curIndex>(classFrom), out);
             }
 
-            json_finline static jsonIter from_json(jsonIter iter, DataMember<TupleType>& into) {
+            static void from_json(Tokenizer& tokenizer, DataMember<TupleType>& into) {
                 DataMember<curType> data;
 
-                iter = detail::from_json(iter, data);
+                detail::from_json(tokenizer, data);
                 std::get<curIndex>(into.access()) = data.consume();
 
-                iter = advance_past_whitespace(iter);
-                if (* iter != ']') {
-                    json_parsing_error(iter, "No tuple end token");
-                }
-                ++iter;
-                return iter;
+                tokenizer.advance_past_or_fail_if_not<']'>("No tuple end token");
             }
         };
     } /* detail */
@@ -82,18 +69,12 @@ namespace tjson {
     }
 
     template<typename... Types>
-    jsonIter from_json(jsonIter iter, detail::DataMember<std::tuple<Types...>>& into) {
-        if(*iter != '[') {
-            json_parsing_error(iter, "No tuple start token");
-        }
-        ++iter;
+    void from_json(detail::Tokenizer& tokenizer, detail::DataMember<std::tuple<Types...>>& into) {
+        tokenizer.consume_array_start();
 
         into.write();
-        return detail::TupleHandler<std::tuple<Types...>,
-                                    0,
-                                    sizeof...(Types) == 1,
-                                    Types...
-                                   >::from_json(iter, into);
+        detail::TupleHandler<std::tuple<Types...>, 0, sizeof...(Types) == 1, Types...>
+            ::from_json(tokenizer, into);
     }
 } /* tjson */
 #endif

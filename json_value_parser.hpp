@@ -16,11 +16,12 @@
 
 namespace tjson {
     template<typename ClassType>
-    inline jsonIter from_json(jsonIter iter, detail::DataStore<ClassType>& into);
+    inline void from_json(detail::Tokenizer& tokenizer, detail::DataStore<ClassType>& into);
 
     template<typename ClassType>
-    inline jsonIter from_json(jsonIter iter, detail::DataMember<ClassType>& into);
+    inline void from_json(detail::Tokenizer& tokenizer, detail::DataMember<ClassType>& into);
 
+    //UTF8 todo
     template<>
     inline void to_json(const std::string& from, detail::Stringbuf& out) {
         out.push_back('\"');
@@ -28,26 +29,14 @@ namespace tjson {
         out.push_back('\"');
     }
 
+    //UTF8 todo
     template<>
-    inline jsonIter from_json(jsonIter iter, detail::DataMember<std::string>& into) {
-        iter = advance_past_whitespace(iter);
-        if(*iter != '\"') {
-            json_parsing_error(iter, "Not a valid string begin token");
-        }
-
-        ++iter;
-        auto endOfString = find_end_of_string(iter);
-        if(*endOfString != '\"') {
-            json_parsing_error(iter, "Not a valid string end token");
-        }
-
-        size_t len = std::distance(iter, endOfString);
-        into.write(iter, len);
-
-        ++endOfString;
-        return endOfString;
+    inline void from_json(detail::Tokenizer& tokenizer, detail::DataMember<std::string>& into) {
+        std::pair<const char*, size_t> stringBeginAndLen = tokenizer.consume_string_token();
+        into.write(stringBeginAndLen.first, stringBeginAndLen.second);
     }
 
+    //UTF8 todo
     template<>
     inline void to_json(const std::wstring& from, detail::Stringbuf& out) {
         out.push_back('\"');
@@ -59,22 +48,11 @@ namespace tjson {
     }
 
 
+    //UTF8 todo
     template<>
-    inline jsonIter from_json(jsonIter iter, detail::DataMember<std::wstring>& into) {
-        iter = advance_past_whitespace(iter);
-        if(*iter != '\"') {
-            json_parsing_error(iter, "Not a valid string begin token");
-        }
-
-        ++iter;
-        auto endOfString = find_end_of_string(iter);
-        if(*endOfString != '\"') {
-            json_parsing_error(iter, "Not a valid string end token");
-        }
-
-        into.write(iter ,endOfString);
-        ++endOfString;
-        return endOfString;
+    inline void from_json(detail::Tokenizer& tokenizer, detail::DataMember<std::wstring>& into) {
+        std::pair<const char*, size_t> stringBeginAndLen = tokenizer.consume_string_token();
+        into.write(stringBeginAndLen.first, stringBeginAndLen.first + stringBeginAndLen.second);
     }
 
     template<typename T1, typename T2>
@@ -87,13 +65,8 @@ namespace tjson {
     }
 
     template<typename T1, typename T2>
-    inline jsonIter from_json(jsonIter iter, detail::DataMember<std::pair<T1, T2>>& into) {
-        iter = advance_past_whitespace(iter);
-
-        if(*iter != '[') {
-            json_parsing_error(iter, "No array start token");
-        }
-        ++iter;
+    inline void from_json(detail::Tokenizer& tokenizer, detail::DataMember<std::pair<T1, T2>>& into) {
+        tokenizer.consume_array_start();
 
         typedef typename std::remove_cv<T1>::type FirstType;
         typedef typename std::remove_cv<T2>::type SecondType;
@@ -101,61 +74,38 @@ namespace tjson {
         detail::DataMember<FirstType> first;
         detail::DataMember<SecondType> second;
 
-        iter = detail::from_json(iter, first);
+        detail::from_json(tokenizer, first);
 
-        iter = advance_past_whitespace(iter);
-        if(*iter != ',') {
-            json_parsing_error(iter, "Pair does not have two values");
-        }
-        ++iter;
+        tokenizer.advance_past_or_fail_if_not<','>("Pair does not have two values");
 
-        iter = detail::from_json(iter, second);
+        detail::from_json(tokenizer, second);
         into.write(first.consume(), second.consume());
 
-        iter = advance_past_whitespace(iter);
-        if(*iter != ']') {
-            json_parsing_error(iter, "No end to JSON pair");
-        }
-
-        ++iter;
-        return iter;
+        tokenizer.advance_past_or_fail_if_not<']'>("No end to JSON pair");
     }
 
     namespace detail {
+        //UTF8 todo
         template<>
-        json_finline void to_json<char, true>(char from, detail::Stringbuf& out) {
+        inline void to_json<char, true>(char from, detail::Stringbuf& out) {
             out.push_back('\"');
             out.push_back(from);
             out.push_back('\"');
         }
 
+        //UTF8 todo
         template<>
-        json_finline jsonIter from_json<char, true>(jsonIter iter, DataMember<char>& into) {
-            iter = advance_past_whitespace(iter);
+        inline void from_json<char, true>(Tokenizer& tokenizer, DataMember<char>& into) {
+            tokenizer.advance_past_or_fail_if_not<'\"'>( "Not a valid string begin token");
 
-            if(*iter != '\"') {
-                json_parsing_error(iter, "Not a valid string begin token");
-            }
-            ++iter;
+            into.write(tokenizer.take());
 
-            if(!*iter) {
-                json_parsing_error(iter,"No string data");
-            }
-
-            //Unicode TODO
-            auto endOfString = iter + 1;
-            if(*endOfString != '\"') {
-                json_parsing_error(iter,"No string end token");
-            }
-
-            into.write(*iter);
-
-            ++endOfString;
-            return endOfString;
+            tokenizer.advance_or_fail_if_not<'\"'>("No string end token");
         }
 
+        //UTF8 todo
         template<>
-        json_finline void to_json<wchar_t, true>(wchar_t from, detail::Stringbuf& out) {
+        inline void to_json<wchar_t, true>(wchar_t from, detail::Stringbuf& out) {
             out.push_back('\"');
 
             std::wstring wideChar(1, from);
@@ -165,41 +115,30 @@ namespace tjson {
             out.push_back('\"');
         }
 
+        //UTF8 todo
         template<>
-        json_finline jsonIter from_json<wchar_t, true>(jsonIter iter, DataMember<wchar_t>& into) {
-            iter = advance_past_whitespace(iter);
-            if(*iter != '\"') {
-                json_parsing_error(iter, "Not a valid string begin token");
-            }
+        inline void from_json<wchar_t, true>(Tokenizer& tokenizer, DataMember<wchar_t>& into) {
+            tokenizer.advance_past_or_fail_if_not<'\"'>( "Not a valid string begin token");
 
-            ++iter;
+            const char* startOfString = tokenizer.position();
+            tokenizer.skip(1);
+            const char* endOfString = tokenizer.position();
 
-            if(!*iter) {
-                json_parsing_error(iter,"No string data");
-            }
+            into.write(std::wstring(startOfString, endOfString)[0]);
 
-            //Unicode TODO
-            auto endOfString = iter + 1;
-            if(*endOfString != '\"') {
-                json_parsing_error(iter,"No string end token");
-            }
-
-            into.write(std::wstring(iter, endOfString)[0]);
-
-            ++endOfString;
-            return endOfString;
+            tokenizer.advance_or_fail_if_not<'\"'>("No string end token");
         }
 
         template<typename ClassType,
                  enable_if<ClassType, std::is_class>>
-        json_finline void to_json(const ClassType& from, detail::Stringbuf& out) {
+        inline void to_json(const ClassType& from, detail::Stringbuf& out) {
             tjson::to_json(from, out);
         }
 
         template<typename ClassType,
                  enable_if<ClassType, std::is_class>>
-        json_finline jsonIter from_json(jsonIter iter, DataMember<ClassType>& into) {
-            return tjson::from_json(iter, into);
+        inline void from_json(detail::Tokenizer& tokenizer, DataMember<ClassType>& into) {
+            tjson::from_json(tokenizer, into);
         }
     }
 }

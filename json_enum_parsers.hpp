@@ -19,29 +19,30 @@ namespace tjson {
     namespace detail {
         template<typename EnumType>
         json_no_return
-        json_finline EnumType validate_enum(jsonIter iter, typename std::underlying_type<EnumType>::type value,
-                                           EnumValueList<EnumType>&&) {
-            json_parsing_error(iter, "Value not in enum");
+        inline EnumType validate_enum(Tokenizer& tokenizer,
+                                      typename std::underlying_type<EnumType>::type value,
+                                      EnumValueList<EnumType>&&) {
+            tokenizer.parsing_error("Value not in enum");
         }
 
         template<typename EnumType, EnumType member, EnumType... members>
-        json_finline EnumType validate_enum(jsonIter iter,
-                                           typename std::underlying_type<EnumType>::type value,
-                                           EnumValueList<EnumType, member, members...>&&) {
+        inline EnumType validate_enum(Tokenizer& tokenizer,
+                                      typename std::underlying_type<EnumType>::type value,
+                                      EnumValueList<EnumType, member, members...>&&) {
             if (value == member) {
                 return static_cast<EnumType>(value);
             }
             else {
-                return validate_enum(iter, value, EnumValueList<EnumType, members...>());
+                return validate_enum(tokenizer, value, EnumValueList<EnumType, members...>());
             }
         }
 
         template<typename EnumType, EnumType base, EnumType max>
-        json_finline EnumType validate_enum(jsonIter iter,
-                                           typename std::underlying_type<EnumType>::type value,
-                                           ContiguousEnumValueList<EnumType, base, max>&&) {
+        inline EnumType validate_enum(Tokenizer& tokenizer,
+                                      typename std::underlying_type<EnumType>::type value,
+                                      ContiguousEnumValueList<EnumType, base, max>&&) {
             if(value < base || value > max) {
-                json_parsing_error(iter, "Value not in enum");
+                tokenizer.parsing_error("Value not in enum");
             }
             else {
                 return static_cast<EnumType>(value);
@@ -50,19 +51,19 @@ namespace tjson {
 
         template<typename ClassType,
                  enable_if<ClassType, std::is_enum>>
-        json_finline void to_json(ClassType from, detail::Stringbuf& out) {
+        inline void to_json(ClassType from, detail::Stringbuf& out) {
             using underlying_type = typename std::underlying_type<ClassType>::type;
             detail::to_json(static_cast<underlying_type>(from), out);
         }
 
         template<typename ClassType,
                  enable_if<ClassType, std::is_enum>>
-        json_finline jsonIter from_json(jsonIter iter, DataMember<ClassType>& into) {
+        inline void from_json(Tokenizer& tokenizer, DataMember<ClassType>& into) {
             using underlying_type = typename std::underlying_type<ClassType>::type;
             DataMember<underlying_type> value;
-            iter = detail::from_json(iter, value);
-            into.write(validate_enum(iter, value.consume(), EnumValidator<ClassType>::values()));
-            return iter;
+
+            detail::from_json(tokenizer, value);
+            into.write(validate_enum(tokenizer, value.consume(), EnumValidator<ClassType>::values()));
         }
     }
 }
