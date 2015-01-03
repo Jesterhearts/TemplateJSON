@@ -5,7 +5,7 @@
 #include <string>
 
 #ifdef _MSC_VER
-static_assert(_MSC_VER >= 1900, "Unsupported compiler");
+static_assert(_MSC_VER >= 1800, "Unsupported compiler");
 #endif
 
 namespace tjson {

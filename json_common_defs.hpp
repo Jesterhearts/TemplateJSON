@@ -8,6 +8,9 @@
 #define json_no_return [[noreturn]]
 #else
 #define json_no_return __declspec(noreturn)
+    #if _MSC_VER < 1900
+    #define constexpr
+    #endif
 #endif
 
 #endif

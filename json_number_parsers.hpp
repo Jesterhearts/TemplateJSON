@@ -9,21 +9,35 @@
 
 namespace tjson {
 namespace detail {
-    template<size_t bytes> constexpr uint8_t max_string_length();
-    template<> //127, 255
-    constexpr uint8_t max_string_length<1>() { return 3; };
-    template<> //32767, 65535
-    constexpr uint8_t max_string_length<2>() { return 5; };
-    template<> //2147483647, 4294967295
-    constexpr uint8_t max_string_length<4>() { return 10; };
-    template<> //9223372036854775807, 18446744073709551615
-    constexpr uint8_t max_string_length<8>() { return 20; };
+
+    template<size_t bytes>
+    struct min_buffer_size;
+
+    template<>
+    struct min_buffer_size<1> : reference_only {
+        static const uint8_t value = 3;
+    };
+
+    template<>
+    struct min_buffer_size<2> : reference_only {
+        static const uint8_t value = 5;
+    };
+
+    template<>
+    struct min_buffer_size<4> : reference_only {
+        static const uint8_t value = 10;
+    };
+
+    template<>
+    struct min_buffer_size<8> : reference_only {
+        static const uint8_t value = 20;
+    };
 
     template<typename Type, Type base>
     inline void itoa(Type value, detail::Stringbuf& out) {
         static_assert(base > 1 && base <= 10, "Unsupported base");
         static_assert(std::is_integral<Type>::value, "Must be an integral type");
-        const auto BufferSize = max_string_length<sizeof(Type)>() + std::is_signed<Type>::value;
+        const auto BufferSize = min_buffer_size<sizeof(Type)>::value + std::is_signed<Type>::value;
 
         if(!value) {
             out.push_back('0');
