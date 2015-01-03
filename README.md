@@ -6,7 +6,15 @@ This is a simple way to make a C++ class serialize to/deserialize from JSON.
 ---
 To create a class:
 
-- In your class .cpp file:
+- In your class header file:
+ 1. If you specify any constructors for your class you must also provide a construct for the class that accepts as its arguments values for all of the fields that you want to be initialized when deserializing.
+ 2. If you wish to specify private data members for serializing/deserializing
+   - `#include "json_private_access.hpp`
+   - In your class body invoke `JSON_PRIVATE_ACCESS()`
+      - This can go anywhere in the declaration
+      - It only declares as friends the types needed by the json serializer to handle serializing your class. It will not affect visibility modifiers.
+
+- In your class implementation file:
  1. `#include "json.hpp"`
  2. Use the macro `JSON_ENABLE(YourClass, (myfield1 [, "key"]), ...)` in the global namespace
    - The list of tuples after "YourClass" in the JSON_ENABLE declaration will be the fields that are serialized and deserialized.
@@ -15,8 +23,8 @@ To create a class:
 
 To convert a class to/from json:
 - `#include "json_functions.hpp"`
-- Call `tjson::to_json(YourClass)`
-- Or `tjson::from_json(string_for_your_class)`
+- `tjson::to_json(YourClass)`
+- `tjson::from_json<YourClass>(string_for_your_class)`
 
 
 --------
@@ -27,7 +35,8 @@ MySimpleClass.hpp
     /* MySimpleClass.hpp */
     class MySimpleClass {
     public:
-        MySimpleClass() : m_int(10) {};
+        MySimpleClass() : m_int(10) {}
+        MySimpleClass(int i) : m_int(i) {};
         
         int m_int;
     };
@@ -59,6 +68,7 @@ e.g.
     class NestedContainer {
     public:
         NestedContainer() : m_simpleClass(), m_int(20) {};
+        NestedContainer(MySimpleClass&& c, int i) : m_simpleClass(c), m_int(i) {};
         MySimpleClass m_simpleClass;
         int m_int;
     };
@@ -72,14 +82,25 @@ Calling to_json would produce:
     {"m_simpleClass":{"m_int":10},"not_nested_int":20}
 
 --- 
-#### Warning:
-There is no cycle detection logic. If deserializing encounters a cycle your program will most likely crash.
+#### Note:
+There is no cycle detection logic. If deserializing encounters a cycle your program will crash.
 
 ---
 ### Constant fields:
-Specifying a const field to be included in the JSON is acceptable; However, a warning will be issued informing you that you have a const field specified to be written into when de-serializing. The warning is purely informational. No data will be written to the const field.
+Since the deserialization will internally access the constructor for your class, constant fields can be specified. They will be initialized during construction.
 
-It is possible to disable this warning by defining JSON_NO_WARN_CONST
+---
+### Static fields:
+Static members are currently unsupported.
+
+---
+### Arrays:
+Supported:
+- std::array
+
+Unsupported:
+- Constant sized arrays (e.g. const char* [20])
+- Heap allocated arrays (e.g. int* = new int[20])
 
 ---
 ### Dependencies
@@ -87,6 +108,8 @@ This program requires the boost.preprocessor and boost.lexical_cast libraries.
 
 ---
 ### Tested compilers:
-- Cygwin g++ 4.8.3
-
+- Cygwin64 g++ (GCC) 4.9.2
+- MinGW-W64 g++ (x86_64-posix-seh-rev1, Built by MinGW-W64 project) 4.9.2
+- MSVC 2013 u4
+- MSVC 2015 Preview
 
