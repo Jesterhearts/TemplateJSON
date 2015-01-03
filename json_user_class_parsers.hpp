@@ -26,9 +26,7 @@ namespace detail {
              typename member, typename... members>
     inline void members_to_json(const ClassType& classFrom, detail::Stringbuf& out,
                                       MemberList<member, members...>&&) {
-        out.push_back('"');
         out.append(member::key, sizeof(member::key) - 1);
-        out.push_back('"');
         out.push_back(':');
 
         member_to_json(classFrom, member(), out);
@@ -38,9 +36,12 @@ namespace detail {
         members_to_json(classFrom, out, MemberList<members...>());
     }
 
-    inline void member_from_json(DataList<>& into, const char* startOfKey, size_t,
+    inline void member_from_json(DataList<>& into, const char* startOfKey, size_t keylen,
                                  Tokenizer& tokenizer, MemberList<>&&) {
-        tokenizer.parsing_error("Invalid key for object");
+        std::string message("Invalid key for object: (");
+        message.append(startOfKey, keylen);
+        message.append(")");
+        tokenizer.parsing_error(std::move(message));
     }
 
     template<typename DataType, typename... DataTypes,
@@ -49,9 +50,12 @@ namespace detail {
                                  size_t keylen, Tokenizer& tokenizer,
                                  MemberList<member, members...>&&) {
 
-        constexpr const size_t len = sizeof(member::key) - 1;
+        //-1 for opening ", -1 for closing ", -1 for \0
+        constexpr const size_t extraneous_chars_in_key = 3;
+        constexpr const size_t len = sizeof(member::key) - extraneous_chars_in_key;
 
-        if(keylen == len && std::memcmp(startOfKey, member::key, len) == 0) {
+        //+1 to pass opening "
+        if(keylen == len && std::memcmp(startOfKey, member::key + 1, len) == 0) {
             detail::from_json(tokenizer, into.data);
         }
         else {

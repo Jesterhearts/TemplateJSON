@@ -86,16 +86,18 @@ namespace tjson {
 
     namespace detail {
         //UTF8 todo
-        template<>
-        inline void to_json<char, true>(char from, detail::Stringbuf& out) {
+        template<typename ClassType,
+                 enable_if<ClassType, is_char>>
+        inline void to_json(ClassType from, detail::Stringbuf& out) {
             out.push_back('\"');
             out.push_back(from);
             out.push_back('\"');
         }
 
         //UTF8 todo
-        template<>
-        inline void from_json<char, true>(Tokenizer& tokenizer, DataMember<char>& into) {
+        template<typename ClassType,
+                 enable_if<ClassType, is_char>>
+        inline void from_json(Tokenizer& tokenizer, DataMember<ClassType>& into) {
             tokenizer.advance_past_or_fail_if_not<'\"'>( "Not a valid string begin token");
 
             into.write(tokenizer.take());
@@ -104,8 +106,9 @@ namespace tjson {
         }
 
         //UTF8 todo
-        template<>
-        inline void to_json<wchar_t, true>(wchar_t from, detail::Stringbuf& out) {
+        template<typename ClassType,
+                 enable_if<ClassType, is_wchar>>
+        inline void to_json(ClassType from, detail::Stringbuf& out) {
             out.push_back('\"');
 
             std::wstring wideChar(1, from);
@@ -116,8 +119,9 @@ namespace tjson {
         }
 
         //UTF8 todo
-        template<>
-        inline void from_json<wchar_t, true>(Tokenizer& tokenizer, DataMember<wchar_t>& into) {
+        template<typename ClassType,
+                 enable_if<ClassType, is_wchar>>
+        inline void from_json(Tokenizer& tokenizer, DataMember<ClassType>& into) {
             tokenizer.advance_past_or_fail_if_not<'\"'>( "Not a valid string begin token");
 
             const char* startOfString = tokenizer.position();

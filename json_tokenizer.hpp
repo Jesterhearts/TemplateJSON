@@ -124,6 +124,10 @@ struct Tokenizer {
         throw std::invalid_argument(error_message);
     }
 
+    void parsing_error(std::string&& message) {
+        parsing_error(message.c_str());
+    }
+
 private:
     const char* current;
     const char* end;

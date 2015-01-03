@@ -70,13 +70,16 @@ namespace detail {
     }
 
     template<typename ClassType,
-             enable_if<ClassType, std::is_integral>>
+             enable_if<ClassType, is_numeric>>
     inline void to_json(ClassType from, detail::Stringbuf& out) {
         itoa<ClassType, 10>(from, out);
     }
 
-    template<>
-    inline void to_json<bool, true>(bool from, detail::Stringbuf& out) {
+    template<typename ClassType,
+             enable_if<ClassType, is_bool>>
+    inline void to_json(ClassType from, detail::Stringbuf& out) {
+        static_assert(std::is_same<ClassType, bool>::value, "error in template declaration.");
+
         out.append(from ? "true" : "false", from ? 4 : 5);
     }
 
@@ -130,13 +133,16 @@ namespace detail {
     }
 
     template<typename ClassType,
-             enable_if<ClassType, std::is_integral>>
+             enable_if<ClassType, is_numeric>>
     inline void from_json(Tokenizer& tokenizer, DataMember<ClassType>& into) {
         return atoi(tokenizer, into);
     }
 
-    template<>
-    inline void from_json<bool, true>(Tokenizer& tokenizer, DataMember<bool>& into) {
+    template<typename ClassType,
+             enable_if<ClassType, is_bool>>
+    inline void from_json(Tokenizer& tokenizer, DataMember<ClassType>& into) {
+        static_assert(std::is_same<ClassType, bool>::value, "error in template declaration.");
+
         tokenizer.seek();
 
         if(memcmp("true", tokenizer.position(), 4) == 0) {
