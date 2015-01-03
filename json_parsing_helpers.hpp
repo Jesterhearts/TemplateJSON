@@ -49,7 +49,8 @@ private:
     size_t m_size;
 
     void allocate(size_t size) {
-        size_t newsize = std::distance(m_buf, index) + size;
+        const size_t index_offset = std::distance(m_buf, index);
+        size_t newsize = index_offset + size;
         if(m_size < newsize) {
             newsize *= 1.2;
             char* new_mem = static_cast<char*>(std::realloc(m_buf, newsize));
@@ -57,6 +58,7 @@ private:
                 throw std::bad_alloc();
             }
             m_buf = new_mem;
+            index = m_buf + index_offset;
             m_size = newsize;
         }
     }
