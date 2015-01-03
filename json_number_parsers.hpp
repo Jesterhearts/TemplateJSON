@@ -101,7 +101,7 @@ namespace detail {
 
         const char* position = tokenizer.position();
 
-        for(value = 0; std::isdigit(*position); ++position) {
+        for(value = 0; isdigit(*position); ++position) {
             if(value > std::numeric_limits<Type>::max() / 10) {
                 tokenizer.parsing_error("Value will overflow");
             }

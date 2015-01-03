@@ -4,6 +4,10 @@
 
 #include "json_functions.hpp"
 
+#ifndef _MSC_VER
 #define json_no_return [[noreturn]]
+#else
+#define json_no_return __declspec(noreturn)
+#endif
 
 #endif

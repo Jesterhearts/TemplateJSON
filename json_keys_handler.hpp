@@ -14,21 +14,24 @@ namespace tjson {
     template<>                                                  \
     struct MemberInfo<                                          \
         JSON_MEMBER_INFO_ARGS(CLASS_NAME, VARDATA)> {           \
-        static constexpr const char key[] = "\""                \
-            BOOST_PP_EXPAND(JSON_KEY_NAME VARDATA)              \
-        "\"";                                                   \
+        static const char key[];                                \
     };                                                          \
                                                                 \
-    constexpr const char MemberInfo<                            \
+    const char MemberInfo<                                      \
         JSON_MEMBER_INFO_ARGS(CLASS_NAME, VARDATA)              \
-    >::key[];
+    >::key[] = "\"" BOOST_PP_EXPAND(JSON_KEY_NAME VARDATA) "\"";
 
 #define JSON_MEMBER_INFO_ARGS(CLASS_NAME, VARDATA) \
         decltype(&CLASS_NAME:: JSON_VARNAME VARDATA),   \
         &CLASS_NAME:: JSON_VARNAME VARDATA
 
+#ifndef _MSC_VER
 #define JSON_KEY_NAME(...)                                         \
     BOOST_PP_OVERLOAD(JSON_KEY_NAME, __VA_ARGS__)(__VA_ARGS__)
+#else
+#define JSON_KEY_NAME(...)                                                                   \
+    BOOST_PP_CAT(BOOST_PP_OVERLOAD(JSON_KEY_NAME, __VA_ARGS__)(__VA_ARGS__),BOOST_PP_EMPTY())
+#endif
 
 #define JSON_KEY_NAME2(VARNAME, JSONKEY)   \
     JSONKEY

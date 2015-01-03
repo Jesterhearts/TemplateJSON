@@ -11,7 +11,11 @@ struct basic {
 struct nested {
     nested(basic&& b) : basic1(b) {}
 
+#ifndef _MSC_VER
     nested() : basic1{10} {}
+#else
+    nested() : basic1() {}
+#endif
 
     basic basic1;
 };

@@ -4,6 +4,10 @@
 
 #include <string>
 
+#ifdef _MSC_VER
+static_assert(_MSC_VER >= 1900, "Unsupported compiler");
+#endif
+
 namespace tjson {
     namespace detail {
         struct Stringbuf;

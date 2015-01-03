@@ -22,6 +22,7 @@
 *.stackdump
 
 .idea/*
+visual_studio/*
 bench.cpp
 bench.h
 CMakeLists.txt

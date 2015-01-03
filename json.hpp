@@ -15,6 +15,11 @@
 
 #include <cstdlib>
 
+#ifdef _MSC_VER
+#pragma warning(push)
+#pragma warning(disable: 4624)
+#endif
+
 #include "json_common_defs.hpp"
 #include "json_data_store.hpp"
 #include "json_value_parser.hpp"
@@ -81,7 +86,7 @@ namespace tjson {
     namespace tjson {                                                \
         template<>                                                  \
         struct EnumValidator<ENUM_NAME> {                           \
-            constexpr static EnumValueList<ENUM_NAME, __VA_ARGS__>  \
+            static EnumValueList<ENUM_NAME, __VA_ARGS__>  \
             values() {                                              \
                 return EnumValueList<ENUM_NAME, __VA_ARGS__>();     \
             }                                                       \
@@ -92,11 +97,16 @@ namespace tjson {
     namespace tjson {                                                        \
         template<>                                                          \
         struct EnumValidator<ENUM_NAME> {                                   \
-            constexpr static ContiguousEnumValueList<ENUM_NAME, __VA_ARGS__>\
+            static ContiguousEnumValueList<ENUM_NAME, __VA_ARGS__>\
             values() {                                                      \
                 return ContiguousEnumValueList<ENUM_NAME, __VA_ARGS__>();   \
             }                                                               \
         };                                                                  \
     }
+
+
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif
 
 #endif
