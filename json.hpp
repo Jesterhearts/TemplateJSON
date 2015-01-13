@@ -20,12 +20,12 @@
 #pragma warning(disable: 4624)
 #endif
 
-#include "json_common_defs.hpp"
-#include "json_data_store.hpp"
-#include "json_value_parser.hpp"
-#include "json_user_class_parsers.hpp"
-#include "json_keys_handler.hpp"
-#include "json_member_mapper.hpp"
+#include "internal/json_common_defs.hpp"
+#include "internal/json_data_store.hpp"
+#include "internal/json_value_parser.hpp"
+#include "internal/json_user_class_parsers.hpp"
+#include "internal/json_keys_handler.hpp"
+#include "internal/json_member_mapper.hpp"
 
 namespace tjson {
     template<typename ClassType>
