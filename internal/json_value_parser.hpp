@@ -25,15 +25,15 @@ namespace tjson {
     template<>
     inline void to_json(const std::string& from, detail::Stringbuf& out) {
         out.push_back('\"');
-        out.append(from);
+        out.append_and_escape(from);
         out.push_back('\"');
     }
 
     //UTF8 todo
     template<>
     inline void from_json(detail::Tokenizer& tokenizer, detail::DataMember<std::string>& into) {
-        std::pair<const char*, size_t> stringBeginAndLen = tokenizer.consume_string_token();
-        into.write(stringBeginAndLen.first, stringBeginAndLen.second);
+        detail::Tokenizer::UnescapedString unescaped = tokenizer.consume_string_token();
+        into.write(unescaped.data, unescaped.length);
     }
 
     //UTF8 todo
@@ -42,7 +42,7 @@ namespace tjson {
         out.push_back('\"');
 
         std::string narrowString(from.begin(), from.end());
-        out.append(narrowString);
+        out.append_and_escape(narrowString);
 
         out.push_back('\"');
     }
@@ -51,8 +51,8 @@ namespace tjson {
     //UTF8 todo
     template<>
     inline void from_json(detail::Tokenizer& tokenizer, detail::DataMember<std::wstring>& into) {
-        std::pair<const char*, size_t> stringBeginAndLen = tokenizer.consume_string_token();
-        into.write(stringBeginAndLen.first, stringBeginAndLen.first + stringBeginAndLen.second);
+        detail::Tokenizer::UnescapedString unescaped = tokenizer.consume_string_token();
+        into.write(unescaped.data, unescaped.data + unescaped.length);
     }
 
     template<typename T1, typename T2>

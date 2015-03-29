@@ -10,39 +10,45 @@ namespace detail {
 
 //UTF8 todo
 struct Tokenizer {
-    Tokenizer(const std::string& string)
-        : current(string.data()), end(string.data() + string.length()) { }
+    Tokenizer(const std::string& string) :
+        current(string.data()),
+        end(string.data() + string.length()) {}
 
+    json_force_inline
     char peek() {
         return *current;
     }
 
+    json_force_inline
     char seek() {
-        advance_if<&isspace>();
+        advance_while_whitespace();
         return peek();
     }
 
+    json_force_inline
     char take() {
         return *(current++);
     }
 
+    json_force_inline
     void skip(size_t count) {
         current += count;
     }
 
+    json_force_inline
     const char* position() {
         return current;
     }
 
     template<char value>
     void advance_past() {
-        advance_if<&isspace>();
+        advance_while_whitespace();
         advance_if<value>();
     }
 
     template<char value>
     void advance_past_or_fail_if_not(const char* message) {
-        advance_if<&isspace>();
+        advance_while_whitespace();
         advance_or_fail_if_not<value>(message);
     }
 
@@ -70,12 +76,104 @@ struct Tokenizer {
         }
     }
 
+    struct UnescapedString {
+        const char* const data;
+        const size_t length;
+
+        json_force_inline UnescapedString(const char* data, size_t length, bool shared) :
+            data(data),
+            length(length),
+            shared(shared)
+        {}
+
+        json_force_inline UnescapedString(UnescapedString&& other) :
+            data(other.data),
+            length(other.length),
+            shared(other.shared)
+        {
+            other.shared = true;
+        }
+
+
+        json_force_inline ~UnescapedString() {
+            if(!shared)
+                std::free(const_cast<char*>(data));
+        }
+
+    private:
+        bool shared;
+    };
+
     //return is the set (opening quote, closing quote)
-    std::pair<const char*, size_t> consume_string_token() {
+    UnescapedString consume_string_token() {
         const char* string_start = consume_string_start();
         const char* string_end = consume_string_remainder();
 
-        return std::make_pair(string_start, std::distance(string_start, string_end));
+        size_t length = std::distance(string_start, string_end);
+
+        void* backslash = std::memchr(string_start, '\\', length);
+        if(!backslash) {
+            return {string_start, length, /* shared */true};
+        }
+
+        char* data = static_cast<char*>(std::malloc(length * sizeof(char)));
+
+        char* write_i = data;
+        for(; string_start != (string_end - 1) && string_start != string_end;
+            ++string_start, ++write_i)
+        {
+            if(*string_start == '\\') {
+                switch(*(string_start + 1)) {
+                case '\\':
+                    /* fallthru */
+                case '\"':
+                    /* fallthru */
+                case '\'':
+                    *write_i = *(string_start + 1);
+                    break;
+
+                case 'a':
+                    *write_i = '\a';
+                    break;
+                case 'b':
+                    *write_i = '\b';
+                    break;
+                case 'f':
+                    *write_i = '\f';
+                    break;
+                case 'n':
+                    *write_i = '\n';
+                    break;
+                case 'r':
+                    *write_i = '\r';
+                    break;
+                case 't':
+                    *write_i = '\t';
+                    break;
+                case 'v':
+                    *write_i = '\v';
+                    break;
+                default:
+                    *write_i = *string_start;
+                    *write_i = *(string_start + 1);
+                }
+                ++string_start;
+            }
+            else {
+                *write_i = *string_start;
+            }
+        }
+
+        if(string_start != string_end) {
+            *write_i = *string_start;
+        }
+
+        UnescapedString result {
+            data,
+            static_cast<size_t>(std::distance(data, write_i)),
+            /* shared */false
+        };
+        return result;
     }
 
     void consume_kv_mapping() {
@@ -95,26 +193,27 @@ struct Tokenizer {
     }
 
     std::pair<const char*, size_t> consume_number() {
-        advance_if<&isspace>();
+        advance_while_whitespace();
 
         const char* start = current;
 
         advance_if<'-'>();
-        advance_if<&isdigit>();
+        advance_while<&isdigit>();
 
         advance_if<'.'>();
-        advance_if<&isdigit>();
+        advance_while<&isdigit>();
 
         if(advance_if_either<'e', 'E'>()) {
             advance_if_either<'-', '+'>();
         }
 
-        advance_if<&isdigit>();
+        advance_while<&isdigit>();
 
         return std::make_pair(start, std::distance(start, current));
     }
 
-    json_no_return void parsing_error(const char* description) {
+    json_no_return
+    void parsing_error(const char* description) {
         size_t context_length = std::min<size_t>(std::distance(current, end), 1000);
 
         std::string error_message(description);
@@ -124,6 +223,7 @@ struct Tokenizer {
         throw std::invalid_argument(error_message);
     }
 
+    json_no_return
     void parsing_error(std::string&& message) {
         parsing_error(message.c_str());
     }
@@ -132,8 +232,27 @@ private:
     const char* current;
     const char* end;
 
+    void advance_while_whitespace() {
+        while (true) {
+            switch(peek()) {
+            case ' ':
+                /* fallthru */
+            case '\n':
+                /* fallthru */
+            case '\r':
+                /* fallthru */
+            case '\t':
+                /* fallthru */
+            case '\v':
+                ++current;
+                continue;
+            }
+            break;
+        }
+    }
+
     template<int (test)(int)>
-    void advance_if() {
+    void advance_while() {
         while(test(peek())) {
             ++current;
         }

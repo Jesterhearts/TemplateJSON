@@ -14,29 +14,44 @@ namespace tjson {
 namespace detail {
 
 struct Stringbuf {
-    Stringbuf() {
+    json_force_inline Stringbuf() {
         m_size = 1024;
         m_buf = static_cast<char*>(std::malloc(m_size));
         index = m_buf;
     }
 
-    ~Stringbuf() {
+    json_force_inline ~Stringbuf() {
         std::free(m_buf);
     }
 
-    void push_back(char c) {
+    json_force_inline void push_back(char c) {
         allocate(1);
         *(index++) = c;
     }
 
-    void append(const char* str, size_t len) {
+    json_force_inline void append(const char* str, size_t len) {
         allocate(len);
         std::memcpy(index, str, len);
         index += len;
     }
 
-    void append(const std::string& str) {
+    json_force_inline void append(const std::string& str) {
         append(str.c_str(), str.length());
+    }
+
+    json_force_inline void append_and_escape(const std::string& str) {
+        allocate(2 * str.length());
+
+        const char* chars = str.c_str();
+        size_t length = str.length();
+
+        for(size_t i = 0; i < length; ++i) {
+            char c = chars[i];
+            if(c == '"' || c =='\\') {
+                *(index++) = '\\';
+            }
+            *(index++) = c;
+        }
     }
 
     std::string to_string() {
@@ -48,7 +63,7 @@ private:
     char* m_buf;
     size_t m_size;
 
-    void allocate(size_t size) {
+    json_force_inline void allocate(size_t size) {
         const size_t index_offset = std::distance(m_buf, index);
         size_t newsize = index_offset + size;
         if(m_size < newsize) {

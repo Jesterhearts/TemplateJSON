@@ -22,8 +22,27 @@ struct strings {
     std::wstring wstring;
     std::string unicode;
     std::wstring wunicode;
+};
 
-    //TODO test escaping
+struct escaped_strings {
+    escaped_strings(std::string quotes, std::string escaped, std::string both, std::string newline)
+        :   quotes(quotes),
+            escaped(escaped),
+            both(both),
+            newline(newline)
+    {}
+
+    escaped_strings()
+        :   quotes("abc\""),
+            escaped("\\\\"),
+            both("\"\\\\\""),
+            newline("\n")
+    {}
+
+    std::string quotes;
+    std::string escaped;
+    std::string both;
+    std::string newline;
 };
 
 struct chars {

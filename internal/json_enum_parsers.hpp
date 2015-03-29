@@ -19,16 +19,16 @@ namespace tjson {
     namespace detail {
         template<typename EnumType>
         json_no_return
-        inline EnumType validate_enum(Tokenizer& tokenizer,
-                                      typename std::underlying_type<EnumType>::type value,
-                                      EnumValueList<EnumType>&&) {
+        json_force_inline EnumType validate_enum(Tokenizer&                                    tokenizer,
+                                                 typename std::underlying_type<EnumType>::type value,
+                                                 EnumValueList<EnumType>&&) {
             tokenizer.parsing_error("Value not in enum");
         }
 
         template<typename EnumType, EnumType member, EnumType... members>
-        inline EnumType validate_enum(Tokenizer& tokenizer,
-                                      typename std::underlying_type<EnumType>::type value,
-                                      EnumValueList<EnumType, member, members...>&&) {
+        json_force_inline EnumType validate_enum(Tokenizer&                                    tokenizer,
+                                                 typename std::underlying_type<EnumType>::type value,
+                                                 EnumValueList<EnumType, member, members...>&&) {
             if (value == member) {
                 return static_cast<EnumType>(value);
             }
@@ -38,9 +38,9 @@ namespace tjson {
         }
 
         template<typename EnumType, EnumType base, EnumType max>
-        inline EnumType validate_enum(Tokenizer& tokenizer,
-                                      typename std::underlying_type<EnumType>::type value,
-                                      ContiguousEnumValueList<EnumType, base, max>&&) {
+        json_force_inline EnumType validate_enum(Tokenizer&                                    tokenizer,
+                                                 typename std::underlying_type<EnumType>::type value,
+                                                 ContiguousEnumValueList<EnumType, base, max>&&) {
             if(value < base || value > max) {
                 tokenizer.parsing_error("Value not in enum");
             }

@@ -14,8 +14,7 @@ namespace detail {
     struct data_internal_store_tag;
     struct Tokenizer;
 
-    template<typename, typename = data_internal_store_tag, typename = void, typename = void,
-             typename = void>
+    template<typename, typename = data_internal_store_tag>
     struct DataMember;
 
     template<typename ClassType>

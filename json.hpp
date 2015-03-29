@@ -37,7 +37,7 @@ namespace tjson {
     }
 
     template<typename ClassType>
-    inline std::string to_json(const ClassType& classFrom) {
+    json_force_inline std::string to_json(const ClassType& classFrom) {
         detail::Stringbuf json;
 
         tjson::to_json(classFrom, json);
@@ -61,7 +61,7 @@ namespace tjson {
     }
 
     template<typename ClassType>
-    inline ClassType from_json(const std::string& jsonData) {
+    json_force_inline ClassType from_json(const std::string& jsonData) {
         detail::DataStore<ClassType> data;
 
         detail::Tokenizer tokenizer(jsonData);

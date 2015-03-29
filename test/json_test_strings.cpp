@@ -3,10 +3,15 @@
 #include "json.hpp"
 
 JSON_ENABLE(strings, (string), (wstring), (unicode), (wunicode));
+JSON_ENABLE(escaped_strings, (quotes), (escaped), (both), (newline));
 JSON_ENABLE(chars, (c), (wc));
 
 void TestStringClass() {
     TEST_BODY(strings)
+}
+
+void TestEscaping() {
+    TEST_BODY(escaped_strings);
 }
 
 void TestChars() {
@@ -14,7 +19,8 @@ void TestChars() {
 }
 
 void TestStrings() {
-    TestStringClass() ;
+    TestStringClass();
+    TestEscaping();
     TestChars();
 }
 
