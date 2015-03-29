@@ -2,6 +2,8 @@
 #ifndef __JSON_TEST_POINTERS_HPP__
 #define __JSON_TEST_POINTERS_HPP__
 
+#include <memory>
+
 struct bare_pointers {
     bare_pointers() : pointer(new int(5)), null(nullptr) {}
 
