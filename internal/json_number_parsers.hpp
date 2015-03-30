@@ -74,7 +74,7 @@ namespace detail {
         }
 
         ++to;
-        out.append(to, BufferSize - std::abs(to - str));
+        out.append(to, BufferSize - (to - str));
     }
 
     template<typename ClassType,
@@ -85,13 +85,13 @@ namespace detail {
 
     template<typename ClassType,
              enable_if<ClassType, is_numeric>>
-    inline void to_json(ClassType from, detail::Stringbuf& out) {
+    json_force_inline void to_json(ClassType from, detail::Stringbuf& out) {
         itoa<ClassType, 10>(from, out);
     }
 
     template<typename ClassType,
              enable_if<ClassType, is_bool>>
-    inline void to_json(ClassType from, detail::Stringbuf& out) {
+    json_force_inline void to_json(ClassType from, detail::Stringbuf& out) {
         static_assert(std::is_same<ClassType, bool>::value, "error in template declaration.");
 
         out.append(from ? "true" : "false", from ? 4 : 5);
@@ -122,14 +122,13 @@ namespace detail {
             value *= 10;
 
             Type temp = (*position) - '0';
-            if(sign != -1 && temp > std::numeric_limits<Type>::max() - value) {
-                tokenizer.parsing_error("Value will overflow");
-            }
-
-            if(sign == -1 && temp > std::numeric_limits<Type>::max() - value) {
-                if(temp > std::numeric_limits<Type>::max() - value + 1) {
+            if(temp > std::numeric_limits<Type>::max() - value) {
+                if(sign != -1
+                   || (sign == -1 && temp > std::numeric_limits<Type>::max() - value + 1))
+                {
                     tokenizer.parsing_error("Value will overflow");
                 }
+
                 offByOne = true;
                 temp -= 1;
             }
@@ -148,7 +147,7 @@ namespace detail {
 
     template<typename ClassType,
              enable_if<ClassType, is_numeric>>
-    inline void from_json(Tokenizer& tokenizer, DataMember<ClassType>& into) {
+    json_force_inline void from_json(Tokenizer& tokenizer, DataMember<ClassType>& into) {
         return atoi(tokenizer, into);
     }
 

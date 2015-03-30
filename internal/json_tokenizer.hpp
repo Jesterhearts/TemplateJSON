@@ -94,7 +94,6 @@ struct Tokenizer {
             other.shared = true;
         }
 
-
         json_force_inline ~UnescapedString() {
             if(!shared)
                 std::free(const_cast<char*>(data));
@@ -111,25 +110,26 @@ struct Tokenizer {
 
         size_t length = std::distance(string_start, string_end);
 
-        void* backslash = std::memchr(string_start, '\\', length);
+        const char* backslash = static_cast<char*>(std::memchr(string_start, '\\', length));
         if(!backslash) {
             return {string_start, length, /* shared */true};
         }
 
         char* data = static_cast<char*>(std::malloc(length * sizeof(char)));
+        std::memcpy(data, string_start, std::distance(string_start, backslash));
 
-        char* write_i = data;
-        for(; string_start != (string_end - 1) && string_start != string_end;
-            ++string_start, ++write_i)
+        char* write_i = data + std::distance(string_start, backslash);
+        for(; backslash != (string_end - 1) && backslash != string_end;
+            ++backslash, ++write_i)
         {
-            if(*string_start == '\\') {
-                switch(*(string_start + 1)) {
+            if(*backslash == '\\') {
+                switch(*(backslash + 1)) {
                 case '\\':
                     /* fallthru */
                 case '\"':
                     /* fallthru */
                 case '\'':
-                    *write_i = *(string_start + 1);
+                    *write_i = *(backslash + 1);
                     break;
 
                 case 'a':
@@ -154,18 +154,18 @@ struct Tokenizer {
                     *write_i = '\v';
                     break;
                 default:
-                    *write_i = *string_start;
-                    *write_i = *(string_start + 1);
+                    *write_i = *backslash;
+                    *write_i = *(backslash + 1);
                 }
-                ++string_start;
+                ++backslash;
             }
             else {
-                *write_i = *string_start;
+                *write_i = *backslash;
             }
         }
 
-        if(string_start != string_end) {
-            *write_i = *string_start;
+        if(backslash != string_end) {
+            *write_i = *backslash;
         }
 
         UnescapedString result {
