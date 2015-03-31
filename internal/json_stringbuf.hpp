@@ -1,6 +1,6 @@
 #pragma once
-#ifndef __JSON_PARSING_HELPERS_HPP__
-#define __JSON_PARSING_HELPERS_HPP__
+#ifndef __JSON_STRINGBUF_HPP__
+#define __JSON_STRINGBUF_HPP__
 
 #include <algorithm>
 #include <stdexcept>

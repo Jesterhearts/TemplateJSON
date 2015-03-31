@@ -6,7 +6,7 @@
 #include <string>
 #include <type_traits>
 
-#include "json_parsing_helpers.hpp"
+#include "json_stringbuf.hpp"
 #include "json_data_store.hpp"
 #include "json_number_parsers.hpp"
 #include "json_enum_parsers.hpp"

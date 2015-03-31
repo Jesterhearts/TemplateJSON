@@ -5,7 +5,7 @@
 #include "json_common_defs.hpp"
 #include "json_data_store.hpp"
 #include "json_member_mapper.hpp"
-#include "json_parsing_helpers.hpp"
+#include "json_stringbuf.hpp"
 #include "json_tokenizer.hpp"
 
 namespace tjson {
