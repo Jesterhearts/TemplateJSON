@@ -11,11 +11,11 @@ namespace detail {
         ~reference_only() = delete;
     };
 
-    struct data_external_store_tag;
+    struct data_emplace_store_tag;
     struct data_internal_store_tag;
     struct Tokenizer;
 
-    template<typename, typename = data_internal_store_tag>
+    template<typename, typename >
     struct DataMember;
 
     template<typename ClassType>
@@ -48,57 +48,57 @@ namespace detail {
     template<typename ClassType, enable_if<ClassType, std::is_enum> = true>
     inline void to_json(ClassType from, detail::Stringbuf& out);
 
-    template<typename ClassType, enable_if<ClassType, std::is_enum> = true>
-    inline void from_json(Tokenizer& iter, DataMember<ClassType>& into);
+    template<typename ClassType, typename store_tag, enable_if<ClassType, std::is_enum> = true>
+    inline void from_json(Tokenizer& iter, DataMember<ClassType, store_tag>& into);
 
     //Number parsers
     template<typename ClassType, enable_if<ClassType, is_numeric> = true>
     inline void to_json(ClassType from, detail::Stringbuf& out);
 
-    template<typename ClassType, enable_if<ClassType, is_numeric> = true>
-    inline void from_json(Tokenizer& iter, DataMember<ClassType>& into);
+    template<typename ClassType, typename store_tag, enable_if<ClassType, is_numeric> = true>
+    inline void from_json(Tokenizer& iter, DataMember<ClassType, store_tag>& into);
 
     //Boolean parsers
     template<typename ClassType, enable_if<ClassType, is_bool> = true>
     inline void to_json(ClassType from, detail::Stringbuf& out);
 
-    template<typename ClassType, enable_if<ClassType, is_bool> = true>
-    inline void from_json(Tokenizer& iter, DataMember<ClassType>& into);
+    template<typename ClassType, typename store_tag, enable_if<ClassType, is_bool> = true>
+    inline void from_json(Tokenizer& iter, DataMember<ClassType, store_tag>& into);
 
     //Character parsers
     template<typename ClassType, enable_if<ClassType, is_char> = true>
     inline void to_json(ClassType from, detail::Stringbuf& out);
 
-    template<typename ClassType, enable_if<ClassType, is_char> = true>
-    inline void from_json(Tokenizer& iter, DataMember<ClassType>& into);
+    template<typename ClassType, typename store_tag, enable_if<ClassType, is_char> = true>
+    inline void from_json(Tokenizer& iter, DataMember<ClassType, store_tag>& into);
 
     //Wide Character parsers
     template<typename ClassType, enable_if<ClassType, is_wchar> = true>
     inline void to_json(ClassType from, detail::Stringbuf& out);
 
-    template<typename ClassType, enable_if<ClassType, is_wchar> = true>
-    inline void from_json(Tokenizer& iter, DataMember<ClassType>& into);
+    template<typename ClassType, typename store_tag, enable_if<ClassType, is_wchar> = true>
+    inline void from_json(Tokenizer& iter, DataMember<ClassType, store_tag>& into);
 
     //Floating point number parsers
     template<typename ClassType, enable_if<ClassType, std::is_floating_point> = true>
     inline void to_json(ClassType from, detail::Stringbuf& out);
 
-    template<typename ClassType, enable_if<ClassType, std::is_floating_point> = true>
-    inline void from_json(Tokenizer& iter, DataMember<ClassType>& into);
+    template<typename ClassType, typename store_tag, enable_if<ClassType, std::is_floating_point> = true>
+    inline void from_json(Tokenizer& iter, DataMember<ClassType, store_tag>& into);
 
     //Pointer parsers
     template<typename ClassType, enable_if<ClassType, std::is_pointer> = true>
     inline void to_json(ClassType from, detail::Stringbuf& out);
 
-    template<typename ClassType, enable_if<ClassType, std::is_pointer> = true>
-    inline void from_json(Tokenizer& iter, DataMember<ClassType>& into);
+    template<typename ClassType, typename store_tag, enable_if<ClassType, std::is_pointer> = true>
+    inline void from_json(Tokenizer& iter, DataMember<ClassType, store_tag>& into);
 
     //Class parsers
     template<typename ClassType, enable_if<ClassType, std::is_class> = true>
     inline void to_json(const ClassType& from, detail::Stringbuf& out);
 
-    template<typename ClassType, enable_if<ClassType, std::is_class> = true>
-    inline void from_json(Tokenizer& iter, DataMember<ClassType>& into);
+    template<typename ClassType, typename store_tag, enable_if<ClassType, std::is_class> = true>
+    inline void from_json(Tokenizer& iter, DataMember<ClassType, store_tag>& into);
 
 } /* detail */
 } /* tjson */

@@ -23,9 +23,9 @@ namespace tjson {
             }
         }
 
-        template<typename ClassType,
+        template<typename ClassType, typename store_tag,
                  enable_if<ClassType, std::is_pointer>>
-        inline void from_json(Tokenizer& tokenizer, DataMember<ClassType>& into) {
+        inline void from_json(Tokenizer& tokenizer, DataMember<ClassType, store_tag>& into) {
 
             tokenizer.seek();
             if(memcmp("null", tokenizer.position(), 4) == 0) {
@@ -35,7 +35,7 @@ namespace tjson {
             }
 
             typedef typename std::remove_pointer<ClassType>::type InternalClass;
-            DataMember<InternalClass> data;
+            DataMember<InternalClass, detail::data_internal_store_tag> data;
             detail::from_json<InternalClass>(tokenizer, data);
             into.write(new InternalClass{ data.consume() });
         }
@@ -55,9 +55,10 @@ namespace tjson {
 
 
             template<typename T, typename... D,
-                     template<typename T, typename... D> class SmartPointerType>
-            inline void from_json(Tokenizer& tokenizer, DataMember<SmartPointerType<T, D...>>& into) {
-                DataMember<T> data;
+                     template<typename T, typename... D> class SmartPointerType,
+                     typename store_tag>
+            inline void from_json(Tokenizer& tokenizer, DataMember<SmartPointerType<T, D...>, store_tag>& into) {
+                DataMember<T, detail::data_internal_store_tag> data;
                 detail::from_json(tokenizer, data);
                 into.write(new T{ data.consume() });
             }
@@ -69,8 +70,8 @@ namespace tjson {
         detail::pointers::to_json(from, out);
     }
 
-    template<typename T>
-    inline void from_json(detail::Tokenizer& tokenizer, detail::DataMember<std::shared_ptr<T>>& into) {
+    template<typename T, typename store_tag>
+    inline void from_json(detail::Tokenizer& tokenizer, detail::DataMember<std::shared_ptr<T>, store_tag>& into) {
         return detail::pointers::from_json(tokenizer, into);
     }
 
@@ -79,8 +80,8 @@ namespace tjson {
         detail::pointers::to_json(from, out);
     }
 
-    template<typename T>
-    inline void from_json(detail::Tokenizer& tokenizer, detail::DataMember<std::weak_ptr<T>>& into) {
+    template<typename T, typename store_tag>
+    inline void from_json(detail::Tokenizer& tokenizer, detail::DataMember<std::weak_ptr<T>, store_tag>& into) {
         return detail::pointers::from_json(tokenizer, into);
     }
 
@@ -89,8 +90,8 @@ namespace tjson {
         detail::pointers::to_json(from, out);
     }
 
-    template<typename T>
-    inline void from_json(detail::Tokenizer& tokenizer, detail::DataMember<std::auto_ptr<T>>& into) {
+    template<typename T, typename store_tag>
+    inline void from_json(detail::Tokenizer& tokenizer, detail::DataMember<std::auto_ptr<T>, store_tag>& into) {
         return detail::pointers::from_json(tokenizer, into);
     }
 
@@ -99,8 +100,8 @@ namespace tjson {
         detail::pointers::to_json(from, out);
     }
 
-    template<typename T, typename D>
-    void from_json(detail::Tokenizer& tokenizer, detail::DataMember<std::unique_ptr<T, D>>& into) {
+    template<typename T, typename D, typename store_tag>
+    void from_json(detail::Tokenizer& tokenizer, detail::DataMember<std::unique_ptr<T, D>, store_tag>& into) {
         return detail::pointers::from_json(tokenizer, into);
     }
 }

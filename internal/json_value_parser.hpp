@@ -18,8 +18,8 @@ namespace tjson {
     template<typename ClassType>
     inline void from_json(detail::Tokenizer& tokenizer, detail::DataStore<ClassType>& into);
 
-    template<typename ClassType>
-    inline void from_json(detail::Tokenizer& tokenizer, detail::DataMember<ClassType>& into);
+    template<typename ClassType, typename store_tag>
+    inline void from_json(detail::Tokenizer& tokenizer, detail::DataMember<ClassType, store_tag>& into);
 
     //UTF8 todo
     template<>
@@ -30,8 +30,8 @@ namespace tjson {
     }
 
     //UTF8 todo
-    template<>
-    inline void from_json(detail::Tokenizer& tokenizer, detail::DataMember<std::string>& into) {
+    template<typename store_tag>
+    inline void from_json(detail::Tokenizer& tokenizer, detail::DataMember<std::string, store_tag>& into) {
         detail::Tokenizer::UnescapedString unescaped = tokenizer.consume_string_token();
         into.write(unescaped.data, unescaped.length);
     }
@@ -49,8 +49,8 @@ namespace tjson {
 
 
     //UTF8 todo
-    template<>
-    inline void from_json(detail::Tokenizer& tokenizer, detail::DataMember<std::wstring>& into) {
+    template<typename store_tag>
+    inline void from_json(detail::Tokenizer& tokenizer, detail::DataMember<std::wstring, store_tag>& into) {
         detail::Tokenizer::UnescapedString unescaped = tokenizer.consume_string_token();
         into.write(unescaped.data, unescaped.data + unescaped.length);
     }
@@ -64,15 +64,15 @@ namespace tjson {
         out.push_back(']');
     }
 
-    template<typename T1, typename T2>
-    inline void from_json(detail::Tokenizer& tokenizer, detail::DataMember<std::pair<T1, T2>>& into) {
+    template<typename T1, typename T2, typename store_tag>
+    inline void from_json(detail::Tokenizer& tokenizer, detail::DataMember<std::pair<T1, T2>, store_tag>& into) {
         tokenizer.consume_array_start();
 
         typedef typename std::remove_cv<T1>::type FirstType;
         typedef typename std::remove_cv<T2>::type SecondType;
 
-        detail::DataMember<FirstType> first;
-        detail::DataMember<SecondType> second;
+        detail::DataMember<FirstType, detail::data_internal_store_tag> first;
+        detail::DataMember<SecondType, detail::data_internal_store_tag> second;
 
         detail::from_json(tokenizer, first);
 
@@ -95,9 +95,9 @@ namespace tjson {
         }
 
         //UTF8 todo
-        template<typename ClassType,
+        template<typename ClassType, typename store_tag,
                  enable_if<ClassType, is_char>>
-        inline void from_json(Tokenizer& tokenizer, DataMember<ClassType>& into) {
+        inline void from_json(Tokenizer& tokenizer, DataMember<ClassType, store_tag>& into) {
             tokenizer.advance_past_or_fail_if_not<'\"'>( "Not a valid string begin token");
 
             into.write(tokenizer.take());
@@ -119,9 +119,9 @@ namespace tjson {
         }
 
         //UTF8 todo
-        template<typename ClassType,
+        template<typename ClassType, typename store_tag,
                  enable_if<ClassType, is_wchar>>
-        inline void from_json(Tokenizer& tokenizer, DataMember<ClassType>& into) {
+        inline void from_json(Tokenizer& tokenizer, DataMember<ClassType, store_tag>& into) {
             tokenizer.advance_past_or_fail_if_not<'\"'>( "Not a valid string begin token");
 
             const char* startOfString = tokenizer.position();
@@ -139,9 +139,9 @@ namespace tjson {
             tjson::to_json(from, out);
         }
 
-        template<typename ClassType,
+        template<typename ClassType, typename store_tag,
                  enable_if<ClassType, std::is_class>>
-        inline void from_json(detail::Tokenizer& tokenizer, DataMember<ClassType>& into) {
+        inline void from_json(detail::Tokenizer& tokenizer, DataMember<ClassType, store_tag>& into) {
             tjson::from_json(tokenizer, into);
         }
     }

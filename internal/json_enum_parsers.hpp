@@ -56,11 +56,11 @@ namespace tjson {
             detail::to_json(static_cast<underlying_type>(from), out);
         }
 
-        template<typename ClassType,
+        template<typename ClassType, typename store_tag,
                  enable_if<ClassType, std::is_enum>>
-        inline void from_json(Tokenizer& tokenizer, DataMember<ClassType>& into) {
+        inline void from_json(Tokenizer& tokenizer, DataMember<ClassType, store_tag>& into) {
             using underlying_type = typename std::underlying_type<ClassType>::type;
-            DataMember<underlying_type> value;
+            DataMember<underlying_type, detail::data_internal_store_tag> value;
 
             detail::from_json(tokenizer, value);
             into.write(validate_enum(tokenizer, value.consume(), EnumValidator<ClassType>::values()));

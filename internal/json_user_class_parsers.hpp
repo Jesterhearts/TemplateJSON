@@ -12,21 +12,25 @@ namespace tjson {
 namespace detail {
     template<typename ClassType,
              typename UnderlyingType, UnderlyingType member>
-    json_force_inline void member_to_json(const ClassType& classFrom,
-                                          MemberInfo<UnderlyingType, member>&&,
-                                          detail::Stringbuf& out) {
+    json_force_inline
+    void member_to_json(const ClassType& classFrom,
+                        MemberInfo<UnderlyingType, member>&&,
+                        detail::Stringbuf& out)
+    {
         using type = basic_type<decltype(classFrom.*member)>;
         detail::to_json<type>(classFrom.*member, out);
     }
 
     template<typename ClassType>
-    json_force_inline void members_to_json(const ClassType& classFrom, detail::Stringbuf& out,
-                                      MemberList<>&&) {}
+    json_force_inline
+    void members_to_json(const ClassType& classFrom, detail::Stringbuf& out, MemberList<>&&) {}
 
     template<typename ClassType,
              typename member, typename... members>
-    json_force_inline void members_to_json(const ClassType& classFrom, detail::Stringbuf& out,
-                                      MemberList<member, members...>&&) {
+    json_force_inline
+    void members_to_json(const ClassType& classFrom, detail::Stringbuf& out,
+                         MemberList<member, members...>&&)
+    {
         out.append(member::key, sizeof(member::key) - 1);
         out.push_back(':');
 
@@ -37,20 +41,25 @@ namespace detail {
         members_to_json(classFrom, out, MemberList<members...>());
     }
 
-    json_force_inline void member_from_json(DataList<>& into, const char* startOfKey, size_t keylen,
-                                 Tokenizer& tokenizer, MemberList<>&&) {
+    template<typename store_tag>
+    json_force_inline
+    void member_from_json(DataList<store_tag>& into, const char* startOfKey, size_t keylen,
+                          Tokenizer& tokenizer, MemberList<>&&) {
         std::string message("Invalid key for object: (");
         message.append(startOfKey, keylen);
         message.append(")");
         tokenizer.parsing_error(std::move(message));
     }
 
-    template<typename DataType, typename... DataTypes,
+    template<typename store_tag, typename DataType, typename... DataTypes,
              typename member, typename... members>
-    json_force_inline void member_from_json(DataList<DataType, DataTypes...>& into, const char* startOfKey,
-                                 size_t keylen, Tokenizer& tokenizer,
-                                 MemberList<member, members...>&&) {
-
+    json_force_inline
+    void member_from_json(DataList<store_tag, DataType, DataTypes...>& into,
+                          const char*                                  startOfKey,
+                          size_t                                       keylen,
+                          Tokenizer&                                   tokenizer,
+                          MemberList<member, members...>&&)
+    {
         //-1 for opening ", -1 for closing ", -1 for \0
         constexpr const size_t extraneous_chars_in_key = 3;
         constexpr const size_t len = sizeof(member::key) - extraneous_chars_in_key;
