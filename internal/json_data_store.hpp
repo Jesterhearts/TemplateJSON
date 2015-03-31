@@ -58,7 +58,28 @@ namespace detail {
     };
 
     template<typename StoredType, typename store_tag>
-    struct DataMember : initialized_flag<StoredType> {
+    struct data_storage : initialized_flag<StoredType> {
+        raw_data<StoredType> storage;
+    };
+
+    template<typename StoredType>
+    struct data_storage<StoredType, data_external_store_tag> : initialized_flag<StoredType> {
+        StoredType* storage;
+    };
+
+    template<typename StoredType, typename store_tag>
+    struct DataMember : data_storage<StoredType, store_tag> {
+
+        template<typename _store_tag = store_tag,
+                 typename std::enable_if<
+                    std::is_same<_store_tag, data_external_store_tag>::value, bool>::type = true>
+        json_force_inline DataMember(StoredType* storage) :
+            data_storage<StoredType, store_tag>(storage) {}
+
+        template<typename _store_tag = store_tag,
+                 typename std::enable_if<
+                    !std::is_same<_store_tag, data_external_store_tag>::value, bool>::type = true>
+        json_force_inline DataMember() {}
 
         template<typename... Args>
         json_force_inline void write(Args&&... args) {
@@ -83,6 +104,7 @@ namespace detail {
     private:
         using initialized_flag<StoredType>::is_initialized;
         using initialized_flag<StoredType>::set_initialized;
+        using data_storage<StoredType, store_tag>::storage;
 
         template<typename Destroying,
                  typename std::enable_if<
@@ -99,8 +121,6 @@ namespace detail {
                     std::is_trivially_destructible<Destroying>::value, bool>
                  ::type = true>
         json_force_inline void DestroyStorage() { }
-
-        raw_data<StoredType> storage;
     };
 
     template<typename... Types>
@@ -129,6 +149,7 @@ namespace detail {
      * Used to get the next node in the data list.
      */
     template<typename DataType, typename... DataTypes>
+    json_force_inline
     constexpr DataList<DataTypes...>& data_list_next(DataList<DataType, DataTypes...>& list) {
         return static_cast<DataList<DataTypes...>&>(list);
     }

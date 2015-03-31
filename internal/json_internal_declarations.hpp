@@ -11,6 +11,7 @@ namespace detail {
         ~reference_only() = delete;
     };
 
+    struct data_external_store_tag;
     struct data_internal_store_tag;
     struct Tokenizer;
 

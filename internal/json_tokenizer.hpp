@@ -53,6 +53,7 @@ struct Tokenizer {
     }
 
     template<char value>
+    json_force_inline
     void advance_if() {
         if(peek() == value) {
             ++current;
@@ -60,6 +61,7 @@ struct Tokenizer {
     }
 
     template<char value1, char value2>
+    json_force_inline
     bool advance_if_either() {
         if(peek() == value1 || peek() == value2) {
             ++current;
@@ -70,6 +72,7 @@ struct Tokenizer {
     }
 
     template<char value>
+    json_force_inline
     void advance_or_fail_if_not(const char* message) {
         if(take() != value) {
             parsing_error(message);
@@ -132,9 +135,6 @@ struct Tokenizer {
                     *write_i = *(backslash + 1);
                     break;
 
-                case 'a':
-                    *write_i = '\a';
-                    break;
                 case 'b':
                     *write_i = '\b';
                     break;
@@ -150,9 +150,6 @@ struct Tokenizer {
                 case 't':
                     *write_i = '\t';
                     break;
-                case 'v':
-                    *write_i = '\v';
-                    break;
                 default:
                     *write_i = *backslash;
                     *write_i = *(backslash + 1);
@@ -166,6 +163,7 @@ struct Tokenizer {
 
         if(backslash != string_end) {
             *write_i = *backslash;
+            ++write_i;
         }
 
         UnescapedString result {
@@ -176,18 +174,22 @@ struct Tokenizer {
         return result;
     }
 
+    json_force_inline
     void consume_kv_mapping() {
         advance_past_or_fail_if_not<':'>("Missing : in k-v mapping");
     }
 
+    json_force_inline
     void consume_object_start() {
         advance_past_or_fail_if_not<'{'>("Missing { for object start");
     }
 
+    json_force_inline
     void consume_object_end() {
         advance_past_or_fail_if_not<'}'>("Missing } for object end");
     }
 
+    json_force_inline
     void consume_array_start() {
         advance_past_or_fail_if_not<'['>("Missing [ for array start");
     }
@@ -258,6 +260,7 @@ private:
         }
     }
 
+    json_force_inline
     const char* consume_string_start() {
         advance_past_or_fail_if_not<'\"'>("Missing opening \" for string");
         return current;
