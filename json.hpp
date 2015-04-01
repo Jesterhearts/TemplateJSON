@@ -45,15 +45,18 @@ namespace tjson {
         return json.to_string();
     }
 
-    template<typename ClassType>
-    inline void from_json(detail::Tokenizer& tokenizer, detail::DataStore<ClassType>& into) {
+    template<typename ClassType, typename store_tag>
+    inline void from_json(detail::Tokenizer& tokenizer,
+                          detail::DataStore<ClassType, store_tag>& into)
+    {
         tokenizer.consume_object_start();
         detail::members_from_json(into, tokenizer, MembersHolder<ClassType>::members());
     }
 
     template<typename ClassType, typename store_tag>
-    inline void from_json(detail::Tokenizer& tokenizer, detail::DataMember<ClassType, store_tag>& into) {
-        detail::DataStore<ClassType> data;
+    inline void from_json(detail::Tokenizer& tokenizer,
+                          detail::DataMember<ClassType, store_tag>& into) {
+        detail::DataStore<ClassType, store_tag> data;
 
         from_json(tokenizer, data);
 

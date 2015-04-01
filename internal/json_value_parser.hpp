@@ -15,8 +15,8 @@
 #include "json_pointer_parsers.hpp"
 
 namespace tjson {
-    template<typename ClassType>
-    inline void from_json(detail::Tokenizer& tokenizer, detail::DataStore<ClassType>& into);
+    template<typename ClassType, typename store_tag>
+    inline void from_json(detail::Tokenizer& tokenizer, detail::DataStore<ClassType, store_tag>& into);
 
     template<typename ClassType, typename store_tag>
     inline void from_json(detail::Tokenizer& tokenizer, detail::DataMember<ClassType, store_tag>& into);

@@ -73,9 +73,11 @@ namespace detail {
         }
     }
 
-    template<typename ClassType, size_t membersRemaining>
+    template<typename ClassType, typename store_tag, size_t membersRemaining>
     struct Reader : reference_only {
-        json_force_inline static void members_from_json(DataStore<ClassType>& into, Tokenizer& tokenizer) {
+        json_force_inline static void members_from_json(DataStore<ClassType, store_tag>& into,
+                                                        Tokenizer& tokenizer)
+        {
             detail::Tokenizer::UnescapedString unescaped = tokenizer.consume_string_token();
 
             tokenizer.consume_kv_mapping();
@@ -85,13 +87,15 @@ namespace detail {
 
             tokenizer.advance_or_fail_if_not<','>("Incomplete object");
 
-            Reader<ClassType, membersRemaining - 1>::members_from_json(into, tokenizer);
+            Reader<ClassType, store_tag, membersRemaining - 1>::members_from_json(into, tokenizer);
         }
     };
 
-    template<typename ClassType>
-    struct Reader<ClassType, 1> : reference_only {
-        json_force_inline static void members_from_json(DataStore<ClassType>& into, Tokenizer& tokenizer) {
+    template<typename ClassType, typename store_tag>
+    struct Reader<ClassType, store_tag, 1> : reference_only {
+        json_force_inline static void members_from_json(DataStore<ClassType, store_tag>& into,
+                                                        Tokenizer& tokenizer)
+        {
             detail::Tokenizer::UnescapedString unescaped = tokenizer.consume_string_token();
 
             tokenizer.consume_kv_mapping();
@@ -104,9 +108,13 @@ namespace detail {
         }
     };
 
-    template<typename ClassType, typename... types, template<typename... M> class ML>
-    json_force_inline void members_from_json(DataStore<ClassType>& into, Tokenizer& tokenizer, ML<types...>&&) {
-        Reader<ClassType, sizeof...(types)>::members_from_json(into, tokenizer);
+    template<typename ClassType, typename store_tag,
+             typename... types, template<typename... M> class ML>
+    json_force_inline void members_from_json(DataStore<ClassType, store_tag>& into,
+                                             Tokenizer& tokenizer,
+                                             ML<types...>&&)
+    {
+        Reader<ClassType, store_tag, sizeof...(types)>::members_from_json(into, tokenizer);
     }
 } /* detail */
 } /* JSON */
