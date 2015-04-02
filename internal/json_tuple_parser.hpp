@@ -27,7 +27,7 @@ namespace tjson {
                 DataMember<curType, detail::data_internal_store_tag> data;
 
                 detail::from_json(tokenizer, data);
-                std::get<curIndex>(into.access()) = data.consume();
+                std::get<curIndex>(*into.storage_ptr) = data.consume();
 
                 tokenizer.advance_past_or_fail_if_not<','>("Not a valid tuple value");
 
@@ -50,7 +50,7 @@ namespace tjson {
                 DataMember<curType, detail::data_internal_store_tag> data;
 
                 detail::from_json(tokenizer, data);
-                std::get<curIndex>(into.access()) = data.consume();
+                std::get<curIndex>(*into.storage_ptr) = data.consume();
 
                 tokenizer.advance_past_or_fail_if_not<']'>("No tuple end token");
             }

@@ -73,7 +73,7 @@ namespace tjson {
                     DataMember<value_type, detail::data_internal_store_tag> input;
                     detail::from_json(tokenizer, input);
 
-                    inserter::insert(into.access(), input.consume());
+                    inserter::insert(*into.storage_ptr, input.consume());
                 } while(tokenizer.seek() == ',');
             }
 
