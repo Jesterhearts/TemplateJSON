@@ -8,17 +8,14 @@
 #include <typeinfo>
 #include <utility>
 
-#include "json_common_defs.hpp"
 #include "json_functions.hpp"
-#include "json_internal_declarations.hpp"
 #include "json_object_hints.hpp"
+#include "json_common_defs.hpp"
+#include "json_internal_declarations.hpp"
 #include "json_member_mapper.hpp"
 
 namespace tjson {
 namespace detail {
-    template<typename ClassType>
-    using raw_data = typename
-        std::aligned_storage<sizeof(ClassType), std::alignment_of<ClassType>::value>::type;
 
     template<typename>
     struct underlying;
@@ -39,8 +36,7 @@ namespace detail {
     template<typename ClassType>
     struct class_store_tag : reference_only {
         using type = typename std::conditional<
-            std::is_same<typename ObjectHints<ClassType>::construction_type,
-                         object_hints::non_trivially_constructible>::value,
+            ObjectHints<ClassType>::construction_type == object_hints::non_trivially_constructible,
             data_internal_store_tag,
             data_emplace_store_tag>::type;
     };
@@ -244,7 +240,7 @@ namespace detail {
     }
 
     //See cases outlined in data store
-    template<typename StoredType, typename store_tag, typename construct_tag>
+    template<typename StoredType, typename store_tag, object_hints construct_tag>
     struct data_storage : destroy_storage_flag<StoredType> {
         using storage_ptr = void;
     };
@@ -261,7 +257,7 @@ namespace detail {
         raw_data<StoredType> storage;
     };
 
-    template<typename StoredType, typename construct_tag>
+    template<typename StoredType, object_hints construct_tag>
     struct data_storage<StoredType,
                         data_emplace_store_tag,
                         construct_tag> : destroy_storage_flag<StoredType>
@@ -279,17 +275,15 @@ namespace detail {
     template<typename ClassType>
     struct DataStore {
 
-        template<typename construct_tag = typename ObjectHints<ClassType>::construction_type,
-                 typename std::enable_if<
-                    std::is_same<construct_tag,
-                                 object_hints::trivially_constructible>::value, bool>::type = true>
+        template<object_hints construct_tag = ObjectHints<ClassType>::construction_type,
+                 typename std::enable_if<construct_tag == object_hints::trivially_constructible,
+                            bool>::type = true>
         json_force_inline DataStore(ClassType* storage)
             : data_list(storage, MembersHolder<ClassType>::members()) {}
 
-        template<typename construct_tag = typename ObjectHints<ClassType>::construction_type,
-                 typename std::enable_if<
-                    std::is_same<construct_tag,
-                                 object_hints::non_trivially_constructible>::value, bool>::type = true>
+        template<object_hints construct_tag = ObjectHints<ClassType>::construction_type,
+                 typename std::enable_if<construct_tag == object_hints::non_trivially_constructible,
+                            bool>::type = true>
         json_force_inline DataStore() {}
 
         decltype(data_list_type<ClassType>(MembersHolder<ClassType>::members())) data_list;
@@ -298,7 +292,7 @@ namespace detail {
     template<typename ClassType, typename store_tag = data_internal_store_tag>
     struct DataStoreImpl : data_storage<ClassType,
                                         store_tag,
-                                        typename ObjectHints<ClassType>::construction_type>,
+                                        ObjectHints<ClassType>::construction_type>,
                            DataStore<ClassType> {
     public:
         /* Four cases:
@@ -328,42 +322,38 @@ namespace detail {
          */
 
         template<typename _store_tag = store_tag,
-                 typename construct_tag = typename ObjectHints<ClassType>::construction_type,
+                 object_hints construct_tag = ObjectHints<ClassType>::construction_type,
                  typename std::enable_if<
                     std::is_same<_store_tag, data_internal_store_tag>::value, bool>::type = true,
-                 typename std::enable_if<
-                    std::is_same<construct_tag,
-                                 object_hints::trivially_constructible>::value, bool>::type = true>
+                 typename std::enable_if<construct_tag == object_hints::trivially_constructible,
+                            bool>::type = true>
         json_force_inline DataStoreImpl() :
             DataStore<ClassType>(storage_ptr()) {}
 
         template<typename _store_tag = store_tag,
-                 typename construct_tag = typename ObjectHints<ClassType>::construction_type,
+                 object_hints construct_tag = ObjectHints<ClassType>::construction_type,
                  typename std::enable_if<
                     std::is_same<_store_tag, data_internal_store_tag>::value, bool>::type = true,
-                 typename std::enable_if<
-                    std::is_same<construct_tag,
-                                 object_hints::non_trivially_constructible>::value, bool>::type = true>
+                 typename std::enable_if<construct_tag == object_hints::non_trivially_constructible,
+                            bool>::type = true>
         json_force_inline DataStoreImpl() {}
 
         template<typename _store_tag = store_tag,
-                 typename construct_tag = typename ObjectHints<ClassType>::construction_type,
+                 object_hints construct_tag = ObjectHints<ClassType>::construction_type,
                  typename std::enable_if<
                     std::is_same<_store_tag, data_emplace_store_tag>::value, bool>::type = true,
-                 typename std::enable_if<
-                    std::is_same<construct_tag,
-                                 object_hints::trivially_constructible>::value, bool>::type = true>
+                 typename std::enable_if<construct_tag == object_hints::trivially_constructible,
+                            bool>::type = true>
         json_force_inline DataStoreImpl(ClassType* storage) :
             data_storage<ClassType, store_tag, construct_tag>(storage),
             DataStore<ClassType>(storage) {}
 
         template<typename _store_tag = store_tag,
-                 typename construct_tag = typename ObjectHints<ClassType>::construction_type,
+                 object_hints construct_tag = ObjectHints<ClassType>::construction_type,
                  typename std::enable_if<
                     std::is_same<_store_tag, data_emplace_store_tag>::value, bool>::type = true,
-                 typename std::enable_if<
-                    std::is_same<construct_tag,
-                                 object_hints::non_trivially_constructible>::value, bool>::type = true>
+                 typename std::enable_if<construct_tag == object_hints::non_trivially_constructible,
+                            bool>::type = true>
         json_force_inline DataStoreImpl(ClassType* storage) :
             data_storage<ClassType, store_tag, construct_tag>(storage) {}
 
@@ -398,7 +388,7 @@ namespace detail {
     private:
         using data_storage<ClassType,
                            store_tag,
-                           typename ObjectHints<ClassType>::construction_type
+                           ObjectHints<ClassType>::construction_type
                           >::storage_ptr;
         using destroy_storage_flag<ClassType>::should_destroy_storage;
         using destroy_storage_flag<ClassType>::set_should_destroy_storage;
@@ -408,12 +398,11 @@ namespace detail {
         template<typename member_store_tag,
                  typename... Values,
                  typename _store_tag = store_tag,
-                 typename construct_tag = typename ObjectHints<ClassType>::construction_type,
+                 object_hints construct_tag = ObjectHints<ClassType>::construction_type,
                  typename std::enable_if<
                     std::is_same<_store_tag, data_internal_store_tag>::value, bool>::type = true,
-                 typename std::enable_if<
-                    std::is_same<construct_tag,
-                                 object_hints::non_trivially_constructible>::value, bool>::type = true>
+                 typename std::enable_if<construct_tag == object_hints::non_trivially_constructible,
+                            bool>::type = true>
         json_force_inline
         ClassType realize(DataList<member_store_tag>& list,
                           Values&&...          values)
@@ -426,12 +415,11 @@ namespace detail {
                  typename... DataTypes,
                  typename... Values,
                  typename _store_tag = store_tag,
-                 typename construct_tag = typename ObjectHints<ClassType>::construction_type,
+                 object_hints construct_tag = ObjectHints<ClassType>::construction_type,
                  typename std::enable_if<
                     std::is_same<_store_tag, data_internal_store_tag>::value, bool>::type = true,
-                 typename std::enable_if<
-                    std::is_same<construct_tag,
-                                 object_hints::non_trivially_constructible>::value, bool>::type = true>
+                 typename std::enable_if<construct_tag == object_hints::non_trivially_constructible,
+                            bool>::type = true>
         json_force_inline
         ClassType realize(DataList<member_store_tag, DataType, DataTypes...>& list,
                           Values&&...                                  values)
@@ -442,12 +430,11 @@ namespace detail {
         //Creating a trivially constructible type
         template<typename member_store_tag,
                  typename _store_tag = store_tag,
-                 typename construct_tag = typename ObjectHints<ClassType>::construction_type,
+                 object_hints construct_tag = ObjectHints<ClassType>::construction_type,
                  typename std::enable_if<
                     std::is_same<_store_tag, data_internal_store_tag>::value, bool>::type = true,
-                 typename std::enable_if<
-                    std::is_same<construct_tag,
-                                 object_hints::trivially_constructible>::value, bool>::type = true>
+                 typename std::enable_if<construct_tag == object_hints::trivially_constructible,
+                            bool>::type = true>
         json_force_inline
         ClassType realize(DataList<member_store_tag>& list)
         {
@@ -459,12 +446,11 @@ namespace detail {
                  typename DataType,
                  typename... DataTypes,
                  typename _store_tag = store_tag,
-                 typename construct_tag = typename ObjectHints<ClassType>::construction_type,
+                 object_hints construct_tag = ObjectHints<ClassType>::construction_type,
                  typename std::enable_if<
                     std::is_same<_store_tag, data_internal_store_tag>::value, bool>::type = true,
-                 typename std::enable_if<
-                    std::is_same<construct_tag,
-                                 object_hints::trivially_constructible>::value, bool>::type = true>
+                 typename std::enable_if<construct_tag == object_hints::trivially_constructible,
+                            bool>::type = true>
         json_force_inline
         ClassType realize(DataList<member_store_tag, DataType, DataTypes...>& list)
         {
@@ -477,12 +463,11 @@ namespace detail {
         template<typename list_store_tag,
                  typename... Values,
                  typename _store_tag = store_tag,
-                 typename construct_tag = typename ObjectHints<ClassType>::construction_type,
+                 object_hints construct_tag = ObjectHints<ClassType>::construction_type,
                  typename std::enable_if<
                     std::is_same<_store_tag, data_emplace_store_tag>::value, bool>::type = true,
-                 typename std::enable_if<
-                    std::is_same<construct_tag,
-                                 object_hints::non_trivially_constructible>::value, bool>::type = true>
+                 typename std::enable_if<construct_tag == object_hints::non_trivially_constructible,
+                            bool>::type = true>
         json_force_inline
         void transfer_storage(DataList<list_store_tag>& list,
                               Values&&...               values)
@@ -495,12 +480,11 @@ namespace detail {
                  typename... DataTypes,
                  typename... Values,
                  typename _store_tag = store_tag,
-                 typename construct_tag = typename ObjectHints<ClassType>::construction_type,
+                 object_hints construct_tag = ObjectHints<ClassType>::construction_type,
                  typename std::enable_if<
                     std::is_same<_store_tag, data_emplace_store_tag>::value, bool>::type = true,
-                 typename std::enable_if<
-                    std::is_same<construct_tag,
-                                 object_hints::non_trivially_constructible>::value, bool>::type = true>
+                 typename std::enable_if<construct_tag == object_hints::non_trivially_constructible,
+                            bool>::type = true>
         json_force_inline
         void transfer_storage(DataList<list_store_tag, DataType, DataTypes...>& list,
                               Values&&...                                       values)
@@ -511,12 +495,11 @@ namespace detail {
         //Transferring a trivially constructible type
         template<typename list_store_tag,
                  typename _store_tag = store_tag,
-                 typename construct_tag = typename ObjectHints<ClassType>::construction_type,
+                 object_hints construct_tag = ObjectHints<ClassType>::construction_type,
                  typename std::enable_if<
                     std::is_same<_store_tag, data_emplace_store_tag>::value, bool>::type = true,
-                 typename std::enable_if<
-                    std::is_same<construct_tag,
-                                 object_hints::trivially_constructible>::value, bool>::type = true>
+                 typename std::enable_if<construct_tag == object_hints::trivially_constructible,
+                            bool>::type = true>
         json_force_inline
         void transfer_storage(DataList<list_store_tag>& list) {}
 
@@ -524,12 +507,11 @@ namespace detail {
                  typename DataType,
                  typename... DataTypes,
                  typename _store_tag = store_tag,
-                 typename construct_tag = typename ObjectHints<ClassType>::construction_type,
+                 object_hints construct_tag = ObjectHints<ClassType>::construction_type,
                  typename std::enable_if<
                     std::is_same<_store_tag, data_emplace_store_tag>::value, bool>::type = true,
-                 typename std::enable_if<
-                    std::is_same<construct_tag,
-                                 object_hints::trivially_constructible>::value, bool>::type = true>
+                 typename std::enable_if<construct_tag == object_hints::trivially_constructible,
+                            bool>::type = true>
         json_force_inline
         void transfer_storage(DataList<list_store_tag, DataType, DataTypes...>& list)
         {
@@ -538,19 +520,17 @@ namespace detail {
         }
 
         template<typename _store_tag = store_tag,
-                 typename construct_tag = typename ObjectHints<ClassType>::construction_type,
+                 object_hints construct_tag = ObjectHints<ClassType>::construction_type,
                  typename std::enable_if<
                     std::is_same<_store_tag, data_emplace_store_tag>::value
-                    || std::is_same<construct_tag,
-                                    object_hints::non_trivially_constructible>::value, bool>::type = true>
+                    || construct_tag == object_hints::non_trivially_constructible, bool>::type = true>
         json_force_inline void DestroyStorage() {}
 
         template<typename _store_tag = store_tag,
-                 typename construct_tag = typename ObjectHints<ClassType>::construction_type,
+                 object_hints construct_tag = ObjectHints<ClassType>::construction_type,
                  typename std::enable_if<
                     std::is_same<_store_tag, data_internal_store_tag>::value
-                    && std::is_same<construct_tag,
-                                    object_hints::trivially_constructible>::value, bool>::type = true>
+                    && construct_tag == object_hints::trivially_constructible, bool>::type = true>
         json_force_inline void DestroyStorage() {
             if(should_destroy_storage()) {
                 storage_ptr()->~ClassType();

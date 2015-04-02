@@ -11,6 +11,10 @@ namespace detail {
         ~reference_only() = delete;
     };
 
+    template<typename ClassType>
+    using raw_data = typename
+        std::aligned_storage<sizeof(ClassType), std::alignment_of<ClassType>::value>::type;
+
     struct data_emplace_store_tag;
     struct data_internal_store_tag;
     struct Tokenizer;

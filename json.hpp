@@ -22,10 +22,11 @@
 
 #include "internal/json_common_defs.hpp"
 #include "internal/json_data_store.hpp"
-#include "internal/json_value_parser.hpp"
-#include "internal/json_user_class_parsers.hpp"
+#include "internal/json_object_hints.hpp"
 #include "internal/json_keys_handler.hpp"
 #include "internal/json_member_mapper.hpp"
+#include "internal/json_user_class_parsers.hpp"
+#include "internal/json_value_parser.hpp"
 
 namespace tjson {
     template<typename ClassType>
@@ -105,6 +106,15 @@ namespace tjson {
                 return ContiguousEnumValueList<ENUM_NAME, __VA_ARGS__>();   \
             }                                                               \
         };                                                                  \
+    }
+
+#define JSON_HINT_CAN_BUILD_IN_PLACE(CLASS_NAME)                    \
+    namespace tjson {                                               \
+        template<>                                                  \
+        struct ObjectHints<CLASS_NAME> : detail::reference_only {   \
+            constexpr static const object_hints construction_type   \
+                = object_hints::trivially_constructible;            \
+        };                                                          \
     }
 
 

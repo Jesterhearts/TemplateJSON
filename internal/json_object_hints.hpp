@@ -5,14 +5,14 @@
 
 namespace tjson {
 
-namespace object_hints {
-    struct non_trivially_constructible : detail::reference_only {};
-    struct trivially_constructible : detail::reference_only {};
-} /* object_hints */
+enum struct object_hints {
+    non_trivially_constructible,
+    trivially_constructible
+};
 
 template<typename ClassType>
 struct ObjectHints : detail::reference_only {
-    using construction_type = object_hints::non_trivially_constructible;
+    constexpr static const object_hints construction_type = object_hints::non_trivially_constructible;
 };
 } /* namespace tjson*/
 
