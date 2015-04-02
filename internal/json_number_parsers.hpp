@@ -97,8 +97,8 @@ namespace detail {
         out.append(from ? "true" : "false", from ? 4 : 5);
     }
 
-    template<typename Type, typename store_tag>
-    inline void atoi(Tokenizer& tokenizer, DataMember<Type, store_tag>& into) {
+    template<typename Type>
+    inline void atoi(Tokenizer& tokenizer, DataMemberBase<Type>& into) {
         static_assert(std::is_integral<Type>::value, "Must be an integral value");
 
         char sign_c = tokenizer.seek();
@@ -145,15 +145,15 @@ namespace detail {
         tokenizer.skip(std::distance(tokenizer.position(), position));
     }
 
-    template<typename ClassType, typename store_tag,
+    template<typename ClassType,
              enable_if<ClassType, is_numeric>>
-    json_force_inline void from_json(Tokenizer& tokenizer, DataMember<ClassType, store_tag>& into) {
+    json_force_inline void from_json(Tokenizer& tokenizer, DataMemberBase<ClassType>& into) {
         return atoi(tokenizer, into);
     }
 
-    template<typename ClassType, typename store_tag,
+    template<typename ClassType,
              enable_if<ClassType, is_bool>>
-    inline void from_json(Tokenizer& tokenizer, DataMember<ClassType, store_tag>& into) {
+    inline void from_json(Tokenizer& tokenizer, DataMemberBase<ClassType>& into) {
         static_assert(std::is_same<ClassType, bool>::value, "error in template declaration.");
 
         tokenizer.seek();
@@ -173,9 +173,9 @@ namespace detail {
         tokenizer.parsing_error("Could not read bool");
     }
 
-    template<typename ClassType, typename store_tag,
+    template<typename ClassType,
              enable_if<ClassType, std::is_floating_point>>
-    inline void from_json(Tokenizer& tokenizer, DataMember<ClassType, store_tag>& into) {
+    inline void from_json(Tokenizer& tokenizer, DataMemberBase<ClassType>& into) {
         std::pair<const char*, size_t> startAndLength = tokenizer.consume_number();
 
         try {

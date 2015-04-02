@@ -23,8 +23,7 @@ namespace tjson {
                     ::to_json(classFrom, out);
             }
 
-            template<typename store_tag>
-            static void from_json(Tokenizer& tokenizer, DataMember<TupleType, store_tag>& into) {
+            static void from_json(Tokenizer& tokenizer, DataMemberBase<TupleType>& into) {
                 DataMember<curType, detail::data_internal_store_tag> data;
 
                 detail::from_json(tokenizer, data);
@@ -47,8 +46,7 @@ namespace tjson {
                 detail::to_json(std::get<curIndex>(classFrom), out);
             }
 
-            template<typename store_tag>
-            static void from_json(Tokenizer& tokenizer, DataMember<TupleType, store_tag>& into) {
+            static void from_json(Tokenizer& tokenizer, DataMemberBase<TupleType>& into) {
                 DataMember<curType, detail::data_internal_store_tag> data;
 
                 detail::from_json(tokenizer, data);
@@ -70,8 +68,8 @@ namespace tjson {
         out.push_back(']');
     }
 
-    template<typename store_tag, typename... Types>
-    void from_json(detail::Tokenizer& tokenizer, detail::DataMember<std::tuple<Types...>, store_tag>& into) {
+    template<typename... Types>
+    void from_json(detail::Tokenizer& tokenizer, detail::DataMemberBase<std::tuple<Types...>>& into) {
         tokenizer.consume_array_start();
 
         into.write();

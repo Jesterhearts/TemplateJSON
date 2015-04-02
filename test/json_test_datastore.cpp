@@ -11,7 +11,7 @@ JSON_ENABLE(Tester, (_i), (_i2));
 
 #ifndef JSON_TEST_ALL
 int main() {
-    tjson::detail::DataStore<Tester> _storage;
+    tjson::detail::DataStoreImpl<Tester> _storage;
 
     _storage.data_list.data.write(1);
     tjson::detail::data_list_next(_storage.data_list).data.write(2);

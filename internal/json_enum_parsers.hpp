@@ -51,14 +51,13 @@ namespace tjson {
 
         template<typename ClassType,
                  enable_if<ClassType, std::is_enum>>
-        inline void to_json(ClassType from, detail::Stringbuf& out) {
+        json_force_inline void to_json(ClassType from, detail::Stringbuf& out) {
             using underlying_type = typename std::underlying_type<ClassType>::type;
             detail::to_json(static_cast<underlying_type>(from), out);
         }
 
-        template<typename ClassType, typename store_tag,
-                 enable_if<ClassType, std::is_enum>>
-        inline void from_json(Tokenizer& tokenizer, DataMember<ClassType, store_tag>& into) {
+        template<typename ClassType, enable_if<ClassType, std::is_enum>>
+        json_force_inline void from_json(Tokenizer& tokenizer, DataMemberBase<ClassType>& into) {
             using underlying_type = typename std::underlying_type<ClassType>::type;
             DataMember<underlying_type, detail::data_internal_store_tag> value;
 
