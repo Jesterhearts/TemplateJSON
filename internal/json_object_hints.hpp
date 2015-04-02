@@ -12,7 +12,7 @@ namespace object_hints {
 
 template<typename ClassType>
 struct ObjectHints : detail::reference_only {
-    using construction_type = object_hints::trivially_constructible;
+    using construction_type = object_hints::non_trivially_constructible;
 };
 } /* namespace tjson*/
 
