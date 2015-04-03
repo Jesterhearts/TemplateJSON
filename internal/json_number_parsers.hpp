@@ -98,7 +98,7 @@ namespace detail {
     }
 
     template<typename Type>
-    inline void atoi(Tokenizer& tokenizer, DataMemberBase<Type>& into) {
+    inline void atoi(Tokenizer& tokenizer, DataMember<Type>& into) {
         static_assert(std::is_integral<Type>::value, "Must be an integral value");
 
         char sign_c = tokenizer.seek();
@@ -147,13 +147,13 @@ namespace detail {
 
     template<typename ClassType,
              enable_if<ClassType, is_numeric>>
-    json_force_inline void from_json(Tokenizer& tokenizer, DataMemberBase<ClassType>& into) {
+    json_force_inline void from_json(Tokenizer& tokenizer, DataMember<ClassType>& into) {
         return atoi(tokenizer, into);
     }
 
     template<typename ClassType,
              enable_if<ClassType, is_bool>>
-    inline void from_json(Tokenizer& tokenizer, DataMemberBase<ClassType>& into) {
+    inline void from_json(Tokenizer& tokenizer, DataMember<ClassType>& into) {
         static_assert(std::is_same<ClassType, bool>::value, "error in template declaration.");
 
         tokenizer.seek();
@@ -175,7 +175,7 @@ namespace detail {
 
     template<typename ClassType,
              enable_if<ClassType, std::is_floating_point>>
-    inline void from_json(Tokenizer& tokenizer, DataMemberBase<ClassType>& into) {
+    inline void from_json(Tokenizer& tokenizer, DataMember<ClassType>& into) {
         std::pair<const char*, size_t> startAndLength = tokenizer.consume_number();
 
         try {

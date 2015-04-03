@@ -56,7 +56,7 @@ namespace tjson {
 
     template<typename ClassType>
     inline void from_json(detail::Tokenizer& tokenizer,
-                          detail::DataMemberBase<ClassType>& into) {
+                          detail::DataMember<ClassType>& into) {
         detail::DataStoreImpl<ClassType, detail::data_emplace_store_tag> data(into.storage_ptr);
 
         from_json(tokenizer, data);

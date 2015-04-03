@@ -84,8 +84,8 @@ namespace detail {
     };
 
     template<typename StoredType>
-    struct DataMemberBase : data_member_storage_base<StoredType> {
-        json_force_inline DataMemberBase(StoredType* storage) noexcept
+    struct DataMember : data_member_storage_base<StoredType> {
+        json_force_inline DataMember(StoredType* storage) noexcept
             : data_member_storage_base<StoredType>(storage) {}
 
         template<typename... Args>
@@ -99,31 +99,31 @@ namespace detail {
     };
 
     template<typename StoredType, typename store_tag>
-    struct data_member_storage : DataMemberBase<StoredType> {
+    struct data_member_storage : DataMember<StoredType> {
         json_force_inline data_member_storage() noexcept :
-            DataMemberBase<StoredType>(static_cast<StoredType*>(static_cast<void*>(&storage))) {}
+            DataMember<StoredType>(static_cast<StoredType*>(static_cast<void*>(&storage))) {}
 
         raw_data<StoredType> storage;
     };
 
     template<typename StoredType>
-    struct data_member_storage<StoredType, data_emplace_store_tag> : DataMemberBase<StoredType> {
+    struct data_member_storage<StoredType, data_emplace_store_tag> : DataMember<StoredType> {
         json_force_inline data_member_storage(StoredType* storage) noexcept :
-            DataMemberBase<StoredType>(storage) {}
+            DataMember<StoredType>(storage) {}
     };
 
     template<typename StoredType, typename store_tag>
-    struct DataMember : data_member_storage<StoredType, store_tag> {
+    struct DataMemberImpl : data_member_storage<StoredType, store_tag> {
 
         template<typename _store_tag = store_tag,
                  typename std::enable_if<
                     std::is_same<_store_tag, data_internal_store_tag>::value, bool>::type = true>
-        json_force_inline DataMember() noexcept {}
+        json_force_inline DataMemberImpl() noexcept {}
 
         template<typename _store_tag = store_tag,
                  typename std::enable_if<
                     std::is_same<_store_tag, data_emplace_store_tag>::value, bool>::type = true>
-        json_force_inline DataMember(StoredType* storage) noexcept :
+        json_force_inline DataMemberImpl(StoredType* storage) noexcept :
             data_member_storage<StoredType, store_tag>(storage) {}
 
         template<typename _store_tag = store_tag,
@@ -147,7 +147,7 @@ namespace detail {
             return *storage_ptr;
         }
 
-        json_force_inline ~DataMember() {
+        json_force_inline ~DataMemberImpl() {
             if(should_destroy_storage()) {
                 storage_ptr->~StoredType();
             }
@@ -180,7 +180,7 @@ namespace detail {
                     std::is_same<store_tag, data_internal_store_tag>::value, bool>::type = true>
         json_force_inline DataList() noexcept {}
 
-        DataMember<StoredType, typename class_store_tag<ClassFor>::type> data;
+        DataMemberImpl<StoredType, typename class_store_tag<ClassFor>::type> data;
     };
 
     template<typename ClassFor, typename StoredType, typename NextType, typename... Types>
@@ -200,7 +200,7 @@ namespace detail {
                     std::is_same<store_tag, data_internal_store_tag>::value, bool>::type = true>
         json_force_inline DataList() noexcept {}
 
-        DataMember<StoredType, typename class_store_tag<ClassFor>::type> data;
+        DataMemberImpl<StoredType, typename class_store_tag<ClassFor>::type> data;
     };
 
     /**
@@ -373,7 +373,7 @@ namespace detail {
         template<typename _store_tag = store_tag,
                  typename std::enable_if<
                     std::is_same<_store_tag, data_emplace_store_tag>::value, bool>::type = true>
-        json_force_inline void transfer_storage(DataMemberBase<ClassType>& into) {
+        json_force_inline void transfer_storage(DataMember<ClassType>& into) {
             assert(into.storage_ptr == storage_ptr());
             transfer_storage(data_list);
             into.set_should_destroy_storage();
