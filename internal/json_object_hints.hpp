@@ -11,9 +11,13 @@ enum struct object_hints {
 };
 
 template<typename ClassType>
-struct ObjectHints : detail::reference_only {
-    constexpr static const object_hints construction_type = object_hints::non_trivially_constructible;
+struct ConstructHint : detail::reference_only {
+    static const object_hints construction_type;
 };
+
+template<typename ClassType>
+const object_hints ConstructHint<ClassType>::construction_type
+    = object_hints::non_trivially_constructible;
 } /* namespace tjson*/
 
 #endif

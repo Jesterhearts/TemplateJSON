@@ -77,31 +77,31 @@ namespace tjson {
 };
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
-#define JSON_ENABLE(CLASS_NAME, ...)                                \
-    namespace tjson {                                                \
-        JSON_CREATE_KEYS(CLASS_NAME, __VA_ARGS__)                   \
-        JSON_CREATE_MEMBERS(CLASS_NAME, __VA_ARGS__)                \
-                                                                    \
-        template std::string to_json<CLASS_NAME>(const CLASS_NAME&);     \
-        template CLASS_NAME from_json<CLASS_NAME>(const std::string&);   \
+#define JSON_ENABLE(CLASS_NAME, ...)                                    \
+    namespace tjson {                                                   \
+        JSON_CREATE_KEYS(CLASS_NAME, __VA_ARGS__)                       \
+        JSON_CREATE_MEMBERS(CLASS_NAME, __VA_ARGS__)                    \
+                                                                        \
+        template std::string to_json<CLASS_NAME>(const CLASS_NAME&);    \
+        template CLASS_NAME from_json<CLASS_NAME>(const std::string&);  \
     }
 
-#define JSON_ENABLE_ENUM(ENUM_NAME, ...)                            \
-    namespace tjson {                                                \
-        template<>                                                  \
-        struct EnumValidator<ENUM_NAME> {                           \
-            static EnumValueList<ENUM_NAME, __VA_ARGS__>  \
-            values() {                                              \
-                return EnumValueList<ENUM_NAME, __VA_ARGS__>();     \
-            }                                                       \
-        };                                                          \
+#define JSON_ENABLE_ENUM(ENUM_NAME, ...)                        \
+    namespace tjson {                                           \
+        template<>                                              \
+        struct EnumValidator<ENUM_NAME> {                       \
+            static EnumValueList<ENUM_NAME, __VA_ARGS__>        \
+            values() {                                          \
+                return EnumValueList<ENUM_NAME, __VA_ARGS__>(); \
+            }                                                   \
+        };                                                      \
     }
 
 #define JSON_ENABLE_CONTIGUOUS_ENUM(ENUM_NAME, ...)                         \
-    namespace tjson {                                                        \
+    namespace tjson {                                                       \
         template<>                                                          \
         struct EnumValidator<ENUM_NAME> {                                   \
-            static ContiguousEnumValueList<ENUM_NAME, __VA_ARGS__>\
+            static ContiguousEnumValueList<ENUM_NAME, __VA_ARGS__>          \
             values() {                                                      \
                 return ContiguousEnumValueList<ENUM_NAME, __VA_ARGS__>();   \
             }                                                               \
@@ -110,11 +110,9 @@ namespace tjson {
 
 #define JSON_HINT_CAN_BUILD_IN_PLACE(CLASS_NAME)                    \
     namespace tjson {                                               \
-        template<>                                                  \
-        struct ObjectHints<CLASS_NAME> : detail::reference_only {   \
-            constexpr static const object_hints construction_type   \
-                = object_hints::trivially_constructible;            \
-        };                                                          \
+    template<>                                                      \
+    const object_hints ConstructHint<CLASS_NAME>::construction_type \
+        = object_hints::trivially_constructible;                    \
     }
 
 
