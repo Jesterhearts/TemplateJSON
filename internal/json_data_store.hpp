@@ -14,6 +14,12 @@
 #include "json_internal_declarations.hpp"
 #include "json_member_mapper.hpp"
 
+json_force_inline void* operator new(size_t, void*, tjson::detail::placement_new) json_return_nonull;
+
+json_force_inline void* operator new(size_t, void* ptr, tjson::detail::placement_new) {
+    return ptr;
+}
+
 namespace tjson {
 namespace detail {
 
@@ -78,9 +84,10 @@ namespace detail {
     template<typename StoredType>
     struct data_member_storage_base : destroy_storage_flag<StoredType> {
         json_force_inline data_member_storage_base(StoredType* storage) noexcept
-            : storage_ptr(storage) {}
+            : _storage_ptr(storage) {}
 
-        StoredType* storage_ptr;
+        json_force_inline StoredType* storage_ptr() json_return_nonull { return _storage_ptr; }
+        StoredType* _storage_ptr;
     };
 
     template<typename StoredType>
@@ -90,7 +97,7 @@ namespace detail {
 
         template<typename... Args>
         json_force_inline void write(Args&&... args) {
-            new (storage_ptr) StoredType{ std::forward<Args>(args)... };
+            new (storage_ptr(), placement_new::invoke) StoredType{ std::forward<Args>(args)... };
             set_should_destroy_storage();
         }
 
@@ -131,7 +138,7 @@ namespace detail {
                     std::is_same<_store_tag, data_internal_store_tag>::value, bool>::type = true>
         json_force_inline StoredType&& consume() noexcept {
             assert(is_initialized());
-            return std::move(*storage_ptr);
+            return std::move(*storage_ptr());
         }
 
         template<typename _store_tag = store_tag,
@@ -144,12 +151,12 @@ namespace detail {
 
         json_force_inline StoredType& access() noexcept {
             assert(is_initialized());
-            return *storage_ptr;
+            return *storage_ptr();
         }
 
         json_force_inline ~DataMemberImpl() {
             if(should_destroy_storage()) {
-                storage_ptr->~StoredType();
+                storage_ptr()->~StoredType();
             }
         }
 
@@ -250,7 +257,7 @@ namespace detail {
                         data_internal_store_tag,
                         object_hints::trivially_constructible> : destroy_storage_flag<StoredType>
     {
-        json_force_inline StoredType* storage_ptr() noexcept {
+        json_force_inline StoredType* storage_ptr() noexcept json_return_nonull {
             return static_cast<StoredType*>(static_cast<void*>(&storage));
         }
 
@@ -265,7 +272,7 @@ namespace detail {
         json_force_inline data_storage(StoredType* storage) noexcept :
             storage(storage) {}
 
-        json_force_inline StoredType* storage_ptr() {
+        json_force_inline StoredType* storage_ptr() json_return_nonull {
             return storage;
         }
 
@@ -298,9 +305,9 @@ namespace detail {
         /* Four cases:
          * 1. We are emplacing a trivially constructible type:
          *    - Build the items in-place in the passed-in object
-         *    - Do nothing in transfer_storage
+         *    - Do nothing in transfer_storage, just flag that owning object will do teardown
          *    - realize() is not a valid operation
-         *    - Do nothing in the destructor
+         *    - Do nothing in the destructor, teardown is now owner's problem
          *
          * 2. We are emplacing a non-trivially constructible type:
          *    - Build the data list out of separate objects
@@ -374,7 +381,7 @@ namespace detail {
                  typename std::enable_if<
                     std::is_same<_store_tag, data_emplace_store_tag>::value, bool>::type = true>
         json_force_inline void transfer_storage(DataMember<ClassType>& into) {
-            assert(into.storage_ptr == storage_ptr());
+            assert(into.storage_ptr() == storage_ptr());
             transfer_storage(data_list);
             into.set_should_destroy_storage();
         }
@@ -472,7 +479,7 @@ namespace detail {
         void transfer_storage(DataList<list_store_tag>& list,
                               Values&&...               values)
         {
-            new (storage_ptr()) ClassType{std::forward<Values>(values)...};
+            new (storage_ptr(), placement_new::invoke) ClassType{std::forward<Values>(values)...};
         }
 
         template<typename list_store_tag,

@@ -71,17 +71,20 @@ namespace tjson {
         typedef typename std::remove_cv<T1>::type FirstType;
         typedef typename std::remove_cv<T2>::type SecondType;
 
-        detail::DataMemberImpl<FirstType, detail::data_internal_store_tag> first;
-        detail::DataMemberImpl<SecondType, detail::data_internal_store_tag> second;
+        detail::DataMemberImpl<FirstType, detail::data_emplace_store_tag> first(
+            const_cast<FirstType*>(&into.storage_ptr()->first));
+        detail::DataMemberImpl<SecondType, detail::data_emplace_store_tag> second(
+            const_cast<SecondType*>(&into.storage_ptr()->second));
 
         detail::from_json(tokenizer, first);
-
         tokenizer.advance_past_or_fail_if_not<','>("Pair does not have two values");
 
         detail::from_json(tokenizer, second);
-        into.write(first.consume(), second.consume());
-
         tokenizer.advance_past_or_fail_if_not<']'>("No end to JSON pair");
+
+        first.consume();
+        second.consume();
+        into.set_should_destroy_storage();
     }
 
     namespace detail {

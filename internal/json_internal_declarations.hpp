@@ -11,6 +11,10 @@ namespace detail {
         ~reference_only() = delete;
     };
 
+    enum struct placement_new {
+        invoke
+    };
+
     template<typename ClassType>
     using raw_data = typename
         std::aligned_storage<sizeof(ClassType), std::alignment_of<ClassType>::value>::type;

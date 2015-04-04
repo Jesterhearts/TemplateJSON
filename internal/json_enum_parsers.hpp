@@ -54,12 +54,12 @@ namespace tjson {
         json_force_inline void from_json(Tokenizer& tokenizer, DataMember<ClassType>& into) {
             using underlying_type = typename std::underlying_type<ClassType>::type;
             DataMemberImpl<underlying_type, detail::data_emplace_store_tag> value(
-                        reinterpret_cast<underlying_type*>(into.storage_ptr));
+                        reinterpret_cast<underlying_type*>(into.storage_ptr()));
 
             detail::from_json(tokenizer, value);
             value.consume();
             into.set_should_destroy_storage();
-            validate_enum(tokenizer, *static_cast<DataMember<underlying_type>&>(value).storage_ptr,
+            validate_enum(tokenizer, *static_cast<DataMember<underlying_type>&>(value).storage_ptr(),
                           EnumValidator<ClassType>::values());
         }
     }

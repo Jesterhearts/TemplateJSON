@@ -125,7 +125,10 @@ struct Tokenizer {
         for(; backslash != (string_end - 1) && backslash != string_end;
             ++backslash, ++write_i)
         {
-            if(*backslash == '\\') {
+            if(*backslash != '\\') {
+                *write_i = *backslash;
+            }
+            else {
                 switch(*(backslash + 1)) {
                 case '\\':
                     /* fallthru */
@@ -155,9 +158,6 @@ struct Tokenizer {
                     *write_i = *(backslash + 1);
                 }
                 ++backslash;
-            }
-            else {
-                *write_i = *backslash;
             }
         }
 
@@ -215,7 +215,7 @@ struct Tokenizer {
     }
 
     json_no_return
-    void parsing_error(const char* description) {
+    void parsing_error(const char* description) json_cold_function {
         size_t context_length = std::min<size_t>(std::distance(current, end), 1000);
 
         std::string error_message(description);
@@ -226,7 +226,7 @@ struct Tokenizer {
     }
 
     json_no_return
-    void parsing_error(std::string&& message) {
+    void parsing_error(std::string&& message) json_cold_function {
         parsing_error(message.c_str());
     }
 
@@ -277,12 +277,12 @@ private:
         const char* escape_index = string_end - 1;
         bool escaped = false;
 
-        while(*escape_index == '\\') {
+        while(json_expect_false(*escape_index == '\\')) {
             escaped = !escaped;
             --escape_index;
         }
 
-        if(escaped) {
+        if(json_expect_false(escaped)) {
             return consume_string_remainder();
         }
 
