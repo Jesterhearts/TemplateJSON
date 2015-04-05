@@ -54,7 +54,7 @@ struct Stringbuf {
     }
 
     std::string to_string() {
-        return std::string(m_buf, std::distance(m_buf, index));
+        return {m_buf, index};
     }
 
 private:
@@ -76,7 +76,7 @@ private:
         }
 
         m_buf = new_mem;
-        index = m_buf + index_offset;
+        index = new_mem + index_offset;
         m_size = newsize;
     }
 };
