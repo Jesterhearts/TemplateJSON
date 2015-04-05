@@ -14,11 +14,11 @@ namespace tjson {
 namespace detail {
 
 struct Stringbuf {
-    json_force_inline Stringbuf() {
-        m_size = 1024;
-        m_buf = static_cast<char*>(std::malloc(m_size));
-        index = m_buf;
-    }
+    json_force_inline Stringbuf() :
+        m_size(1024),
+        m_buf(static_cast<char*>(std::malloc(m_size))),
+        index(m_buf)
+    {}
 
     json_force_inline ~Stringbuf() {
         std::free(m_buf);
@@ -44,7 +44,6 @@ struct Stringbuf {
         size_t length = str.length();
         const char* chars = str.c_str();
 
-
         for(size_t i = 0; i < length; ++i) {
             char c = chars[i];
             if(c == '"' || c =='\\') {
@@ -59,9 +58,9 @@ struct Stringbuf {
     }
 
 private:
-    char* index;
-    char* m_buf;
     size_t m_size;
+    char* m_buf;
+    char* index;
 
     json_force_inline void allocate(size_t size) {
         const size_t index_offset = std::distance(m_buf, index);
