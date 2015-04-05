@@ -20,8 +20,11 @@
 //The standard mandates that calls to a non-throwing new check for null. The default placement new
 //  inserts a null check and jump after every call, which is unnecessary since we know that the
 //  pointer is not null. This makes gcc remove the null check.
-json_force_inline void* operator new(size_t, void*, tjson::detail::placement_new) json_return_nonull;
-json_force_inline void* operator new(size_t, void* ptr, tjson::detail::placement_new) {
+json_force_inline
+void* operator new(size_t, void*, tjson::detail::placement_new) json_return_nonull;
+
+json_force_inline
+void* operator new(size_t, void* ptr, tjson::detail::placement_new) {
     return ptr;
 }
 
@@ -66,7 +69,8 @@ namespace detail {
     struct destroy_storage_flag<ClassType,
                             typename std::enable_if<
                                 !std::is_trivially_destructible<ClassType>::value, bool
-                            >::type> {
+                            >::type>
+    {
         json_force_inline constexpr destroy_storage_flag() noexcept : initialized(false) {}
 
         json_force_inline void set_should_destroy_storage() noexcept { initialized = true; }
@@ -82,7 +86,8 @@ namespace detail {
     struct destroy_storage_flag<ClassType,
                             typename std::enable_if<
                                 std::is_trivially_destructible<ClassType>::value, bool
-                            >::type> {
+                            >::type>
+    {
         json_force_inline void set_should_destroy_storage() noexcept { }
         json_force_inline void unset_should_destroy_storage() noexcept { }
         json_force_inline bool should_destroy_storage() noexcept { return false; }
@@ -91,8 +96,10 @@ namespace detail {
 
     template<typename StoredType>
     struct data_member_storage_base : destroy_storage_flag<StoredType> {
-        json_force_inline data_member_storage_base(StoredType* storage) noexcept
-            : _storage_ptr(storage) {}
+
+        json_force_inline data_member_storage_base(StoredType* storage) noexcept :
+            _storage_ptr(storage)
+        {}
 
         json_force_inline StoredType* storage_ptr() json_return_nonull { return _storage_ptr; }
         StoredType* _storage_ptr;
@@ -100,8 +107,9 @@ namespace detail {
 
     template<typename StoredType>
     struct DataMember : data_member_storage_base<StoredType> {
-        json_force_inline DataMember(StoredType* storage) noexcept
-            : data_member_storage_base<StoredType>(storage) {}
+        json_force_inline DataMember(StoredType* storage) noexcept :
+            data_member_storage_base<StoredType>(storage)
+        {}
 
         template<typename... Args>
         json_force_inline void write(Args&&... args) {
@@ -118,7 +126,8 @@ namespace detail {
     template<typename StoredType, typename store_tag>
     struct data_member_storage : DataMember<StoredType> {
         json_force_inline data_member_storage() noexcept :
-            DataMember<StoredType>(static_cast<StoredType*>(static_cast<void*>(&storage))) {}
+            DataMember<StoredType>(static_cast<StoredType*>(static_cast<void*>(&storage)))
+        {}
 
         raw_data<StoredType> storage;
     };
@@ -126,7 +135,8 @@ namespace detail {
     template<typename StoredType>
     struct data_member_storage<StoredType, data_emplace_store_tag> : DataMember<StoredType> {
         json_force_inline data_member_storage(StoredType* storage) noexcept :
-            DataMember<StoredType>(storage) {}
+            DataMember<StoredType>(storage)
+        {}
     };
 
     template<typename StoredType, typename store_tag>
@@ -141,7 +151,8 @@ namespace detail {
                  typename std::enable_if<
                     std::is_same<_store_tag, data_emplace_store_tag>::value, bool>::type = true>
         json_force_inline DataMemberImpl(StoredType* storage) noexcept :
-            data_member_storage<StoredType, store_tag>(storage) {}
+            data_member_storage<StoredType, store_tag>(storage)
+        {}
 
         template<typename _store_tag = store_tag,
                  typename std::enable_if<
@@ -181,7 +192,9 @@ namespace detail {
     //TODO: This stores members in the "wrong" order, since they are reverse-order in memory
     //  I *think* this doesn't matter since it looks like from the assembly the compiler just
     //  removes this class because of all the inlining and builds directly on the members, making
-    //  the member memory-order irrelevant
+    //  the member memory-order irrelevant.
+    //As long as there is no ##% performance difference in changing the order, this will stay as-is
+    //  since it's much easier to understand/reason about
     template<typename ClassFor, typename... Types>
     struct DataList {};
 
@@ -205,8 +218,10 @@ namespace detail {
     };
 
     template<typename ClassFor, typename StoredType, typename NextType, typename... Types>
-    struct DataList<ClassFor, StoredType, NextType, Types...> : DataList<ClassFor, NextType, Types...> {
-
+    struct DataList<ClassFor, StoredType, NextType, Types...> : DataList<ClassFor,
+                                                                         NextType,
+                                                                         Types...>
+    {
         template<typename store_tag = typename class_store_tag<ClassFor>::type,
                  typename member, typename... members,
                  typename std::enable_if<
@@ -231,10 +246,8 @@ namespace detail {
              typename std::enable_if<
                 std::is_same<typename class_store_tag<ClassFor>::type,
                              data_internal_store_tag>::value, bool>::type = true>
-    constexpr DataList<ClassFor,
-                       typename underlying<members>::type...>
-    data_list_type(MemberList<members...>&&) noexcept
-    {
+    constexpr DataList<ClassFor, typename underlying<members>::type...>
+    data_list_type(MemberList<members...>&&) noexcept {
         return DataList<ClassFor, typename underlying<members>::type...>();
     }
 
@@ -243,10 +256,10 @@ namespace detail {
                 std::is_same<typename class_store_tag<ClassFor>::type,
                              data_emplace_store_tag>::value, bool>::type = true>
     DataList<ClassFor, typename underlying<members>::type...>
-    data_list_type(MemberList<members...>&&) noexcept
-    {
-        return DataList<ClassFor,
-                        typename underlying<members>::type...>(nullptr, MemberList<members...>());
+    data_list_type(MemberList<members...>&&) noexcept {
+        return DataList<ClassFor, typename underlying<members>::type...>(
+            nullptr, MemberList<members...>()
+        );
     }
 
     /**
@@ -255,8 +268,7 @@ namespace detail {
     template<typename ClassFor, typename DataType, typename... DataTypes>
     json_force_inline
     constexpr DataList<ClassFor, DataTypes...>&
-    data_list_next(DataList<ClassFor, DataType, DataTypes...>& list) noexcept
-    {
+    data_list_next(DataList<ClassFor, DataType, DataTypes...>& list) noexcept {
         return static_cast<DataList<ClassFor, DataTypes...>&>(list);
     }
 
@@ -267,7 +279,8 @@ namespace detail {
                  typename std::enable_if<construct_tag == object_hints::trivially_constructible,
                             bool>::type = true>
         json_force_inline DataStore(StoredType* storage) noexcept
-            : data_list(storage, MembersHolder<StoredType>::members()) {}
+            : data_list(storage, MembersHolder<StoredType>::members())
+        {}
 
         template<object_hints construct_tag = ConstructHint<StoredType>::construction_type,
                  typename std::enable_if<construct_tag == object_hints::non_trivially_constructible,
@@ -289,7 +302,8 @@ namespace detail {
                         object_hints::trivially_constructible> : DataStore<StoredType>
     {
         json_force_inline data_storage() noexcept :
-            DataStore<StoredType>(storage_ptr()) {}
+            DataStore<StoredType>(storage_ptr())
+        {}
 
         json_force_inline StoredType* storage_ptr() noexcept json_return_nonull {
             return static_cast<StoredType*>(static_cast<void*>(&storage));
@@ -308,13 +322,15 @@ namespace detail {
                             bool>::type = true>
         json_force_inline data_storage(StoredType* storage) noexcept :
             DataStore<StoredType>(storage),
-            storage(storage) {}
+            storage(storage)
+        {}
 
         template<object_hints _construct_tag = construct_tag,
                  typename std::enable_if<_construct_tag == object_hints::non_trivially_constructible,
                             bool>::type = true>
         json_force_inline data_storage(StoredType* storage) noexcept :
-            storage(storage) {}
+            storage(storage)
+        {}
 
         json_force_inline StoredType* storage_ptr() json_return_nonull {
             return storage;
@@ -326,7 +342,7 @@ namespace detail {
     template<typename StoredType, typename store_tag = data_internal_store_tag>
     struct DataStoreImpl : data_storage<StoredType,
                                         store_tag,
-                                        ConstructHint<StoredType>::construction_type> 
+                                        ConstructHint<StoredType>::construction_type>
     {
         /* Four cases:
          * 1. We are emplacing a trivially constructible type:
@@ -377,7 +393,8 @@ namespace detail {
                  typename std::enable_if<construct_tag == object_hints::trivially_constructible,
                             bool>::type = true>
         json_force_inline DataStoreImpl(StoredType* storage) noexcept :
-            data_storage<StoredType, store_tag, construct_tag>(storage) {}
+            data_storage<StoredType, store_tag, construct_tag>(storage)
+        {}
 
         template<typename _store_tag = store_tag,
                  object_hints construct_tag = ConstructHint<StoredType>::construction_type,
@@ -386,7 +403,8 @@ namespace detail {
                  typename std::enable_if<construct_tag == object_hints::non_trivially_constructible,
                             bool>::type = true>
         json_force_inline DataStoreImpl(StoredType* storage) noexcept :
-            data_storage<StoredType, store_tag, construct_tag>(storage) {}
+            data_storage<StoredType, store_tag, construct_tag>(storage)
+        {}
 
         /**
          * Data store is no longer valid after this call
@@ -436,7 +454,7 @@ namespace detail {
                             bool>::type = true>
         json_force_inline
         StoredType realize(DataList<member_store_tag>& list,
-                          Values&&...          values)
+                           Values&&...          values)
         {
             return StoredType{ std::forward<Values>(values)... };
         }
@@ -453,7 +471,7 @@ namespace detail {
                             bool>::type = true>
         json_force_inline
         StoredType realize(DataList<member_store_tag, DataType, DataTypes...>& list,
-                          Values&&...                                  values)
+                           Values&&...                                  values)
         {
             return realize(data_list_next(list), std::forward<Values>(values)..., list.data.consume());
         }
@@ -467,8 +485,7 @@ namespace detail {
                  typename std::enable_if<construct_tag == object_hints::trivially_constructible,
                             bool>::type = true>
         json_force_inline
-        StoredType realize(DataList<member_store_tag>& list) noexcept
-        {
+        StoredType realize(DataList<member_store_tag>& list) noexcept {
             //class has been fully created at this point, need to make sure to call destructor after
             //  calling move
             set_should_destroy_storage();
@@ -485,8 +502,7 @@ namespace detail {
                  typename std::enable_if<construct_tag == object_hints::trivially_constructible,
                             bool>::type = true>
         json_force_inline
-        StoredType realize(DataList<member_store_tag, DataType, DataTypes...>& list) noexcept
-        {
+        StoredType realize(DataList<member_store_tag, DataType, DataTypes...>& list) noexcept {
             //Need to flag all datalist members as non-destroying, since we'll handle that after
             //  this point. This puts it in a temporary partial-destroying state, but it should be
             //  safe since no exceptions can be thrown in the middle of this process.
@@ -551,8 +567,7 @@ namespace detail {
                  typename std::enable_if<construct_tag == object_hints::trivially_constructible,
                             bool>::type = true>
         json_force_inline
-        void transfer_storage(DataList<list_store_tag, DataType, DataTypes...>& list) noexcept
-        {
+        void transfer_storage(DataList<list_store_tag, DataType, DataTypes...>& list) noexcept {
             list.data.consume();
             transfer_storage(data_list_next(list));
         }
