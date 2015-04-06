@@ -214,6 +214,7 @@ struct Tokenizer {
         return std::make_pair(start, std::distance(start, current));
     }
 
+    json_never_inline
     json_no_return
     void parsing_error(const char* description) json_cold_function {
         size_t context_length = std::min<size_t>(std::distance(current, end), 1000);
@@ -225,6 +226,7 @@ struct Tokenizer {
         throw std::invalid_argument(error_message);
     }
 
+    json_never_inline
     json_no_return
     void parsing_error(std::string&& message) json_cold_function {
         parsing_error(message.c_str());

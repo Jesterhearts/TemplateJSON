@@ -62,6 +62,16 @@ namespace detail {
     struct data_internal_store_tag : reference_only {};
     struct data_emplace_store_tag : reference_only {};
 
+    template<typename store_tag>
+    struct is_internal_store_tag : reference_only {
+        constexpr static const bool value = std::is_same<store_tag, data_internal_store_tag>::value;
+    };
+
+    template<typename store_tag>
+    struct is_emplace_store_tag : reference_only {
+        constexpr static const bool value = std::is_same<store_tag, data_emplace_store_tag>::value;
+    };
+
     template<typename, typename enabled = bool>
     struct destroy_storage_flag;
 
@@ -111,11 +121,21 @@ namespace detail {
             data_member_storage_base<StoredType>(storage)
         {}
 
-        template<typename... Args>
+        template<typename... Args,
+                 typename std::enable_if<!std::is_nothrow_constructible<StoredType, Args...>::value,
+                    bool>::type = true>
         json_force_inline void write(Args&&... args) {
             new (storage_ptr(), placement_new::invoke) StoredType{ std::forward<Args>(args)... };
             //This must happen AFTER calling new, since if that throws we don't want to try to tear
             //  down a class that hasn't been built yet
+            set_should_destroy_storage();
+        }
+
+        template<typename... Args,
+                 typename std::enable_if<std::is_nothrow_constructible<StoredType, Args...>::value,
+                    bool>::type = true>
+        json_force_inline void write(Args&&... args) noexcept {
+            new (storage_ptr(), placement_new::invoke) StoredType{ std::forward<Args>(args)... };
             set_should_destroy_storage();
         }
 
@@ -143,28 +163,24 @@ namespace detail {
     struct DataMemberImpl : data_member_storage<StoredType, store_tag> {
 
         template<typename _store_tag = store_tag,
-                 typename std::enable_if<
-                    std::is_same<_store_tag, data_internal_store_tag>::value, bool>::type = true>
+                 enable_if<_store_tag, is_internal_store_tag> = true>
         json_force_inline DataMemberImpl() noexcept {}
 
         template<typename _store_tag = store_tag,
-                 typename std::enable_if<
-                    std::is_same<_store_tag, data_emplace_store_tag>::value, bool>::type = true>
+                 enable_if<_store_tag, is_emplace_store_tag> = true>
         json_force_inline DataMemberImpl(StoredType* storage) noexcept :
             data_member_storage<StoredType, store_tag>(storage)
         {}
 
         template<typename _store_tag = store_tag,
-                 typename std::enable_if<
-                    std::is_same<_store_tag, data_internal_store_tag>::value, bool>::type = true>
+                 enable_if<_store_tag, is_internal_store_tag> = true>
         json_force_inline StoredType&& consume() noexcept {
             assert(is_initialized());
             return std::move(*storage_ptr());
         }
 
         template<typename _store_tag = store_tag,
-                 typename std::enable_if<
-                    std::is_same<_store_tag, data_emplace_store_tag>::value, bool>::type = true>
+                 enable_if<_store_tag, is_emplace_store_tag> = true>
         json_force_inline void consume() noexcept {
             assert(is_initialized());
             unset_should_destroy_storage();
@@ -203,15 +219,13 @@ namespace detail {
 
         template<typename store_tag = typename class_store_tag<ClassFor>::type,
                  typename member, typename... members,
-                 typename std::enable_if<
-                    std::is_same<store_tag, data_emplace_store_tag>::value, bool>::type = true>
+                 enable_if<store_tag, is_emplace_store_tag> = true>
         json_force_inline DataList(ClassFor* instance, MemberList<member, members...>&&) noexcept :
             data(const_cast<StoredType*>(&(instance->*(member_pointer<member>::value))))
         {}
 
         template<typename store_tag = typename class_store_tag<ClassFor>::type,
-                 typename std::enable_if<
-                    std::is_same<store_tag, data_internal_store_tag>::value, bool>::type = true>
+                 enable_if<store_tag, is_internal_store_tag> = true>
         json_force_inline DataList() noexcept {}
 
         DataMemberImpl<StoredType, typename class_store_tag<ClassFor>::type> data;
@@ -223,17 +237,16 @@ namespace detail {
                                                                          Types...>
     {
         template<typename store_tag = typename class_store_tag<ClassFor>::type,
-                 typename member, typename... members,
-                 typename std::enable_if<
-                    std::is_same<store_tag, data_emplace_store_tag>::value, bool>::type = true>
+                 typename member,
+                 typename... members,
+                 enable_if<store_tag, is_emplace_store_tag> = true>
         json_force_inline DataList(ClassFor* instance, MemberList<member, members...>&&) noexcept :
             DataList<ClassFor, NextType, Types...>(instance, MemberList<members...>()),
             data(const_cast<StoredType*>(&(instance->*(member_pointer<member>::value))))
         {}
 
         template<typename store_tag = typename class_store_tag<ClassFor>::type,
-                 typename std::enable_if<
-                    std::is_same<store_tag, data_internal_store_tag>::value, bool>::type = true>
+                 enable_if<store_tag, is_internal_store_tag> = true>
         json_force_inline DataList() noexcept {}
 
         DataMemberImpl<StoredType, typename class_store_tag<ClassFor>::type> data;
@@ -372,24 +385,12 @@ namespace detail {
 
         template<typename _store_tag = store_tag,
                  object_hints construct_tag = ConstructHint<StoredType>::construction_type,
-                 typename std::enable_if<
-                    std::is_same<_store_tag, data_internal_store_tag>::value, bool>::type = true,
-                 typename std::enable_if<construct_tag == object_hints::trivially_constructible,
-                            bool>::type = true>
+                 enable_if<_store_tag, is_internal_store_tag> = true>
         json_force_inline DataStoreImpl() noexcept {}
 
         template<typename _store_tag = store_tag,
                  object_hints construct_tag = ConstructHint<StoredType>::construction_type,
-                 typename std::enable_if<
-                    std::is_same<_store_tag, data_internal_store_tag>::value, bool>::type = true,
-                 typename std::enable_if<construct_tag == object_hints::non_trivially_constructible,
-                            bool>::type = true>
-        json_force_inline DataStoreImpl() noexcept {}
-
-        template<typename _store_tag = store_tag,
-                 object_hints construct_tag = ConstructHint<StoredType>::construction_type,
-                 typename std::enable_if<
-                    std::is_same<_store_tag, data_emplace_store_tag>::value, bool>::type = true,
+                 enable_if<_store_tag, is_emplace_store_tag> = true,
                  typename std::enable_if<construct_tag == object_hints::trivially_constructible,
                             bool>::type = true>
         json_force_inline DataStoreImpl(StoredType* storage) noexcept :
@@ -398,8 +399,7 @@ namespace detail {
 
         template<typename _store_tag = store_tag,
                  object_hints construct_tag = ConstructHint<StoredType>::construction_type,
-                 typename std::enable_if<
-                    std::is_same<_store_tag, data_emplace_store_tag>::value, bool>::type = true,
+                 enable_if<_store_tag, is_emplace_store_tag> = true,
                  typename std::enable_if<construct_tag == object_hints::non_trivially_constructible,
                             bool>::type = true>
         json_force_inline DataStoreImpl(StoredType* storage) noexcept :
@@ -410,8 +410,7 @@ namespace detail {
          * Data store is no longer valid after this call
          */
         template<typename _store_tag = store_tag,
-                 typename std::enable_if<
-                    std::is_same<_store_tag, data_internal_store_tag>::value, bool>::type = true>
+                 enable_if<_store_tag, is_internal_store_tag> = true>
         json_force_inline StoredType realize() {
             return realize(data_list);
         }
@@ -420,8 +419,7 @@ namespace detail {
          * Data store is no longer valid after this call
          */
         template<typename _store_tag = store_tag,
-                 typename std::enable_if<
-                    std::is_same<_store_tag, data_emplace_store_tag>::value, bool>::type = true>
+                 enable_if<_store_tag, is_emplace_store_tag> = true>
         json_force_inline void transfer_storage(DataMember<StoredType>& into) {
             assert(into.storage_ptr() == storage_ptr());
             transfer_storage(data_list);
@@ -448,13 +446,12 @@ namespace detail {
                  typename... Values,
                  typename _store_tag = store_tag,
                  object_hints construct_tag = ConstructHint<StoredType>::construction_type,
-                 typename std::enable_if<
-                    std::is_same<_store_tag, data_internal_store_tag>::value, bool>::type = true,
+                 enable_if<_store_tag, is_internal_store_tag> = true,
                  typename std::enable_if<construct_tag == object_hints::non_trivially_constructible,
                             bool>::type = true>
         json_force_inline
-        StoredType realize(DataList<member_store_tag>& list,
-                           Values&&...          values)
+        static StoredType realize(DataList<member_store_tag>& list,
+                                  Values&&...                 values)
         {
             return StoredType{ std::forward<Values>(values)... };
         }
@@ -465,13 +462,12 @@ namespace detail {
                  typename... Values,
                  typename _store_tag = store_tag,
                  object_hints construct_tag = ConstructHint<StoredType>::construction_type,
-                 typename std::enable_if<
-                    std::is_same<_store_tag, data_internal_store_tag>::value, bool>::type = true,
+                 enable_if<_store_tag, is_internal_store_tag> = true,
                  typename std::enable_if<construct_tag == object_hints::non_trivially_constructible,
                             bool>::type = true>
         json_force_inline
-        StoredType realize(DataList<member_store_tag, DataType, DataTypes...>& list,
-                           Values&&...                                  values)
+        static StoredType realize(DataList<member_store_tag, DataType, DataTypes...>& list,
+                                  Values&&...                                         values)
         {
             return realize(data_list_next(list), std::forward<Values>(values)..., list.data.consume());
         }
@@ -480,8 +476,7 @@ namespace detail {
         template<typename member_store_tag,
                  typename _store_tag = store_tag,
                  object_hints construct_tag = ConstructHint<StoredType>::construction_type,
-                 typename std::enable_if<
-                    std::is_same<_store_tag, data_internal_store_tag>::value, bool>::type = true,
+                 enable_if<_store_tag, is_internal_store_tag> = true,
                  typename std::enable_if<construct_tag == object_hints::trivially_constructible,
                             bool>::type = true>
         json_force_inline
@@ -497,8 +492,7 @@ namespace detail {
                  typename... DataTypes,
                  typename _store_tag = store_tag,
                  object_hints construct_tag = ConstructHint<StoredType>::construction_type,
-                 typename std::enable_if<
-                    std::is_same<_store_tag, data_internal_store_tag>::value, bool>::type = true,
+                 enable_if<_store_tag, is_internal_store_tag> = true,
                  typename std::enable_if<construct_tag == object_hints::trivially_constructible,
                             bool>::type = true>
         json_force_inline
@@ -518,13 +512,12 @@ namespace detail {
                  typename... Values,
                  typename _store_tag = store_tag,
                  object_hints construct_tag = ConstructHint<StoredType>::construction_type,
-                 typename std::enable_if<
-                    std::is_same<_store_tag, data_emplace_store_tag>::value, bool>::type = true,
+                 enable_if<_store_tag, is_emplace_store_tag> = true,
                  typename std::enable_if<construct_tag == object_hints::non_trivially_constructible,
                             bool>::type = true>
         json_force_inline
-        void transfer_storage(DataList<list_store_tag>& list,
-                              Values&&...               values)
+        static void transfer_storage(DataList<list_store_tag>& list,
+                                     Values&&...               values)
         {
             new (storage_ptr(), placement_new::invoke) StoredType{std::forward<Values>(values)...};
         }
@@ -535,13 +528,12 @@ namespace detail {
                  typename... Values,
                  typename _store_tag = store_tag,
                  object_hints construct_tag = ConstructHint<StoredType>::construction_type,
-                 typename std::enable_if<
-                    std::is_same<_store_tag, data_emplace_store_tag>::value, bool>::type = true,
+                 enable_if<_store_tag, is_emplace_store_tag> = true,
                  typename std::enable_if<construct_tag == object_hints::non_trivially_constructible,
                             bool>::type = true>
         json_force_inline
-        void transfer_storage(DataList<list_store_tag, DataType, DataTypes...>& list,
-                              Values&&...                                       values)
+        static void transfer_storage(DataList<list_store_tag, DataType, DataTypes...>& list,
+                                     Values&&...                                       values)
         {
             transfer_storage(data_list_next(list), std::forward<Values>(values)..., list.data.consume());
         }
@@ -550,24 +542,22 @@ namespace detail {
         template<typename list_store_tag,
                  typename _store_tag = store_tag,
                  object_hints construct_tag = ConstructHint<StoredType>::construction_type,
-                 typename std::enable_if<
-                    std::is_same<_store_tag, data_emplace_store_tag>::value, bool>::type = true,
+                 enable_if<_store_tag, is_emplace_store_tag> = true,
                  typename std::enable_if<construct_tag == object_hints::trivially_constructible,
                             bool>::type = true>
         json_force_inline
-        void transfer_storage(DataList<list_store_tag>& list) noexcept {}
+        static void transfer_storage(DataList<list_store_tag>& list) noexcept {}
 
         template<typename list_store_tag,
                  typename DataType,
                  typename... DataTypes,
                  typename _store_tag = store_tag,
                  object_hints construct_tag = ConstructHint<StoredType>::construction_type,
-                 typename std::enable_if<
-                    std::is_same<_store_tag, data_emplace_store_tag>::value, bool>::type = true,
+                 enable_if<_store_tag, is_emplace_store_tag> = true,
                  typename std::enable_if<construct_tag == object_hints::trivially_constructible,
                             bool>::type = true>
         json_force_inline
-        void transfer_storage(DataList<list_store_tag, DataType, DataTypes...>& list) noexcept {
+        static void transfer_storage(DataList<list_store_tag, DataType, DataTypes...>& list) noexcept {
             list.data.consume();
             transfer_storage(data_list_next(list));
         }
