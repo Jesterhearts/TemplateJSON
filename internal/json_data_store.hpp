@@ -516,8 +516,8 @@ namespace detail {
                  typename std::enable_if<construct_tag == object_hints::non_trivially_constructible,
                             bool>::type = true>
         json_force_inline
-        static void transfer_storage(DataList<list_store_tag>& list,
-                                     Values&&...               values)
+        void transfer_storage(DataList<list_store_tag>& list,
+                              Values&&...               values)
         {
             new (storage_ptr(), placement_new::invoke) StoredType{std::forward<Values>(values)...};
         }
@@ -532,8 +532,8 @@ namespace detail {
                  typename std::enable_if<construct_tag == object_hints::non_trivially_constructible,
                             bool>::type = true>
         json_force_inline
-        static void transfer_storage(DataList<list_store_tag, DataType, DataTypes...>& list,
-                                     Values&&...                                       values)
+        void transfer_storage(DataList<list_store_tag, DataType, DataTypes...>& list,
+                              Values&&...                                       values)
         {
             transfer_storage(data_list_next(list), std::forward<Values>(values)..., list.data.consume());
         }
