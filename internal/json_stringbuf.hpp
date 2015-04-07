@@ -8,7 +8,6 @@
 #include <cstdlib>
 
 #include "json_internal_declarations.hpp"
-#include "json_tokenizer.hpp"
 
 namespace tjson {
 namespace detail {
@@ -53,8 +52,8 @@ struct Stringbuf {
         }
     }
 
-    std::string to_string() {
-        return {m_buf, index};
+    json_never_inline std::string to_string() {
+        return {m_buf, static_cast<size_t>(std::distance(m_buf, index))};
     }
 
 private:
@@ -80,7 +79,6 @@ private:
         m_size = newsize;
     }
 };
-
 } /* detail */
 } /* tjson */
 #endif

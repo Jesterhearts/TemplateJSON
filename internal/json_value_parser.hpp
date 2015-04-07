@@ -31,7 +31,7 @@ namespace tjson {
 
     //UTF8 todo
     template<>
-    inline void from_json(detail::Tokenizer& tokenizer, detail::DataMember<std::string>& into) {
+    json_never_inline void from_json(detail::Tokenizer& tokenizer, detail::DataMember<std::string>& into) {
         detail::Tokenizer::UnescapedString unescaped = tokenizer.consume_string_token();
         into.write(unescaped.data, unescaped.length);
     }
