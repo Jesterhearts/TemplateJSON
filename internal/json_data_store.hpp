@@ -557,18 +557,17 @@ namespace detail {
         }
 
         template<typename _store_tag = store_tag,
-                 typename construct_tag = typename ConstructHint<StoredType>::construction_type>
-//                  typename std::enable_if<
-//                     is_emplace_store_tag<_store_tag>::value
-//                     || is_non_trivial_construct_tag<_store_tag>::value, bool>::type = true>
+                 typename construct_tag = typename ConstructHint<StoredType>::construction_type,
+                 typename std::enable_if<
+                    is_emplace_store_tag<_store_tag>::value
+                    || is_non_trivial_construct_tag<construct_tag>::value, bool>::type = true>
         json_force_inline void DestroyStorage() noexcept {}
 
         template<typename _store_tag = store_tag,
                  typename construct_tag = typename ConstructHint<StoredType>::construction_type,
-                 typename std::enable_if<
-                    is_internal_store_tag<_store_tag>::value
-                    && is_trivial_construct_tag<_store_tag>::value, bool>::type = true>
-        json_force_inline void DestroyStorage() {
+                 JSON_ENABLE_IF(_store_tag, is_internal_store_tag) = true,
+                 JSON_ENABLE_IF(construct_tag, is_trivial_construct_tag) = true>
+        json_force_inline void DestroyStorage() noexcept {
             if(should_destroy_storage()) {
                 storage_ptr()->~StoredType();
             }
