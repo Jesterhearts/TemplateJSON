@@ -18,6 +18,8 @@
 #ifdef _MSC_VER
 #pragma warning(push)
 #pragma warning(disable: 4624)
+#pragma warning(disable: 4127)
+#pragma warning(disable: 4512)
 #endif
 
 #include "internal/json_common_defs.hpp"
@@ -108,6 +110,7 @@ namespace tjson {
         };                                                                  \
     }
 
+#ifndef _MSC_VER
 #define JSON_HINT_CAN_BUILD_IN_PLACE(CLASS_NAME)                        \
     namespace tjson {                                                   \
     template<>                                                          \
@@ -115,6 +118,15 @@ namespace tjson {
         using construction_type = object_hints::trivially_constructible;\
     };                                                                  \
     }
+#else
+#define JSON_HINT_CAN_BUILD_IN_PLACE(CLASS_NAME)                        \
+    namespace tjson {                                                   \
+    template<>                                                          \
+    struct ConstructHint<CLASS_NAME> {                                  \
+        using construction_type = object_hints::trivially_constructible;\
+    };                                                                  \
+    }
+#endif
 
 
 #ifdef _MSC_VER

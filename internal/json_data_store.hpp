@@ -14,6 +14,10 @@
 #include "json_internal_declarations.hpp"
 #include "json_member_mapper.hpp"
 
+#ifdef _MSC_VER
+#pragma warning(push)
+#pragma warning(disable: 4291)
+#endif
 //TODO: Pretty much none of this file will play nice with custom allocators. Need to add support
 //  later
 
@@ -44,12 +48,9 @@ namespace detail {
 
     template<typename ClassType, typename UnderlyingType, UnderlyingType ClassType::* member>
     struct member_pointer<MemberInfo<UnderlyingType ClassType::*, member>> {
-        using type = UnderlyingType ClassType::* const;
-#ifndef _MSC_VER
-        constexpr static type value = member;
-#else
-        static const size_t value = member;
-#endif
+        json_force_inline static UnderlyingType* apply(ClassType* instance) {
+            return &(instance->*member);
+        }
     };
 
     struct data_internal_store_tag : reference_only {};
@@ -236,7 +237,7 @@ namespace detail {
                  typename member, typename... members,
                  JSON_ENABLE_IF(store_tag, is_emplace_store_tag) = true>
         json_force_inline DataList(ClassFor* instance, MemberList<member, members...>&&) noexcept :
-            data(&(instance->*(member_pointer<member>::value)))
+            data(member_pointer<member>::apply(instance))
         {}
 
         template<typename store_tag = typename class_store_tag<ClassFor>::type,
@@ -257,7 +258,7 @@ namespace detail {
                  JSON_ENABLE_IF(store_tag, is_emplace_store_tag) = true>
         json_force_inline DataList(ClassFor* instance, MemberList<member, members...>&&) noexcept :
             DataList<ClassFor, NextType, Types...>(instance, MemberList<members...>()),
-            data(const_cast<StoredType*>(&(instance->*(member_pointer<member>::value))))
+            data(member_pointer<member>::apply(instance))
         {}
 
         template<typename store_tag = typename class_store_tag<ClassFor>::type,
@@ -451,21 +452,19 @@ namespace detail {
 
         //For constructing/returning an object
         //Creating a non trivially constructible type
-        template<typename member_store_tag,
-                 typename... Values,
+        template<typename... Values,
                  typename _store_tag = store_tag,
                  typename construct_tag = typename ConstructHint<StoredType>::construction_type,
                  JSON_ENABLE_IF(_store_tag, is_internal_store_tag) = true,
                  JSON_ENABLE_IF(construct_tag, is_non_trivial_construct_tag) = true>
         json_force_inline
-        static StoredType realize(DataList<member_store_tag>& list,
-                                  Values&&...                 values)
+        static StoredType realize(DataList<StoredType>&,
+                                  Values&&... values)
         {
             return StoredType{ std::forward<Values>(values)... };
         }
 
-        template<typename member_store_tag,
-                 typename DataType,
+        template<typename DataType,
                  typename... DataTypes,
                  typename... Values,
                  typename _store_tag = store_tag,
@@ -473,35 +472,33 @@ namespace detail {
                  JSON_ENABLE_IF(_store_tag, is_internal_store_tag) = true,
                  JSON_ENABLE_IF(construct_tag, is_non_trivial_construct_tag) = true>
         json_force_inline
-        static StoredType realize(DataList<member_store_tag, DataType, DataTypes...>& list,
-                                  Values&&...                                         values)
+        static StoredType realize(DataList<StoredType, DataType, DataTypes...>& list,
+                                  Values&&...                                   values)
         {
             return realize(data_list_next(list), std::forward<Values>(values)..., list.data.consume());
         }
 
         //Creating a trivially constructible type
-        template<typename member_store_tag,
-                 typename _store_tag = store_tag,
+        template<typename _store_tag = store_tag,
                  typename construct_tag = typename ConstructHint<StoredType>::construction_type,
                  JSON_ENABLE_IF(_store_tag, is_internal_store_tag) = true,
                  JSON_ENABLE_IF(construct_tag, is_trivial_construct_tag) = true>
         json_force_inline
-        StoredType realize(DataList<member_store_tag>& list) noexcept {
+        StoredType realize(DataList<StoredType>&) noexcept {
             //class has been fully created at this point, need to make sure to call destructor after
             //  calling move
             set_should_destroy_storage();
             return std::move(*storage_ptr());
         }
 
-        template<typename member_store_tag,
-                 typename DataType,
+        template<typename DataType,
                  typename... DataTypes,
                  typename _store_tag = store_tag,
                  typename construct_tag = typename ConstructHint<StoredType>::construction_type,
                  JSON_ENABLE_IF(_store_tag, is_internal_store_tag) = true,
                  JSON_ENABLE_IF(construct_tag, is_trivial_construct_tag) = true>
         json_force_inline
-        StoredType realize(DataList<member_store_tag, DataType, DataTypes...>& list) noexcept {
+        StoredType realize(DataList<StoredType, DataType, DataTypes...>& list) noexcept {
             //Need to flag all datalist members as non-destroying, since we'll handle that after
             //  this point. This puts it in a temporary partial-destroying state, but it should be
             //  safe since no exceptions can be thrown in the middle of this process.
@@ -513,21 +510,19 @@ namespace detail {
 
         //For initializing a DataMember
         //Transferring a non trivially constructible type
-        template<typename list_store_tag,
-                 typename... Values,
+        template<typename... Values,
                  typename _store_tag = store_tag,
                  typename construct_tag = typename ConstructHint<StoredType>::construction_type,
                  JSON_ENABLE_IF(_store_tag, is_emplace_store_tag) = true,
                  JSON_ENABLE_IF(construct_tag, is_non_trivial_construct_tag) = true>
         json_force_inline
-        void transfer_storage(DataList<list_store_tag>& list,
-                              Values&&...               values)
+        void transfer_storage(DataList<StoredType>&,
+                              Values&&... values)
         {
             new (storage_ptr(), placement_new::invoke) StoredType{std::forward<Values>(values)...};
         }
 
-        template<typename list_store_tag,
-                 typename DataType,
+        template<typename DataType,
                  typename... DataTypes,
                  typename... Values,
                  typename _store_tag = store_tag,
@@ -535,30 +530,28 @@ namespace detail {
                  JSON_ENABLE_IF(_store_tag, is_emplace_store_tag) = true,
                  JSON_ENABLE_IF(construct_tag, is_non_trivial_construct_tag) = true>
         json_force_inline
-        void transfer_storage(DataList<list_store_tag, DataType, DataTypes...>& list,
-                              Values&&...                                       values)
+        void transfer_storage(DataList<StoredType, DataType, DataTypes...>& list,
+                              Values&&...                                   values)
         {
             transfer_storage(data_list_next(list), std::forward<Values>(values)..., list.data.consume());
         }
 
         //Transferring a trivially constructible type
-        template<typename list_store_tag,
-                 typename _store_tag = store_tag,
+        template<typename _store_tag = store_tag,
                  typename construct_tag = typename ConstructHint<StoredType>::construction_type,
                  JSON_ENABLE_IF(_store_tag, is_emplace_store_tag) = true,
                  JSON_ENABLE_IF(construct_tag, is_trivial_construct_tag) = true>
         json_force_inline
-        static void transfer_storage(DataList<list_store_tag>& list) noexcept {}
+        static void transfer_storage(DataList<StoredType>&) noexcept{}
 
-        template<typename list_store_tag,
-                 typename DataType,
+        template<typename DataType,
                  typename... DataTypes,
                  typename _store_tag = store_tag,
                  typename construct_tag = typename ConstructHint<StoredType>::construction_type,
                  JSON_ENABLE_IF(_store_tag, is_emplace_store_tag) = true,
                  JSON_ENABLE_IF(construct_tag, is_trivial_construct_tag) = true>
         json_force_inline
-        static void transfer_storage(DataList<list_store_tag, DataType, DataTypes...>& list) noexcept {
+        static void transfer_storage(DataList<StoredType, DataType, DataTypes...>& list) noexcept{
             list.data.consume();
             transfer_storage(data_list_next(list));
         }
@@ -583,5 +576,9 @@ namespace detail {
     };
 }
 }
+
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif
 
 #endif

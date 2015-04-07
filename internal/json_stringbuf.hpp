@@ -68,7 +68,7 @@ private:
             return;
         }
 
-        newsize *= 1.2;
+        newsize = static_cast<size_t>(newsize * 1.2);
         char* new_mem = static_cast<char*>(std::realloc(m_buf, newsize));
         if (json_expect_false(!new_mem)) {
             throw std::bad_alloc();

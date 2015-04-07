@@ -23,7 +23,7 @@ namespace detail {
 
     template<typename ClassType>
     json_force_inline
-    void members_to_json(const ClassType& classFrom, detail::Stringbuf& out, MemberList<>&&) {}
+    void members_to_json(const ClassType&, detail::Stringbuf&, MemberList<>&&) {}
 
     template<typename ClassType,
              typename member, typename... members>
@@ -41,9 +41,9 @@ namespace detail {
         members_to_json(classFrom, out, MemberList<members...>());
     }
 
-    template<typename store_tag>
+    template<typename ClassFor>
     json_force_inline
-    void member_from_json(DataList<store_tag>& into, const char* startOfKey, size_t keylen,
+    void member_from_json(DataList<ClassFor>&, const char* startOfKey, size_t keylen,
                           Tokenizer& tokenizer, MemberList<>&&) {
         std::string message("Invalid key for object: (");
         message.append(startOfKey, keylen);
@@ -51,10 +51,10 @@ namespace detail {
         tokenizer.parsing_error(std::move(message));
     }
 
-    template<typename store_tag, typename DataType, typename... DataTypes,
+    template<typename ClassFor, typename DataType, typename... DataTypes,
              typename member, typename... members>
     json_force_inline
-    void member_from_json(DataList<store_tag, DataType, DataTypes...>& into,
+    void member_from_json(DataList<ClassFor, DataType, DataTypes...>& into,
                           const char*                                  startOfKey,
                           size_t                                       keylen,
                           Tokenizer&                                   tokenizer,
@@ -69,7 +69,7 @@ namespace detail {
             detail::from_json(tokenizer, into.data);
         }
         else {
-            member_from_json(data_list_next(into), startOfKey, keylen, tokenizer, MemberList<members...>());
+            member_from_json<ClassFor>(data_list_next(into), startOfKey, keylen, tokenizer, MemberList<members...>());
         }
     }
 
