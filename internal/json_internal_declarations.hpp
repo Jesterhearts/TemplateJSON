@@ -35,6 +35,13 @@ namespace detail {
     template<typename ClassType, template<typename C> class decider>
     using enable_if = typename std::enable_if<decider<basic_type<ClassType>>::value, bool>::type;
 
+#ifndef _MSC_VER
+    #define JSON_ENABLE_IF(TEMPLATE_ARG, DECIDER) enable_if<TEMPLATE_ARG, DECIDER>
+#else
+    #define JSON_ENABLE_IF(TEMPLATE_ARG, DECIDER)   \
+        typename std::enable_if<DECIDER<basic_type<TEMPLATE_ARG>>::value, bool>::type
+#endif
+
     template<typename ClassType>
     using is_bool = std::is_same<ClassType, bool>;
 
@@ -53,59 +60,59 @@ namespace detail {
     };
 
     //Enum parsers
-    template<typename ClassType, enable_if<ClassType, std::is_enum> = true>
+    template<typename ClassType, JSON_ENABLE_IF(ClassType, std::is_enum) = true>
     inline void to_json(ClassType from, detail::Stringbuf& out);
 
-    template<typename ClassType, enable_if<ClassType, std::is_enum> = true>
+    template<typename ClassType, JSON_ENABLE_IF(ClassType, std::is_enum) = true>
     inline void from_json(Tokenizer& iter, DataMember<ClassType>& into);
 
     //Number parsers
-    template<typename ClassType, enable_if<ClassType, is_numeric> = true>
+    template<typename ClassType, JSON_ENABLE_IF(ClassType, is_numeric) = true>
     inline void to_json(ClassType from, detail::Stringbuf& out);
 
-    template<typename ClassType, enable_if<ClassType, is_numeric> = true>
+    template<typename ClassType, JSON_ENABLE_IF(ClassType, is_numeric) = true>
     inline void from_json(Tokenizer& iter, DataMember<ClassType>& into);
 
     //Boolean parsers
-    template<typename ClassType, enable_if<ClassType, is_bool> = true>
+    template<typename ClassType, JSON_ENABLE_IF(ClassType, is_bool) = true>
     inline void to_json(ClassType from, detail::Stringbuf& out);
 
-    template<typename ClassType, enable_if<ClassType, is_bool> = true>
+    template<typename ClassType, JSON_ENABLE_IF(ClassType, is_bool) = true>
     inline void from_json(Tokenizer& iter, DataMember<ClassType>& into);
 
     //Character parsers
-    template<typename ClassType, enable_if<ClassType, is_char> = true>
+    template<typename ClassType, JSON_ENABLE_IF(ClassType, is_char) = true>
     inline void to_json(ClassType from, detail::Stringbuf& out);
 
-    template<typename ClassType, enable_if<ClassType, is_char> = true>
+    template<typename ClassType, JSON_ENABLE_IF(ClassType, is_char) = true>
     inline void from_json(Tokenizer& iter, DataMember<ClassType>& into);
 
     //Wide Character parsers
-    template<typename ClassType, enable_if<ClassType, is_wchar> = true>
+    template<typename ClassType, JSON_ENABLE_IF(ClassType, is_wchar) = true>
     inline void to_json(ClassType from, detail::Stringbuf& out);
 
-    template<typename ClassType, enable_if<ClassType, is_wchar> = true>
+    template<typename ClassType, JSON_ENABLE_IF(ClassType, is_wchar) = true>
     inline void from_json(Tokenizer& iter, DataMember<ClassType>& into);
 
     //Floating point number parsers
-    template<typename ClassType, enable_if<ClassType, std::is_floating_point> = true>
+    template<typename ClassType, JSON_ENABLE_IF(ClassType, std::is_floating_point) = true>
     inline void to_json(ClassType from, detail::Stringbuf& out);
 
-    template<typename ClassType, enable_if<ClassType, std::is_floating_point> = true>
+    template<typename ClassType, JSON_ENABLE_IF(ClassType, std::is_floating_point) = true>
     inline void from_json(Tokenizer& iter, DataMember<ClassType>& into);
 
     //Pointer parsers
-    template<typename ClassType, enable_if<ClassType, std::is_pointer> = true>
+    template<typename ClassType, JSON_ENABLE_IF(ClassType, std::is_pointer) = true>
     inline void to_json(ClassType from, detail::Stringbuf& out);
 
-    template<typename ClassType, enable_if<ClassType, std::is_pointer> = true>
+    template<typename ClassType, JSON_ENABLE_IF(ClassType, std::is_pointer) = true>
     inline void from_json(Tokenizer& iter, DataMember<ClassType>& into);
 
     //Class parsers
-    template<typename ClassType, enable_if<ClassType, std::is_class> = true>
+    template<typename ClassType, JSON_ENABLE_IF(ClassType, std::is_class) = true>
     inline void to_json(const ClassType& from, detail::Stringbuf& out);
 
-    template<typename ClassType, enable_if<ClassType, std::is_class> = true>
+    template<typename ClassType, JSON_ENABLE_IF(ClassType, std::is_class) = true>
     inline void from_json(Tokenizer& iter, DataMember<ClassType>& into);
 
 } /* detail */

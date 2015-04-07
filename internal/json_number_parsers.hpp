@@ -78,19 +78,19 @@ namespace detail {
     }
 
     template<typename ClassType,
-             enable_if<ClassType, std::is_floating_point>>
+             JSON_ENABLE_IF(ClassType, std::is_floating_point)>
     inline void to_json(ClassType from, detail::Stringbuf& out) {
         out.append(boost::lexical_cast<std::string>(from));
     }
 
     template<typename ClassType,
-             enable_if<ClassType, is_numeric>>
+             JSON_ENABLE_IF(ClassType, is_numeric)>
     json_force_inline void to_json(ClassType from, detail::Stringbuf& out) {
         itoa<ClassType, 10>(from, out);
     }
 
     template<typename ClassType,
-             enable_if<ClassType, is_bool>>
+             JSON_ENABLE_IF(ClassType, is_bool)>
     json_force_inline void to_json(ClassType from, detail::Stringbuf& out) {
         static_assert(std::is_same<ClassType, bool>::value, "error in template declaration.");
 
@@ -146,13 +146,13 @@ namespace detail {
     }
 
     template<typename ClassType,
-             enable_if<ClassType, is_numeric>>
+             JSON_ENABLE_IF(ClassType, is_numeric)>
     json_force_inline void from_json(Tokenizer& tokenizer, DataMember<ClassType>& into) {
         return atoi(tokenizer, into);
     }
 
     template<typename ClassType,
-             enable_if<ClassType, is_bool>>
+             JSON_ENABLE_IF(ClassType, is_bool)>
     inline void from_json(Tokenizer& tokenizer, DataMember<ClassType>& into) {
         static_assert(std::is_same<ClassType, bool>::value, "error in template declaration.");
 
@@ -174,7 +174,7 @@ namespace detail {
     }
 
     template<typename ClassType,
-             enable_if<ClassType, std::is_floating_point>>
+             JSON_ENABLE_IF(ClassType, std::is_floating_point)>
     inline void from_json(Tokenizer& tokenizer, DataMember<ClassType>& into) {
         std::pair<const char*, size_t> startAndLength = tokenizer.consume_number();
 

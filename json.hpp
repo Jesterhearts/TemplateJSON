@@ -108,11 +108,12 @@ namespace tjson {
         };                                                                  \
     }
 
-#define JSON_HINT_CAN_BUILD_IN_PLACE(CLASS_NAME)                    \
-    namespace tjson {                                               \
-    template<>                                                      \
-    const object_hints ConstructHint<CLASS_NAME>::construction_type \
-        = object_hints::trivially_constructible;                    \
+#define JSON_HINT_CAN_BUILD_IN_PLACE(CLASS_NAME)                        \
+    namespace tjson {                                                   \
+    template<>                                                          \
+    struct ConstructHint<CLASS_NAME> : detail::reference_only {         \
+        using construction_type = object_hints::trivially_constructible;\
+    };                                                                  \
     }
 
 

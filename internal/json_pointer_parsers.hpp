@@ -12,7 +12,7 @@ namespace std {
 namespace tjson {
     namespace detail {
         template<typename ClassType,
-                 enable_if<ClassType, std::is_pointer>>
+                 JSON_ENABLE_IF(ClassType, std::is_pointer)>
         inline void to_json(ClassType from, detail::Stringbuf& out) {
             if(!from) {
                 out.append("null", 4);
@@ -24,7 +24,7 @@ namespace tjson {
         }
 
         template<typename ClassType,
-                 enable_if<ClassType, std::is_pointer>>
+                 JSON_ENABLE_IF(ClassType, std::is_pointer)>
         inline void from_json(Tokenizer& tokenizer, DataMember<ClassType>& into) {
 
             tokenizer.seek();

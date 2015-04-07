@@ -113,7 +113,7 @@ struct Tokenizer {
 
         size_t length = std::distance(string_start, string_end);
 
-        const char* backslash = static_cast<char*>(std::memchr(string_start, '\\', length));
+        const char* backslash = static_cast<const char*>(std::memchr(string_start, '\\', length));
         if(!backslash) {
             return {string_start, length, /* shared */true};
         }
