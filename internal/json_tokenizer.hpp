@@ -109,16 +109,22 @@ struct Tokenizer {
     //return is the set (opening quote, closing quote)
     UnescapedString consume_string_token() {
         const char* string_start = consume_string_start();
-        const char* string_end = consume_string_remainder();
+
+        const std::pair<const char*, const char* > string_end_and_first_backslash = consume_string_remainder();
+        const char* string_end = string_end_and_first_backslash.first;
+        const char* backslash = string_end_and_first_backslash.second;
 
         size_t length = std::distance(string_start, string_end);
 
-        const char* backslash = static_cast<const char*>(std::memchr(string_start, '\\', length));
-        if(!backslash) {
+        if (string_end == backslash + 1) {
             return {string_start, length, /* shared */true};
         }
 
+
         char* data = static_cast<char*>(std::malloc(length * sizeof(char)));
+        if(!data) {
+           throw std::bad_alloc();
+        }
         std::memcpy(data, string_start, std::distance(string_start, backslash));
 
         char* write_i = data + std::distance(string_start, backslash);
@@ -268,7 +274,7 @@ private:
         return current;
     }
 
-    const char* consume_string_remainder() {
+    std::pair<const char*, const char*> consume_string_remainder(const char* first_backslash = nullptr) {
         const char* string_end = static_cast<const char*>(std::memchr(current, '\"', std::distance(current, end)));
         if(!string_end) {
             parsing_error("Missing closing \" for string");
@@ -285,10 +291,10 @@ private:
         }
 
         if(json_expect_false(escaped)) {
-            return consume_string_remainder();
+           return consume_string_remainder(escape_index);
         }
 
-        return string_end;
+        return {string_end, first_backslash ? first_backslash : escape_index};
     }
 
     Tokenizer(const Tokenizer&) = delete;
