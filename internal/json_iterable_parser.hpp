@@ -39,7 +39,7 @@ namespace tjson {
             }
         };
 
-        template<typename... T, template<typename... T> class Container>
+        template<typename... T, template<typename... T2> class Container>
         inline void to_json(const Container<T...>& from, detail::Stringbuf& out) {
             out.push_back('[');
 
@@ -57,7 +57,7 @@ namespace tjson {
             out.push_back(']');
         }
 
-        template<typename... T, template<typename... T> class Container>
+        template<typename... T, template<typename... T2> class Container>
         inline void from_json(Tokenizer& tokenizer, DataMember<Container<T...>>& into) {
             tokenizer.consume_array_start();
 

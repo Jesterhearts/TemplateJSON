@@ -42,7 +42,7 @@ namespace tjson {
 
         namespace pointers {
             template<typename T, typename... D,
-                     template<typename T, typename... D> class SmartPointerType>
+                     template<typename T2, typename... D2> class SmartPointerType>
             inline void to_json(const SmartPointerType<T, D...>& from, detail::Stringbuf& out) {
                 if(!from) {
                     out.append("null", 4);
@@ -55,7 +55,7 @@ namespace tjson {
 
 
             template<typename T, typename... D,
-                     template<typename T, typename... D> class SmartPointerType>
+                     template<typename T2, typename... D2> class SmartPointerType>
             inline void from_json(Tokenizer& tokenizer, DataMember<SmartPointerType<T, D...>>& into) {
                 DataMemberImpl<T, detail::data_internal_store_tag> data;
                 detail::from_json(tokenizer, data);

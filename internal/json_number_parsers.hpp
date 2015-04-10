@@ -2,7 +2,16 @@
 #ifndef __JSON_NUMBER_PARSERS_HPP__
 #define __JSON_NUMBER_PARSERS_HPP__
 
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunused-local-typedef"
+#endif
+
 #include <boost/lexical_cast.hpp>
+
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif
 
 #include <algorithm>
 #include <limits>
