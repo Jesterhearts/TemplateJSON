@@ -24,12 +24,12 @@ struct Stringbuf {
     }
 
     json_force_inline void push_back(char c) {
-        allocate(1);
+        reserve(1);
         *(index++) = c;
     }
 
     json_force_inline void append(const char* str, size_t len) json_nonull_args {
-        allocate(len);
+        reserve(len);
         std::memcpy(index, str, len);
         index += len;
     }
@@ -39,7 +39,7 @@ struct Stringbuf {
     }
 
     json_force_inline void append_and_escape(const std::string& str) {
-        allocate(2 * str.length());
+        reserve(2 * str.length());
         size_t length = str.length();
         const char* chars = str.c_str();
 
@@ -52,16 +52,7 @@ struct Stringbuf {
         }
     }
 
-    json_never_inline std::string to_string() {
-        return {m_buf, static_cast<size_t>(std::distance(m_buf, index))};
-    }
-
-private:
-    size_t m_size;
-    char* m_buf;
-    char* index;
-
-    json_force_inline void allocate(size_t size) {
+    json_force_inline void reserve(size_t size) {
         const size_t index_offset = std::distance(m_buf, index);
         size_t newsize = index_offset + size;
         if(json_expect_true(m_size >= newsize)) {
@@ -78,6 +69,16 @@ private:
         index = new_mem + index_offset;
         m_size = newsize;
     }
+
+    json_never_inline std::string to_string() {
+        return {m_buf, static_cast<size_t>(std::distance(m_buf, index))};
+    }
+
+private:
+    size_t m_size;
+    char* m_buf;
+public:
+    char* index;
 };
 } /* detail */
 } /* tjson */

@@ -94,7 +94,7 @@ namespace detail {
     template<typename ClassType,
              JSON_ENABLE_IF(ClassType, is_numeric)>
     json_force_inline void to_json(ClassType from, detail::Stringbuf& out) {
-        itoa10<ClassType, 10>(from, out);
+        itoa10(from, out);
     }
 
     template<typename ClassType,
