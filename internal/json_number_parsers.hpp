@@ -42,9 +42,8 @@ namespace detail {
         static const uint8_t value = 20;
     };
 
-    template<typename Type, Type base>
-    inline void itoa(Type value, detail::Stringbuf& out) {
-        static_assert(base > 1 && base <= 10, "Unsupported base");
+    template<typename Type>
+    inline void itoa10(Type value, detail::Stringbuf& out) {
         static_assert(std::is_integral<Type>::value, "Must be an integral type");
         const auto BufferSize = min_buffer_size<sizeof(Type)>::value + std::is_signed<Type>::value;
 
@@ -68,8 +67,8 @@ namespace detail {
         }
 
         while(value) {
-            *to = '0' + (value % base);
-            value /= base;
+            *to = '0' + (value % 10);
+            value /= 10;
             --to;
         }
 
@@ -95,7 +94,7 @@ namespace detail {
     template<typename ClassType,
              JSON_ENABLE_IF(ClassType, is_numeric)>
     json_force_inline void to_json(ClassType from, detail::Stringbuf& out) {
-        itoa<ClassType, 10>(from, out);
+        itoa10<ClassType, 10>(from, out);
     }
 
     template<typename ClassType,
@@ -107,7 +106,7 @@ namespace detail {
     }
 
     template<typename Type>
-    inline void atoi(Tokenizer& tokenizer, DataMember<Type>& into) {
+    inline void atoi10(Tokenizer& tokenizer, DataMember<Type>& into) {
         static_assert(std::is_integral<Type>::value, "Must be an integral value");
 
         char sign_c = tokenizer.seek();
@@ -157,7 +156,7 @@ namespace detail {
     template<typename ClassType,
              JSON_ENABLE_IF(ClassType, is_numeric)>
     json_force_inline void from_json(Tokenizer& tokenizer, DataMember<ClassType>& into) {
-        return atoi(tokenizer, into);
+        return atoi10(tokenizer, into);
     }
 
     template<typename ClassType,
