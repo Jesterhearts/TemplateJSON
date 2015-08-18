@@ -6,9 +6,9 @@
 
 #define JSON_PRIVATE_ACCESS()                               \
     template<typename ClassType>                            \
-    friend struct tjson::MembersHolder;                     \
+    friend struct tjson::detail::MembersHolder;             \
                                                             \
     template<typename memberType, memberType member>        \
-    friend struct tjson::MemberInfo;                        \
+    friend struct tjson::detail::MemberInfo;                        \
 
 #endif

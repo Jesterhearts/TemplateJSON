@@ -83,7 +83,7 @@ namespace detail {
             tokenizer.consume_kv_mapping();
 
             member_from_json(into.data_list, unescaped.data, unescaped.length, tokenizer,
-                             MembersHolder<ClassType>::members());
+                             MembersFor<ClassType>());
 
             tokenizer.advance_or_fail_if_not<','>("Incomplete object");
 
@@ -101,7 +101,7 @@ namespace detail {
             tokenizer.consume_kv_mapping();
 
             member_from_json(into.data_list, unescaped.data, unescaped.length, tokenizer,
-                             MembersHolder<ClassType>::members());
+                             MembersFor<ClassType>());
 
             tokenizer.advance_if<','>();
             tokenizer.consume_object_end();

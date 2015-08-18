@@ -3,6 +3,7 @@
 #define __JSON_KEYS_HANDLER_HPP__
 
 namespace tjson {
+namespace detail {
 
 #define JSON_CREATE_KEYS(CLASS_NAME, ...)               \
     BOOST_PP_SEQ_FOR_EACH(                              \
@@ -38,5 +39,6 @@ namespace tjson {
 #define JSON_KEY_NAME1(VARNAME)                            \
     JSON_KEY_NAME2(VARNAME, BOOST_PP_STRINGIZE(VARNAME))
 
+}
 }
 #endif

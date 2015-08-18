@@ -2,7 +2,7 @@
 #include "test_common.hpp"
 #include "json.hpp"
 
-JSON_ENABLE(iterables, (vector), (map));
+JSON_ENABLE(::iterables, (vector), (map));
 JSON_ENABLE(tuples, (tuple));
 
 void TestIterables() {

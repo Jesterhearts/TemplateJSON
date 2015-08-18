@@ -32,7 +32,7 @@ namespace tjson {
     template<typename ClassType>
     inline void to_json(const ClassType& classFrom, detail::Stringbuf& out) {
         out.push_back('{');
-        detail::members_to_json(classFrom, out, MembersHolder<ClassType>::members());
+        detail::members_to_json(classFrom, out, detail::MembersFor<ClassType>());
 
         out.push_back('}');
     }
@@ -51,7 +51,7 @@ namespace tjson {
                           detail::DataStore<ClassType>& into)
     {
         tokenizer.consume_object_start();
-        detail::members_from_json(into, tokenizer, MembersHolder<ClassType>::members());
+        detail::members_from_json(into, tokenizer, detail::MembersFor<ClassType>());
     }
 
     template<typename ClassType>
@@ -79,8 +79,10 @@ namespace tjson {
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 #define JSON_ENABLE(CLASS_NAME, ...)                                    \
     namespace tjson {                                                   \
-        JSON_CREATE_KEYS(CLASS_NAME, __VA_ARGS__)                       \
-        JSON_CREATE_MEMBERS(CLASS_NAME, __VA_ARGS__)                    \
+        namespace detail {                                              \
+            JSON_CREATE_KEYS(CLASS_NAME, __VA_ARGS__)                   \
+            JSON_CREATE_MEMBERS(CLASS_NAME, __VA_ARGS__)                \
+        }                                                               \
                                                                         \
         template std::string to_json<CLASS_NAME>(const CLASS_NAME&);    \
         template CLASS_NAME from_json<CLASS_NAME>(const std::string&);  \
@@ -99,6 +101,7 @@ namespace tjson {
 
 #define JSON_ENABLE_CONTIGUOUS_ENUM(ENUM_NAME, ...)                         \
     namespace tjson {                                                       \
+    namespace detail {                                                      \
         template<>                                                          \
         struct EnumValidator<ENUM_NAME> {                                   \
             constexpr static ContiguousEnumValueList<ENUM_NAME, __VA_ARGS__>\
@@ -106,29 +109,20 @@ namespace tjson {
                 return ContiguousEnumValueList<ENUM_NAME, __VA_ARGS__>();   \
             }                                                               \
         };                                                                  \
+    }                                                                       \
     }
 
-#ifndef _MSC_VER
-#define JSON_HINT_CAN_BUILD_IN_PLACE(CLASS_NAME)                        \
-    namespace tjson {                                                   \
-    template<>                                                          \
-    struct ConstructHint<CLASS_NAME> : detail::reference_only {         \
-        using construction_type = object_hints::trivially_constructible;\
-    };                                                                  \
+#define JSON_HINT_CAN_BUILD_IN_PLACE(CLASS_NAME)                            \
+    namespace tjson {                                                       \
+    namespace detail {                                                      \
+        template<>                                                          \
+        struct ConstructHint<CLASS_NAME> {                                  \
+            using construction_type = object_hints::trivially_constructible;\
+            ConstructHint()  = delete;                                      \
+            ~ConstructHint() = delete;                                      \
+        };                                                                  \
+    }                                                                       \
     }
-#else
-#define JSON_HINT_CAN_BUILD_IN_PLACE(CLASS_NAME)                        \
-    namespace tjson {                                                   \
-    json_pragma(warning(push));                                         \
-    json_pragma(warning(disable: 4624));                                \
-    template<>                                                          \
-    struct ConstructHint<CLASS_NAME> : detail::reference_only {         \
-        using construction_type = object_hints::trivially_constructible;\
-    };                                                                  \
-    json_pragma(warning(pop));                                          \
-    }
-#endif
-
 
 #ifdef _MSC_VER
 #pragma warning(pop)

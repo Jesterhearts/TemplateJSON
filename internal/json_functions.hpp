@@ -12,6 +12,12 @@ namespace tjson {
     namespace detail {
         struct Stringbuf;
         struct Tokenizer;
+        
+        template<typename ClassType>
+        struct MembersHolder;
+        
+        template<typename memberType, memberType member>
+        struct MemberInfo;
     }
 
     template<typename ClassType>
@@ -22,12 +28,6 @@ namespace tjson {
 
     template<typename ClassType>
     ClassType from_json(const std::string& jsonString);
-
-    template<typename ClassType>
-    struct MembersHolder;
-
-    template<typename memberType, memberType member>
-    struct MemberInfo;
 }
 
 #endif

@@ -19,7 +19,7 @@
 #else
 #define json_no_return              __declspec(noreturn)
 #define json_force_inline           __forceinline
-#define json_never_inline
+#define json_never_inline           __declspec(noinline)
 #define json_cold_function
 #define json_hot_function
 #define json_nonull_args

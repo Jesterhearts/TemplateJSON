@@ -307,14 +307,14 @@ namespace detail {
         template<typename construct_tag = typename ConstructHint<StoredType>::construction_type,
                  enable_if<construct_tag, is_trivial_construct_tag> = true>
         json_force_inline DataStore(StoredType* storage) noexcept
-            : data_list(storage, MembersHolder<StoredType>::members())
+            : data_list(storage, MembersFor<StoredType>())
         {}
 
         template<typename construct_tag = typename ConstructHint<StoredType>::construction_type,
                  enable_if<construct_tag, is_non_trivial_construct_tag> = true>
         json_force_inline DataStore() noexcept {}
 
-        decltype(data_list_type<StoredType>(MembersHolder<StoredType>::members())) data_list;
+        decltype(data_list_type<StoredType>(MembersFor<StoredType>())) data_list;
     };
 
     //See cases outlined in data store
