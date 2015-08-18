@@ -14,6 +14,7 @@
 #define json_return_nonull          __attribute__((returns_nonnull))
 #define json_expect_true(value)     __builtin_expect(value, 1)
 #define json_expect_false(value)    __builtin_expect(value, 0)
+#define json_pragma(p)              _Pragma(BOOST_PP_STRINGIZE(p))
 
 #else
 #define json_no_return              __declspec(noreturn)
@@ -25,6 +26,7 @@
 #define json_return_nonull
 #define json_expect_true(value)     value
 #define json_expect_false(value)    value
+#define json_pragma(p)              __pragma(p)
 
 #endif
 

@@ -119,10 +119,13 @@ namespace tjson {
 #else
 #define JSON_HINT_CAN_BUILD_IN_PLACE(CLASS_NAME)                        \
     namespace tjson {                                                   \
+    json_pragma(warning(push));                                         \
+    json_pragma(warning(disable: 4624));                                \
     template<>                                                          \
-    struct ConstructHint<CLASS_NAME> {                                  \
+    struct ConstructHint<CLASS_NAME> : detail::reference_only {         \
         using construction_type = object_hints::trivially_constructible;\
     };                                                                  \
+    json_pragma(warning(pop));                                          \
     }
 #endif
 
