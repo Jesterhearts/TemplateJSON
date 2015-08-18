@@ -1,6 +1,7 @@
 #include "json.hpp"
+#include <iostream>
 
-#include "json_data_store.hpp"
+#include "internal/json_data_store.hpp"
 
 struct Tester {
     int _i;

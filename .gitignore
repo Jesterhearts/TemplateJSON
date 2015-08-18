@@ -22,7 +22,7 @@
 *.stackdump
 
 .idea/*
-visual_studio/*
+VisualStudio/*
 bench.cpp
 bench.h
 CMakeLists.txt

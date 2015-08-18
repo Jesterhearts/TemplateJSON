@@ -1,4 +1,7 @@
+#ifndef JSON_TEST_ALL
 #define JSON_TEST_ALL
+#endif
+
 #include "json_test_floats.cpp"
 #include "json_test_integrals.cpp"
 #include "json_test_strings.cpp"
@@ -19,6 +22,9 @@ int main() {
     TestPrivateMember();
     TestConstMember();
     TestCustomKey();
+
+    char c;
+    std::cin >> c;
 
     return 0;
 }
