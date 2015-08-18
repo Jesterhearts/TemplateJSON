@@ -3,11 +3,10 @@
 #define __JSON_ITERABLE_PARSER_HPP__
 
 namespace std {
-#ifdef _MSC_VER
-#pragma warning(push)
-#pragma warning(disable: 4099)
+#ifndef _MSC_VER
     template<typename T, size_t N> struct array;
-#pragma warning(pop)
+#else
+    template<typename T, size_t N> class array;
 #endif
 
     template<typename T, typename A> class deque;

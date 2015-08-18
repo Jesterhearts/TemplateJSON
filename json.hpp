@@ -18,8 +18,6 @@
 #ifdef _MSC_VER
 #pragma warning(push)
 #pragma warning(disable: 4624)
-#pragma warning(disable: 4127)
-#pragma warning(disable: 4512)
 #endif
 
 #include "internal/json_common_defs.hpp"

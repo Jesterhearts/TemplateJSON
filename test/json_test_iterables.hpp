@@ -8,12 +8,7 @@
 
 struct iterables {
     iterables(std::vector<int>&& v, std::map<int, int>&& m) : vector(v), map(m) {}
-
-#ifndef _MSC_VER
     iterables() : vector{1, 2, 3, 4, 5}, map{{0, 1}, {2, 3}, {4, 5}} {}
-#else
-    iterables() : vector({ 1, 2, 3, 4, 5 }), map({ { 0, 1 },{ 2, 3 },{ 4, 5 } }) {}
-#endif
 
     std::vector<int> vector;
     std::map<int, int> map;

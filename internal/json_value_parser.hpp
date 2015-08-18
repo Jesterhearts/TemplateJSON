@@ -90,7 +90,7 @@ namespace tjson {
     namespace detail {
         //UTF8 todo
         template<typename ClassType,
-                 JSON_ENABLE_IF(ClassType, is_char)>
+                 enable_if<ClassType, is_char>>
         inline void to_json(ClassType from, detail::Stringbuf& out) {
             out.push_back('\"');
             out.push_back(from);
@@ -99,7 +99,7 @@ namespace tjson {
 
         //UTF8 todo
         template<typename ClassType,
-                 JSON_ENABLE_IF(ClassType, is_char)>
+                 enable_if<ClassType, is_char>>
         inline void from_json(Tokenizer& tokenizer, DataMember<ClassType>& into) {
             tokenizer.advance_past_or_fail_if_not<'\"'>( "Not a valid string begin token");
 
@@ -110,7 +110,7 @@ namespace tjson {
 
         //UTF8 todo
         template<typename ClassType,
-                 JSON_ENABLE_IF(ClassType, is_wchar)>
+                 enable_if<ClassType, is_wchar>>
         inline void to_json(ClassType from, detail::Stringbuf& out) {
             out.push_back('\"');
 
@@ -123,7 +123,7 @@ namespace tjson {
 
         //UTF8 todo
         template<typename ClassType,
-                 JSON_ENABLE_IF(ClassType, is_wchar)>
+                 enable_if<ClassType, is_wchar>>
         inline void from_json(Tokenizer& tokenizer, DataMember<ClassType>& into) {
             tokenizer.advance_past_or_fail_if_not<'\"'>( "Not a valid string begin token");
 
@@ -137,13 +137,13 @@ namespace tjson {
         }
 
         template<typename ClassType,
-                 JSON_ENABLE_IF(ClassType, std::is_class)>
+                 enable_if<ClassType, std::is_class>>
         inline void to_json(const ClassType& from, detail::Stringbuf& out) {
             tjson::to_json(from, out);
         }
 
         template<typename ClassType,
-                 JSON_ENABLE_IF(ClassType, std::is_class)>
+                 enable_if<ClassType, std::is_class>>
         inline void from_json(detail::Tokenizer& tokenizer, DataMember<ClassType>& into) {
             tjson::from_json(tokenizer, into);
         }

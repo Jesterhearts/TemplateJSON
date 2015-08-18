@@ -110,6 +110,5 @@ This program requires the boost.preprocessor and boost.lexical_cast libraries.
 ### Tested compilers:
 - Cygwin64 g++ (GCC) 4.9.2
 - MinGW-W64 g++ (x86_64-posix-seh-rev1, Built by MinGW-W64 project) 4.9.2
-- MSVC 2013 u4
-- MSVC 2015 Preview
+- MSVC 2015
 

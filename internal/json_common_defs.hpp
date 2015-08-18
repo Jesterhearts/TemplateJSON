@@ -26,10 +26,6 @@
 #define json_expect_true(value)     value
 #define json_expect_false(value)    value
 
-    #if _MSC_VER < 1900
-    #define constexpr
-    #define noexcept throw()
-    #endif
 #endif
 
 #endif
