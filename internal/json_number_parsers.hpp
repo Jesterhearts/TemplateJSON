@@ -24,22 +24,22 @@ namespace detail {
 
     template<>
     struct min_buffer_size<1> : reference_only {
-        static const uint8_t value = 3;
+        constexpr static const uint8_t value = 3;
     };
 
     template<>
     struct min_buffer_size<2> : reference_only {
-        static const uint8_t value = 5;
+        constexpr static const uint8_t value = 5;
     };
 
     template<>
     struct min_buffer_size<4> : reference_only {
-        static const uint8_t value = 10;
+        constexpr static const uint8_t value = 10;
     };
 
     template<>
     struct min_buffer_size<8> : reference_only {
-        static const uint8_t value = 20;
+        constexpr static const uint8_t value = 20;
     };
 
     template<typename Type>

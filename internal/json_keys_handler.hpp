@@ -6,20 +6,19 @@ namespace tjson {
 
 #define JSON_CREATE_KEYS(CLASS_NAME, ...)               \
     BOOST_PP_SEQ_FOR_EACH(                              \
-        JSON_REFERENCE_KEY, CLASS_NAME,                 \
+        JSON_CREATE_KEY, CLASS_NAME,                 \
         BOOST_PP_VARIADIC_TO_SEQ(__VA_ARGS__)           \
     )
 
-#define JSON_REFERENCE_KEY(s, CLASS_NAME, VARDATA)              \
-    template<>                                                  \
-    struct MemberInfo<                                          \
-        JSON_MEMBER_INFO_ARGS(CLASS_NAME, VARDATA)> {           \
-        static const char key[];                                \
-    };                                                          \
-                                                                \
-    const char MemberInfo<                                      \
-        JSON_MEMBER_INFO_ARGS(CLASS_NAME, VARDATA)              \
-    >::key[] = "\"" BOOST_PP_EXPAND(JSON_KEY_NAME VARDATA) "\"";
+#define JSON_CREATE_KEY(s, CLASS_NAME, VARDATA)                                             \
+    template<>                                                                              \
+    struct MemberInfo<                                                                      \
+        JSON_MEMBER_INFO_ARGS(CLASS_NAME, VARDATA)> {                                       \
+        json_force_inline                                                                   \
+        constexpr static decltype("\"" BOOST_PP_EXPAND(JSON_KEY_NAME VARDATA) "\"") key() { \
+            return "\"" BOOST_PP_EXPAND(JSON_KEY_NAME VARDATA) "\"";                        \
+        }                                                                                   \
+    };
 
 #define JSON_MEMBER_INFO_ARGS(CLASS_NAME, VARDATA) \
         decltype(&CLASS_NAME:: JSON_VARNAME VARDATA),   \

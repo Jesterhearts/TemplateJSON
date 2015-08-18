@@ -86,22 +86,22 @@ namespace tjson {
         template CLASS_NAME from_json<CLASS_NAME>(const std::string&);  \
     }
 
-#define JSON_ENABLE_ENUM(ENUM_NAME, ...)                        \
-    namespace tjson {                                           \
-        template<>                                              \
-        struct EnumValidator<ENUM_NAME> {                       \
-            static EnumValueList<ENUM_NAME, __VA_ARGS__>        \
-            values() {                                          \
-                return EnumValueList<ENUM_NAME, __VA_ARGS__>(); \
-            }                                                   \
-        };                                                      \
+#define JSON_ENABLE_ENUM(ENUM_NAME, ...)                            \
+    namespace tjson {                                               \
+        template<>                                                  \
+        struct EnumValidator<ENUM_NAME> {                           \
+            constexpr static EnumValueList<ENUM_NAME, __VA_ARGS__>  \
+            values() {                                              \
+                return EnumValueList<ENUM_NAME, __VA_ARGS__>();     \
+            }                                                       \
+        };                                                          \
     }
 
 #define JSON_ENABLE_CONTIGUOUS_ENUM(ENUM_NAME, ...)                         \
     namespace tjson {                                                       \
         template<>                                                          \
         struct EnumValidator<ENUM_NAME> {                                   \
-            static ContiguousEnumValueList<ENUM_NAME, __VA_ARGS__>          \
+            constexpr static ContiguousEnumValueList<ENUM_NAME, __VA_ARGS__>\
             values() {                                                      \
                 return ContiguousEnumValueList<ENUM_NAME, __VA_ARGS__>();   \
             }                                                               \

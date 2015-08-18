@@ -31,7 +31,7 @@ namespace detail {
     void members_to_json(const ClassType& classFrom, detail::Stringbuf& out,
                          MemberList<member, members...>&&)
     {
-        out.append(member::key, sizeof(member::key) - 1);
+        out.append(member::key(), sizeof(member::key()) - 1);
         out.push_back(':');
 
         member_to_json(classFrom, member(), out);
@@ -62,10 +62,10 @@ namespace detail {
     {
         //-1 for opening ", -1 for closing ", -1 for \0
         constexpr const size_t extraneous_chars_in_key = 3;
-        constexpr const size_t len = sizeof(member::key) - extraneous_chars_in_key;
+        constexpr const size_t len = sizeof(member::key()) - extraneous_chars_in_key;
 
         //+1 to pass opening "
-        if(keylen == len && std::memcmp(startOfKey, member::key + 1, len) == 0) {
+        if(keylen == len && std::memcmp(startOfKey, member::key() + 1, len) == 0) {
             detail::from_json(tokenizer, into.data);
         }
         else {
